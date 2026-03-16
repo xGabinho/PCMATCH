@@ -1,0 +1,704 @@
+<template>
+  <div class="flex h-screen overflow-hidden bg-dark-bg">
+
+    <!-- Admin Sidebar -->
+    <aside class="w-60 border-r border-dark-border flex-shrink-0 flex flex-col h-screen overflow-y-auto sticky top-0">
+      <div class="h-16 px-5 flex items-center border-b border-dark-border gap-2.5">
+        <div class="w-7 h-7 rounded-lg bg-accent flex items-center justify-center text-white font-bold text-xs">PC</div>
+        <div>
+          <p class="text-text-primary font-semibold text-sm leading-none">PCMATCH</p>
+          <p class="text-text-muted text-xs mt-0.5">Panel Admin</p>
+        </div>
+      </div>
+
+      <nav class="flex-1 p-3 space-y-1">
+        <button
+          v-for="section in sections"
+          :key="section.id"
+          @click="activeSection = section.id"
+          class="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-150 text-left"
+          :class="activeSection === section.id
+            ? 'bg-accent/10 text-accent border border-accent/20'
+            : 'text-text-muted hover:text-text-primary hover:bg-dark-card'"
+        >
+          <span>{{ section.icon }}</span>
+          {{ section.label }}
+          <span v-if="section.count !== null" class="ml-auto text-xs font-mono opacity-60">{{ section.count }}</span>
+        </button>
+      </nav>
+
+      <div class="p-3 border-t border-dark-border">
+        <button @click="handleLogout" class="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-text-muted hover:text-text-primary hover:bg-dark-card transition-all duration-150">
+          ← Cerrar sesión
+        </button>
+      </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="flex-1 overflow-auto">
+
+      <!-- Topbar -->
+      <div class="h-16 border-b border-dark-border px-8 flex items-center justify-between sticky top-0 bg-dark-bg/90 backdrop-blur z-10">
+        <div>
+          <h1 class="font-semibold text-text-primary">{{ currentSection.label }}</h1>
+          <p class="text-xs text-text-muted mt-0.5">{{ currentSection.description }}</p>
+        </div>
+        <button
+          v-if="currentSection.cta"
+          @click="activeSection === 'bodegas' ? openBodegaModal() : activeSection === 'gestionar-usuarios' ? activeSection = 'crear-usuario' : null"
+          class="btn-primary text-sm"
+        >
+          {{ currentSection.cta }}
+        </button>
+      </div>
+
+      <div class="p-8">
+
+        <!-- ===== BODEGAS ===== -->
+        <template v-if="activeSection === 'bodegas'">
+          <div class="grid grid-cols-3 gap-4 mb-8">
+            <div class="card-dark rounded-xl p-5">
+              <p class="text-text-muted text-xs uppercase tracking-wider mb-2">Total bodegas</p>
+              <p class="text-3xl font-bold text-text-primary font-mono">{{ bodegas.length }}</p>
+            </div>
+            <div class="card-dark rounded-xl p-5">
+              <p class="text-text-muted text-xs uppercase tracking-wider mb-2">Bodegas activas</p>
+              <p class="text-3xl font-bold text-green-400 font-mono">{{ bodegas.filter(b => b.activa == 1).length }}</p>
+            </div>
+            <div class="card-dark rounded-xl p-5">
+              <p class="text-text-muted text-xs uppercase tracking-wider mb-2">Bodegas inactivas</p>
+              <p class="text-3xl font-bold text-red-400 font-mono">{{ bodegas.filter(b => b.activa == 0).length }}</p>
+            </div>
+          </div>
+
+          <div class="card-dark rounded-xl overflow-hidden overflow-x-auto">
+            <div class="px-6 py-4 border-b border-dark-border flex items-center justify-between">
+              <h2 class="font-semibold text-text-primary">Listado de bodegas</h2>
+              <input v-model="filterBodega" type="text" placeholder="Buscar..." class="bg-dark-bg border border-dark-border rounded-lg px-4 py-2 text-sm text-text-primary placeholder-text-muted focus:outline-none focus:border-accent transition-colors w-48" />
+            </div>
+            <div v-if="loadingBodegas" class="px-6 py-12 text-center text-text-muted text-sm">Cargando bodegas...</div>
+            <table v-else class="w-full min-w-[640px]">
+              <thead class="border-b border-dark-border">
+                <tr><th v-for="h in ['Nombre','Teléfono','Correo','Componentes','Estado','Acciones']" :key="h" class="px-6 py-3 text-left text-xs text-text-muted uppercase tracking-wider font-medium">{{ h }}</th></tr>
+              </thead>
+              <tbody class="divide-y divide-dark-border">
+                <tr v-if="filteredBodegas.length === 0"><td colspan="6" class="px-6 py-12 text-center text-text-muted text-sm">Sin bodegas registradas</td></tr>
+                <tr v-for="b in filteredBodegas" :key="b.id" class="hover:bg-dark-bg/50 transition-colors">
+                  <td class="px-6 py-4 text-sm font-medium text-text-primary">{{ b.nombre }}</td>
+                  <td class="px-6 py-4 text-sm text-text-muted">{{ b.telefono || '—' }}</td>
+                  <td class="px-6 py-4 text-sm text-text-muted">{{ b.correo }}</td>
+                  <td class="px-6 py-4 text-sm text-text-primary font-mono">{{ b.total_componentes }}</td>
+                  <td class="px-6 py-4">
+                    <span class="badge text-xs px-2.5 py-1" :class="b.activa == 1 ? 'bg-green-500/10 text-green-400 border border-green-500/20' : 'bg-red-500/10 text-red-400 border border-red-500/20'">
+                      {{ b.activa == 1 ? 'Activa' : 'Inactiva' }}
+                    </span>
+                  </td>
+                  <td class="px-6 py-4">
+                    <div class="flex gap-2">
+                      <button @click="toggleBodega(b)" class="text-xs text-text-muted hover:text-yellow-400 px-2 py-1 rounded hover:bg-yellow-400/10 transition-colors">
+                        {{ b.activa == 1 ? 'Desactivar' : 'Activar' }}
+                      </button>
+                      <button @click="openDeleteBodega(b)" class="text-xs text-text-muted hover:text-red-400 px-2 py-1 rounded hover:bg-red-400/10 transition-colors">Eliminar</button>
+                    </div>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </template>
+
+        <!-- ===== COMPONENTES ===== -->
+        <template v-if="activeSection === 'componentes'">
+          <div class="card-dark rounded-xl overflow-hidden overflow-x-auto">
+            <div class="px-6 py-4 border-b border-dark-border flex items-center justify-between">
+              <h2 class="font-semibold text-text-primary">Listado de componentes</h2>
+              <input v-model="filterComponente" type="text" placeholder="Buscar..." class="bg-dark-bg border border-dark-border rounded-lg px-4 py-2 text-sm text-text-primary placeholder-text-muted focus:outline-none focus:border-accent transition-colors w-48" />
+            </div>
+            <div v-if="loadingComponentes" class="px-6 py-12 text-center text-text-muted text-sm">Cargando componentes...</div>
+            <table v-else class="w-full min-w-[640px]">
+              <thead class="border-b border-dark-border">
+                <tr><th v-for="h in ['Componente','Categoría','Especificación','Gama','Precio','Bodega','Stock']" :key="h" class="px-6 py-3 text-left text-xs text-text-muted uppercase tracking-wider font-medium">{{ h }}</th></tr>
+              </thead>
+              <tbody class="divide-y divide-dark-border">
+                <tr v-if="filteredComponentes.length === 0"><td colspan="7" class="px-6 py-12 text-center text-text-muted text-sm">Sin componentes</td></tr>
+                <tr v-for="c in filteredComponentes" :key="c.id" class="hover:bg-dark-bg/50 transition-colors">
+                  <td class="px-6 py-4 text-sm font-medium text-text-primary">{{ c.nombre }}</td>
+                  <td class="px-6 py-4"><span class="badge text-xs bg-accent/10 text-accent border border-accent/20">{{ c.categoria }}</span></td>
+                  <td class="px-6 py-4 text-sm text-text-muted max-w-48 truncate">{{ c.especificacion }}</td>
+                  <td class="px-6 py-4"><span class="text-xs px-2 py-0.5 rounded-full font-medium border" :class="tierStyles[c.gama]">{{ c.gama }}</span></td>
+                  <td class="px-6 py-4 text-sm text-accent font-mono font-medium">${{ Number(c.precio).toLocaleString() }}</td>
+                  <td class="px-6 py-4 text-sm text-text-muted">{{ c.bodega_nombre }}</td>
+                  <td class="px-6 py-4 text-sm font-mono" :class="c.stock <= 3 ? 'text-yellow-400' : 'text-text-primary'">{{ c.stock }}</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </template>
+
+        <!-- ===== COTIZACIONES ===== -->
+        <template v-if="activeSection === 'cotizaciones'">
+          <div class="card-dark rounded-xl overflow-hidden overflow-x-auto">
+            <div class="px-6 py-4 border-b border-dark-border">
+              <h2 class="font-semibold text-text-primary">Listado de cotizaciones</h2>
+            </div>
+            <div class="px-6 py-12 text-center text-text-muted text-sm">
+              Próximamente — se habilitará cuando el endpoint de cotizaciones esté listo
+            </div>
+          </div>
+        </template>
+
+        <!-- ===== CREAR USUARIO ===== -->
+        <template v-if="activeSection === 'crear-usuario'">
+          <div class="max-w-xl">
+            <div class="card-dark rounded-2xl p-8 space-y-6">
+
+              <div>
+                <label class="block text-sm font-medium text-text-primary mb-3">Rol del usuario</label>
+                <div class="grid grid-cols-2 gap-3">
+                  <button
+                    v-for="role in roles"
+                    :key="role.id"
+                    @click="newUser.rol = role.id"
+                    class="flex flex-col items-center gap-2 p-4 rounded-xl border transition-all duration-150"
+                    :class="newUser.rol === role.id
+                      ? 'border-accent bg-accent/5 text-accent'
+                      : 'border-dark-border text-text-muted hover:border-accent/40 hover:text-text-primary'"
+                  >
+                    <span class="text-2xl">{{ role.icon }}</span>
+                    <span class="text-xs font-medium">{{ role.label }}</span>
+                  </button>
+                </div>
+                <p class="text-xs text-text-muted mt-2 min-h-[1rem]">{{ roles.find(r => r.id === newUser.rol)?.description }}</p>
+              </div>
+
+              <div class="border-t border-dark-border"></div>
+
+              <div class="grid grid-cols-2 gap-4">
+                <div>
+                  <label class="block text-sm font-medium text-text-primary mb-2">Nombre</label>
+                  <input v-model="newUser.nombre" type="text" placeholder="Juan" class="w-full bg-dark-bg border border-dark-border rounded-lg px-4 py-3 text-sm text-text-primary placeholder-text-muted focus:outline-none focus:border-accent transition-colors" />
+                </div>
+                <div>
+                  <label class="block text-sm font-medium text-text-primary mb-2">Apellido</label>
+                  <input v-model="newUser.apellido" type="text" placeholder="Pérez" class="w-full bg-dark-bg border border-dark-border rounded-lg px-4 py-3 text-sm text-text-primary placeholder-text-muted focus:outline-none focus:border-accent transition-colors" />
+                </div>
+              </div>
+
+              <div>
+                <label class="block text-sm font-medium text-text-primary mb-2">Correo electrónico</label>
+                <input v-model="newUser.correo" type="email" placeholder="usuario@email.com" class="w-full bg-dark-bg border border-dark-border rounded-lg px-4 py-3 text-sm text-text-primary placeholder-text-muted focus:outline-none focus:border-accent transition-colors" />
+              </div>
+
+              <div>
+                <label class="block text-sm font-medium text-text-primary mb-2">Teléfono</label>
+                <input v-model="newUser.telefono" type="tel" placeholder="+56 9 1234 5678" class="w-full bg-dark-bg border border-dark-border rounded-lg px-4 py-3 text-sm text-text-primary placeholder-text-muted focus:outline-none focus:border-accent transition-colors" />
+              </div>
+
+              <div>
+                <label class="block text-sm font-medium text-text-primary mb-2">Contraseña temporal</label>
+                <input v-model="newUser.password" type="password" placeholder="Mínimo 8 caracteres" class="w-full bg-dark-bg border border-dark-border rounded-lg px-4 py-3 text-sm text-text-primary placeholder-text-muted focus:outline-none focus:border-accent transition-colors" />
+              </div>
+
+              <p v-if="createUserError" class="text-xs text-red-400 bg-red-500/10 border border-red-500/20 rounded-lg px-4 py-2.5">{{ createUserError }}</p>
+              <p v-if="createUserSuccess" class="text-xs text-green-400 bg-green-500/10 border border-green-500/20 rounded-lg px-4 py-2.5">{{ createUserSuccess }}</p>
+
+              <div class="flex gap-3 pt-2">
+                <button @click="saveNewUser" :disabled="savingUser" class="btn-primary flex-1 text-sm">
+                  {{ savingUser ? 'Creando...' : 'Crear usuario' }}
+                </button>
+                <button @click="resetNewUser" class="btn-secondary text-sm px-5">Limpiar</button>
+              </div>
+            </div>
+          </div>
+        </template>
+
+        <!-- ===== GESTIONAR USUARIOS ===== -->
+        <template v-if="activeSection === 'gestionar-usuarios'">
+          <div class="grid grid-cols-4 gap-4 mb-8">
+            <div class="card-dark rounded-xl p-5">
+              <p class="text-text-muted text-xs uppercase tracking-wider mb-2">Total usuarios</p>
+              <p class="text-3xl font-bold text-text-primary font-mono">{{ usuarios.length }}</p>
+            </div>
+            <div class="card-dark rounded-xl p-5">
+              <p class="text-text-muted text-xs uppercase tracking-wider mb-2">Admins</p>
+              <p class="text-3xl font-bold text-purple-400 font-mono">{{ usuarios.filter(u => u.rol === 'admin').length }}</p>
+            </div>
+            <div class="card-dark rounded-xl p-5">
+              <p class="text-text-muted text-xs uppercase tracking-wider mb-2">Clientes</p>
+              <p class="text-3xl font-bold text-accent font-mono">{{ usuarios.filter(u => u.rol === 'cliente').length }}</p>
+            </div>
+            <div class="card-dark rounded-xl p-5">
+              <p class="text-text-muted text-xs uppercase tracking-wider mb-2">Inactivos</p>
+              <p class="text-3xl font-bold text-red-400 font-mono">{{ usuarios.filter(u => u.estado == 0).length }}</p>
+            </div>
+          </div>
+
+          <div class="card-dark rounded-xl overflow-hidden overflow-x-auto">
+            <div class="px-6 py-4 border-b border-dark-border flex items-center justify-between">
+              <h2 class="font-semibold text-text-primary">Usuarios registrados</h2>
+              <input v-model="filterUsuario" type="text" placeholder="Buscar por nombre o correo..." class="bg-dark-bg border border-dark-border rounded-lg px-4 py-2 text-sm text-text-primary placeholder-text-muted focus:outline-none focus:border-accent transition-colors w-64" />
+            </div>
+            <div v-if="loadingUsuarios" class="px-6 py-12 text-center text-text-muted text-sm">Cargando usuarios...</div>
+            <table v-else class="w-full min-w-[640px]">
+              <thead class="border-b border-dark-border">
+                <tr><th v-for="h in ['Usuario','Correo','Teléfono','Rol','Estado','Registrado','Acciones']" :key="h" class="px-6 py-3 text-left text-xs text-text-muted uppercase tracking-wider font-medium">{{ h }}</th></tr>
+              </thead>
+              <tbody class="divide-y divide-dark-border">
+                <tr v-if="filteredUsuarios.length === 0"><td colspan="7" class="px-6 py-12 text-center text-text-muted text-sm">Sin usuarios</td></tr>
+                <tr v-for="u in filteredUsuarios" :key="u.id" class="hover:bg-dark-bg/50 transition-colors" :class="u.estado == 0 ? 'opacity-50' : ''">
+                  <td class="px-6 py-4">
+                    <div class="flex items-center gap-3">
+                      <div class="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0" :class="roleStyles[u.rol]?.avatar ?? 'bg-dark-card text-text-muted'">
+                        {{ u.nombre.charAt(0) }}
+                      </div>
+                      <span class="text-sm font-medium text-text-primary">{{ u.nombre }} {{ u.apellido }}</span>
+                    </div>
+                  </td>
+                  <td class="px-6 py-4 text-sm text-text-muted">{{ u.correo }}</td>
+                  <td class="px-6 py-4 text-sm text-text-muted">{{ u.telefono || '—' }}</td>
+                  <td class="px-6 py-4">
+                    <span class="badge text-xs px-2.5 py-1" :class="roleStyles[u.rol]?.badge ?? ''">{{ roleStyles[u.rol]?.label ?? u.rol }}</span>
+                  </td>
+                  <td class="px-6 py-4">
+                    <span class="badge text-xs px-2.5 py-1" :class="u.estado == 1 ? 'bg-green-500/10 text-green-400 border border-green-500/20' : 'bg-red-500/10 text-red-400 border border-red-500/20'">
+                      {{ u.estado == 1 ? 'Activo' : 'Inactivo' }}
+                    </span>
+                  </td>
+                  <td class="px-6 py-4 text-sm text-text-muted">{{ formatDate(u.created_at) }}</td>
+                  <td class="px-6 py-4">
+                    <div class="flex gap-2">
+                      <button @click="openEditModal(u)" class="text-xs text-text-muted hover:text-yellow-400 px-2 py-1 rounded hover:bg-yellow-400/10 transition-colors">Editar</button>
+                      <button @click="openDeleteModal(u)" class="text-xs px-2 py-1 rounded transition-colors"
+                        :class="u.estado == 1
+                          ? 'text-text-muted hover:text-red-400 hover:bg-red-400/10'
+                          : 'text-text-muted hover:text-green-400 hover:bg-green-400/10'">
+                        {{ u.estado == 1 ? 'Desactivar' : 'Reactivar' }}
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </template>
+
+      </div>
+    </main>
+
+    <!-- ===== MODAL EDITAR USUARIO ===== -->
+    <div v-if="showEditModal" class="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto py-6 px-4">
+      <div class="fixed inset-0 bg-black/60 backdrop-blur-sm" @click="showEditModal = false"></div>
+      <div class="relative card-dark rounded-2xl p-6 w-full max-w-md my-auto shadow-2xl">
+        <div class="flex items-center justify-between mb-6">
+          <div>
+            <h2 class="text-lg font-bold text-text-primary">Editar usuario</h2>
+            <p class="text-xs text-text-muted mt-0.5">Modifica los datos o el rol del usuario</p>
+          </div>
+          <button @click="showEditModal = false" class="text-text-muted hover:text-text-primary transition-colors text-2xl leading-none w-8 h-8 flex items-center justify-center rounded-lg hover:bg-dark-bg">×</button>
+        </div>
+        <div class="space-y-5">
+          <div class="grid grid-cols-2 gap-4">
+            <div>
+              <label class="block text-sm font-medium text-text-primary mb-2">Nombre</label>
+              <input v-model="editingUser.nombre" type="text" class="w-full bg-dark-bg border border-dark-border rounded-lg px-4 py-3 text-sm text-text-primary focus:outline-none focus:border-accent transition-colors" />
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-text-primary mb-2">Apellido</label>
+              <input v-model="editingUser.apellido" type="text" class="w-full bg-dark-bg border border-dark-border rounded-lg px-4 py-3 text-sm text-text-primary focus:outline-none focus:border-accent transition-colors" />
+            </div>
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-text-primary mb-2">Correo electrónico</label>
+            <input v-model="editingUser.correo" type="email" class="w-full bg-dark-bg border border-dark-border rounded-lg px-4 py-3 text-sm text-text-primary focus:outline-none focus:border-accent transition-colors" />
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-text-primary mb-2">Teléfono</label>
+            <input v-model="editingUser.telefono" type="tel" class="w-full bg-dark-bg border border-dark-border rounded-lg px-4 py-3 text-sm text-text-primary focus:outline-none focus:border-accent transition-colors" />
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-text-primary mb-3">Cambiar rol</label>
+            <div class="grid grid-cols-2 gap-2">
+              <button
+                v-for="role in roles"
+                :key="role.id"
+                @click="editingUser.rol = role.id"
+                class="flex flex-col items-center gap-1.5 p-3 rounded-xl border text-xs font-medium transition-all duration-150"
+                :class="editingUser.rol === role.id
+                  ? 'border-accent bg-accent/5 text-accent'
+                  : 'border-dark-border text-text-muted hover:border-accent/40 hover:text-text-primary'"
+              >
+                <span class="text-lg">{{ role.icon }}</span>
+                {{ role.label }}
+              </button>
+            </div>
+          </div>
+          <p v-if="editUserError" class="text-xs text-red-400 bg-red-500/10 border border-red-500/20 rounded-lg px-4 py-2.5">{{ editUserError }}</p>
+        </div>
+        <div class="flex gap-3 mt-8">
+          <button @click="saveEditUser" :disabled="savingEditUser" class="btn-primary flex-1 text-sm">
+            {{ savingEditUser ? 'Guardando...' : 'Guardar cambios' }}
+          </button>
+          <button @click="showEditModal = false" class="btn-secondary text-sm px-5">Cancelar</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== MODAL DESACTIVAR / REACTIVAR USUARIO ===== -->
+    <div v-if="showDeleteModal" class="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto py-6 px-4">
+      <div class="fixed inset-0 bg-black/60 backdrop-blur-sm" @click="showDeleteModal = false"></div>
+      <div class="relative card-dark rounded-2xl p-6 w-full max-w-sm my-auto shadow-2xl text-center">
+        <div class="w-14 h-14 rounded-full flex items-center justify-center mx-auto mb-4 text-2xl"
+          :class="deletingUser?.estado == 1 ? 'bg-red-500/10 border border-red-500/20' : 'bg-green-500/10 border border-green-500/20'">
+          {{ deletingUser?.estado == 1 ? '🚫' : '✅' }}
+        </div>
+        <h2 class="text-lg font-bold text-text-primary mb-2">
+          {{ deletingUser?.estado == 1 ? 'Desactivar usuario' : 'Reactivar usuario' }}
+        </h2>
+        <p class="text-text-muted text-sm mb-1">
+          {{ deletingUser?.estado == 1 ? '¿Desactivar a' : '¿Reactivar a' }}
+        </p>
+        <p class="text-text-primary font-semibold mb-2">{{ deletingUser?.nombre }} {{ deletingUser?.apellido }}?</p>
+        <p class="text-xs text-text-muted mb-6 px-4">
+          {{ deletingUser?.estado == 1 ? 'El usuario no podrá iniciar sesión mientras esté inactivo.' : 'El usuario podrá volver a iniciar sesión.' }}
+        </p>
+        <div class="flex gap-3">
+          <button @click="confirmDeleteUser" :disabled="savingDeleteUser"
+            class="flex-1 py-3 rounded-lg text-sm font-medium border transition-colors"
+            :class="deletingUser?.estado == 1
+              ? 'bg-red-500/10 text-red-400 border-red-500/20 hover:bg-red-500/20'
+              : 'bg-green-500/10 text-green-400 border-green-500/20 hover:bg-green-500/20'">
+            {{ savingDeleteUser ? 'Procesando...' : (deletingUser?.estado == 1 ? 'Sí, desactivar' : 'Sí, reactivar') }}
+          </button>
+          <button @click="showDeleteModal = false" class="flex-1 btn-secondary text-sm">Cancelar</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== MODAL AGREGAR BODEGA ===== -->
+    <div v-if="showBodegaModal" class="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto py-6 px-4">
+      <div class="fixed inset-0 bg-black/60 backdrop-blur-sm" @click="closeBodegaModal"></div>
+      <div class="relative card-dark rounded-2xl p-6 w-full max-w-md my-auto shadow-2xl">
+        <div class="flex items-center justify-between mb-6">
+          <div>
+            <h2 class="text-lg font-bold text-text-primary">Agregar bodega</h2>
+            <p class="text-xs text-text-muted mt-0.5">Crea el acceso para el gestor de la bodega</p>
+          </div>
+          <button @click="closeBodegaModal" class="text-text-muted hover:text-text-primary transition-colors text-2xl leading-none w-8 h-8 flex items-center justify-center rounded-lg hover:bg-dark-bg">×</button>
+        </div>
+        <div class="space-y-5">
+          <div>
+            <label class="block text-sm font-medium text-text-primary mb-2">Nombre de la bodega</label>
+            <input v-model="newBodega.nombre" type="text" placeholder="Ej: TecnoStore Santiago" class="w-full bg-dark-bg border border-dark-border rounded-lg px-4 py-3 text-sm text-text-primary placeholder-text-muted focus:outline-none focus:border-accent transition-colors" />
+          </div>
+          <div class="border-t border-dark-border pt-1">
+            <p class="text-xs text-text-muted mb-4">Credenciales de acceso para el gestor</p>
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-text-primary mb-2">Correo electrónico</label>
+            <input v-model="newBodega.correo" type="email" placeholder="gestor@bodega.com" class="w-full bg-dark-bg border border-dark-border rounded-lg px-4 py-3 text-sm text-text-primary placeholder-text-muted focus:outline-none focus:border-accent transition-colors" />
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-text-primary mb-2">Número de teléfono</label>
+            <input v-model="newBodega.telefono" type="tel" placeholder="+56 9 1234 5678" class="w-full bg-dark-bg border border-dark-border rounded-lg px-4 py-3 text-sm text-text-primary placeholder-text-muted focus:outline-none focus:border-accent transition-colors" />
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-text-primary mb-2">Contraseña de acceso</label>
+            <input v-model="newBodega.password" type="password" placeholder="Mínimo 8 caracteres" class="w-full bg-dark-bg border border-dark-border rounded-lg px-4 py-3 text-sm text-text-primary placeholder-text-muted focus:outline-none focus:border-accent transition-colors" />
+          </div>
+          <div class="rounded-lg border border-accent/20 bg-accent/5 p-3 flex items-start gap-2">
+            <span class="text-accent text-sm mt-0.5">ℹ️</span>
+            <p class="text-xs text-text-muted leading-relaxed">El gestor usará estas credenciales para ingresar al sistema y administrar el stock de su bodega.</p>
+          </div>
+          <p v-if="bodegaError" class="text-xs text-red-400 bg-red-500/10 border border-red-500/20 rounded-lg px-4 py-2.5">{{ bodegaError }}</p>
+        </div>
+        <div class="flex gap-3 mt-8">
+          <button @click="saveNewBodega" :disabled="savingBodega" class="btn-primary flex-1 text-sm">
+            {{ savingBodega ? 'Creando...' : 'Crear bodega' }}
+          </button>
+          <button @click="closeBodegaModal" class="btn-secondary text-sm px-5">Cancelar</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== MODAL ELIMINAR BODEGA ===== -->
+    <div v-if="showDeleteBodegaModal" class="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto py-6 px-4">
+      <div class="fixed inset-0 bg-black/60 backdrop-blur-sm" @click="showDeleteBodegaModal = false"></div>
+      <div class="relative card-dark rounded-2xl p-6 w-full max-w-sm my-auto shadow-2xl text-center">
+        <div class="w-14 h-14 rounded-full bg-red-500/10 border border-red-500/20 flex items-center justify-center mx-auto mb-4 text-2xl">🗑️</div>
+        <h2 class="text-lg font-bold text-text-primary mb-2">Eliminar bodega</h2>
+        <p class="text-text-muted text-sm mb-1">¿Estás seguro de que deseas eliminar</p>
+        <p class="text-text-primary font-semibold mb-2">{{ deletingBodega?.nombre }}?</p>
+        <p class="text-xs text-text-muted mb-6 px-4">Se eliminarán también todos sus componentes.</p>
+        <div class="flex gap-3">
+          <button @click="confirmDeleteBodega" :disabled="savingDeleteBodega" class="flex-1 py-3 rounded-lg text-sm font-medium bg-red-500/10 text-red-400 border border-red-500/20 hover:bg-red-500/20 transition-colors">
+            {{ savingDeleteBodega ? 'Eliminando...' : 'Sí, eliminar' }}
+          </button>
+          <button @click="showDeleteBodegaModal = false" class="flex-1 btn-secondary text-sm">Cancelar</button>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</template>
+
+<script setup>
+import { ref, computed, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
+import { useAuth } from '../composables/useAuth'
+
+const API = 'http://localhost/pcmatch/backend/api'
+const { getToken, logout } = useAuth()
+const router = useRouter()
+
+function handleLogout() {
+  logout()
+  router.push('/login')
+}
+
+function formatDate(dateStr) {
+  if (!dateStr) return '—'
+  return new Date(dateStr).toLocaleDateString('es-CL', { day: '2-digit', month: 'short', year: 'numeric' })
+}
+
+// ── Secciones ─────────────────────────────────────────────
+const activeSection = ref('bodegas')
+
+const sections = computed(() => [
+  { id: 'bodegas',            icon: '🏪', label: 'Bodegas',            description: `${bodegas.value.length} bodegas registradas`,    cta: '+ Agregar bodega', count: bodegas.value.length    },
+  { id: 'componentes',        icon: '🔧', label: 'Componentes',        description: `${componentes.value.length} componentes en total`, cta: null,               count: componentes.value.length },
+  { id: 'cotizaciones',       icon: '📄', label: 'Cotizaciones',       description: 'Historial de cotizaciones',                       cta: null,               count: null },
+  { id: 'crear-usuario',      icon: '➕', label: 'Crear usuario',      description: 'Registrar nuevo usuario',                        cta: null,               count: null },
+  { id: 'gestionar-usuarios', icon: '👥', label: 'Gestionar usuarios', description: `${usuarios.value.length} usuarios registrados`,   cta: '+ Crear usuario',  count: usuarios.value.length   },
+])
+
+const currentSection = computed(() => sections.value.find(s => s.id === activeSection.value))
+
+// ── Estilos ───────────────────────────────────────────────
+const roles = [
+  { id: 'admin',   icon: '🛡️', label: 'Admin',   description: 'Acceso total al panel administrativo.' },
+  { id: 'cliente', icon: '👤', label: 'Cliente',  description: 'Solo puede cotizar y ver su historial.' },
+]
+
+const roleStyles = {
+  admin:   { label: 'Admin',   badge: 'bg-purple-500/10 text-purple-400 border border-purple-500/20', avatar: 'bg-purple-500/20 text-purple-400' },
+  cliente: { label: 'Cliente', badge: 'bg-blue-500/10 text-blue-400 border border-blue-500/20',       avatar: 'bg-blue-500/20 text-blue-400'    },
+  bodega:  { label: 'Bodega',  badge: 'bg-yellow-500/10 text-yellow-400 border border-yellow-500/20', avatar: 'bg-yellow-500/20 text-yellow-400' },
+}
+
+const tierStyles = {
+  alta:  'bg-yellow-500/10 text-yellow-400 border-yellow-500/20',
+  media: 'bg-blue-500/10 text-blue-400 border-blue-500/20',
+  baja:  'bg-zinc-500/10 text-zinc-400 border-zinc-500/20',
+}
+
+// ── Bodegas ───────────────────────────────────────────────
+const bodegas = ref([])
+const loadingBodegas = ref(false)
+const filterBodega = ref('')
+const showBodegaModal = ref(false)
+const showDeleteBodegaModal = ref(false)
+const deletingBodega = ref(null)
+const savingBodega = ref(false)
+const savingDeleteBodega = ref(false)
+const bodegaError = ref('')
+const newBodega = ref({ nombre: '', correo: '', telefono: '', password: '' })
+
+const filteredBodegas = computed(() => {
+  if (!filterBodega.value.trim()) return bodegas.value
+  const q = filterBodega.value.toLowerCase()
+  return bodegas.value.filter(b => b.nombre.toLowerCase().includes(q) || b.correo.toLowerCase().includes(q))
+})
+
+async function fetchBodegas() {
+  loadingBodegas.value = true
+  try {
+    const res = await fetch(`${API}/bodegas/`, { headers: { Authorization: `Bearer ${getToken()}` } })
+    const data = await res.json()
+    if (res.ok) bodegas.value = data.bodegas
+  } catch(e) { console.error(e) } finally { loadingBodegas.value = false }
+}
+
+function openBodegaModal() {
+  newBodega.value = { nombre: '', correo: '', telefono: '', password: '' }
+  bodegaError.value = ''
+  showBodegaModal.value = true
+}
+
+function closeBodegaModal() {
+  showBodegaModal.value = false
+  bodegaError.value = ''
+}
+
+async function saveNewBodega() {
+  bodegaError.value = ''
+  if (!newBodega.value.nombre || !newBodega.value.correo || !newBodega.value.password)
+    return bodegaError.value = 'Nombre, correo y contraseña son requeridos'
+  savingBodega.value = true
+  try {
+    const res = await fetch(`${API}/bodegas/`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getToken()}` },
+      body: JSON.stringify(newBodega.value)
+    })
+    const data = await res.json()
+    if (!res.ok) return bodegaError.value = data.error ?? 'Error al crear'
+    await fetchBodegas()
+    closeBodegaModal()
+  } catch(e) { bodegaError.value = 'Error de conexión' } finally { savingBodega.value = false }
+}
+
+async function toggleBodega(b) {
+  const activa = b.activa == 1 ? 0 : 1
+  await fetch(`${API}/bodegas/`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getToken()}` },
+    body: JSON.stringify({ id: b.id, nombre: b.nombre, telefono: b.telefono, activa })
+  })
+  await fetchBodegas()
+}
+
+function openDeleteBodega(b) {
+  deletingBodega.value = b
+  showDeleteBodegaModal.value = true
+}
+
+async function confirmDeleteBodega() {
+  savingDeleteBodega.value = true
+  try {
+    await fetch(`${API}/bodegas/?id=${deletingBodega.value.id}`, {
+      method: 'DELETE',
+      headers: { Authorization: `Bearer ${getToken()}` }
+    })
+    await fetchBodegas()
+    showDeleteBodegaModal.value = false
+  } catch(e) { console.error(e) } finally { savingDeleteBodega.value = false }
+}
+
+// ── Componentes ───────────────────────────────────────────
+const componentes = ref([])
+const loadingComponentes = ref(false)
+const filterComponente = ref('')
+
+const filteredComponentes = computed(() => {
+  if (!filterComponente.value.trim()) return componentes.value
+  const q = filterComponente.value.toLowerCase()
+  return componentes.value.filter(c => c.nombre.toLowerCase().includes(q) || c.categoria.toLowerCase().includes(q))
+})
+
+async function fetchComponentes() {
+  loadingComponentes.value = true
+  try {
+    const res = await fetch(`${API}/componentes/admin/`, { headers: { Authorization: `Bearer ${getToken()}` } })
+    const data = await res.json()
+    if (res.ok) componentes.value = data.componentes
+  } catch(e) { console.error(e) } finally { loadingComponentes.value = false }
+}
+
+// ── Usuarios ──────────────────────────────────────────────
+const usuarios = ref([])
+const loadingUsuarios = ref(false)
+const filterUsuario = ref('')
+const showEditModal = ref(false)
+const showDeleteModal = ref(false)
+const editingUser = ref({})
+const deletingUser = ref(null)
+const createUserError = ref('')
+const createUserSuccess = ref('')
+const savingUser = ref(false)
+const editUserError = ref('')
+const savingEditUser = ref(false)
+const savingDeleteUser = ref(false)
+const newUser = ref({ rol: 'cliente', nombre: '', apellido: '', correo: '', telefono: '', password: '' })
+
+const filteredUsuarios = computed(() => {
+  if (!filterUsuario.value.trim()) return usuarios.value
+  const q = filterUsuario.value.toLowerCase()
+  return usuarios.value.filter(u =>
+    u.nombre.toLowerCase().includes(q) ||
+    u.correo.toLowerCase().includes(q) ||
+    u.apellido?.toLowerCase().includes(q)
+  )
+})
+
+async function fetchUsuarios() {
+  loadingUsuarios.value = true
+  try {
+    const res = await fetch(`${API}/usuarios/`, { headers: { Authorization: `Bearer ${getToken()}` } })
+    const data = await res.json()
+    if (res.ok) usuarios.value = data.usuarios
+  } catch(e) { console.error(e) } finally { loadingUsuarios.value = false }
+}
+
+function resetNewUser() {
+  newUser.value = { rol: 'cliente', nombre: '', apellido: '', correo: '', telefono: '', password: '' }
+  createUserError.value = ''
+  createUserSuccess.value = ''
+}
+
+async function saveNewUser() {
+  createUserError.value = ''
+  createUserSuccess.value = ''
+  if (!newUser.value.nombre || !newUser.value.correo || !newUser.value.password)
+    return createUserError.value = 'Nombre, correo y contraseña son requeridos'
+  savingUser.value = true
+  try {
+    const res = await fetch(`${API}/usuarios/`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getToken()}` },
+      body: JSON.stringify(newUser.value)
+    })
+    const data = await res.json()
+    if (!res.ok) return createUserError.value = data.error ?? 'Error al crear'
+    createUserSuccess.value = 'Usuario creado correctamente'
+    resetNewUser()
+    await fetchUsuarios()
+  } catch(e) { createUserError.value = 'Error de conexión' } finally { savingUser.value = false }
+}
+
+function openEditModal(u) {
+  editingUser.value = { ...u }
+  editUserError.value = ''
+  showEditModal.value = true
+}
+
+async function saveEditUser() {
+  editUserError.value = ''
+  savingEditUser.value = true
+  try {
+    const res = await fetch(`${API}/usuarios/`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getToken()}` },
+      body: JSON.stringify(editingUser.value)
+    })
+    const data = await res.json()
+    if (!res.ok) return editUserError.value = data.error ?? 'Error al guardar'
+    await fetchUsuarios()
+    showEditModal.value = false
+  } catch(e) { editUserError.value = 'Error de conexión' } finally { savingEditUser.value = false }
+}
+
+function openDeleteModal(u) {
+  deletingUser.value = u
+  showDeleteModal.value = true
+}
+
+async function confirmDeleteUser() {
+  savingDeleteUser.value = true
+  try {
+    const nuevoEstado = deletingUser.value.estado == 1 ? 0 : 1
+    await fetch(`${API}/usuarios/?id=${deletingUser.value.id}&estado=${nuevoEstado}`, {
+      method: 'DELETE',
+      headers: { Authorization: `Bearer ${getToken()}` }
+    })
+    await fetchUsuarios()
+    showDeleteModal.value = false
+  } catch(e) { console.error(e) } finally { savingDeleteUser.value = false }
+}
+
+// ── Lifecycle ─────────────────────────────────────────────
+onMounted(() => {
+  fetchBodegas()
+  fetchUsuarios()
+  fetchComponentes()
+})
+</script>
