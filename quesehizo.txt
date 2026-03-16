@@ -1,0 +1,37 @@
+Ahora prueba el módulo completo:
+1. Crear una bodega
+
+Clic en "+ Nueva Bodega"
+Llena nombre, correo, teléfono y contraseña
+Clic en "Crear Bodega"
+Debe aparecer en la tabla con badge verde "Activa"
+
+2. Probar RF-12 — bodega SIN stock (debe funcionar)
+
+La bodega "PC Components Sur" no tiene stock
+Clic en "Desactivar" → aparece el modal
+Clic en "Sí, desactivar"
+El badge debe cambiar a rojo "Inactiva" y el botón desaparece
+
+3. Probar RF-12 — bodega CON stock (debe bloquearse)
+
+La bodega "TechStore Norte" tiene 5 componentes en stock
+Clic en "Desactivar" → aparece el modal
+Clic en "Sí, desactivar"
+Debe aparecer el error en rojo dentro del modal diciendo que tiene inventario
+
+
+servidor: http://localhost:5173/admin
+
+Admin:
+
+Correo: admin@pcmatch.com
+Contraseña: password
+
+
+Recuerda para la próxima vez que abras el proyecto:
+
+Abrir XAMPP → iniciar Apache y MySQL
+Abrir terminal en C:/xampp/htdocs/pcmatch/frontend
+Ejecutar npm run dev
+Entrar a localhost:5173
