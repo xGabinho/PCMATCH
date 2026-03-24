@@ -97,6 +97,8 @@
                 type="text"
                 placeholder="Juan"
                 v-model="registerData.nombre"
+                @input="registerData.nombre = registerData.nombre.replace(/[^a-záéíóúñüA-ZÁÉÍÓÚÑÜ]/g, '')"
+                maxlength="40"
                 class="w-full bg-dark-bg border border-dark-border rounded-lg px-4 py-3 text-sm text-text-primary placeholder-text-muted focus:outline-none focus:border-accent transition-colors"
               />
             </div>
@@ -106,36 +108,90 @@
                 type="text"
                 placeholder="Pérez"
                 v-model="registerData.apellido"
+                @input="registerData.apellido = registerData.apellido.replace(/[^a-záéíóúñüA-ZÁÉÍÓÚÑÜ]/g, '')"
+                maxlength="40"
                 class="w-full bg-dark-bg border border-dark-border rounded-lg px-4 py-3 text-sm text-text-primary placeholder-text-muted focus:outline-none focus:border-accent transition-colors"
               />
             </div>
           </div>
+
           <div>
             <label class="block text-sm font-medium text-text-primary mb-2">Correo electrónico</label>
             <input
               type="email"
-              placeholder="tucorreo@email.com"
+              placeholder="tucorreo@gmail.com"
               v-model="registerData.correo"
               class="w-full bg-dark-bg border border-dark-border rounded-lg px-4 py-3 text-sm text-text-primary placeholder-text-muted focus:outline-none focus:border-accent transition-colors"
             />
           </div>
+
           <div>
             <label class="block text-sm font-medium text-text-primary mb-2">Número de celular</label>
-            <input
-              type="tel"
-              placeholder="+56 9 1234 5678"
-              v-model="registerData.telefono"
-              class="w-full bg-dark-bg border border-dark-border rounded-lg px-4 py-3 text-sm text-text-primary placeholder-text-muted focus:outline-none focus:border-accent transition-colors"
-            />
+            <div class="flex gap-2">
+              <div class="flex items-center px-3 rounded-lg bg-dark-bg border border-dark-border text-text-muted text-sm select-none flex-shrink-0">
+                🇨🇴 +57
+              </div>
+              <input
+                type="tel"
+                placeholder="300 123 4567"
+                v-model="registerData.telefonoLocal"
+                @input="handleTelefonoInput"
+                maxlength="13"
+                class="flex-1 bg-dark-bg border border-dark-border rounded-lg px-4 py-3 text-sm text-text-primary placeholder-text-muted focus:outline-none focus:border-accent transition-colors"
+              />
+            </div>
+            <p class="text-xs text-text-muted mt-1">Debe ser un número colombiano válido (3XX XXX XXXX)</p>
           </div>
+
           <div>
             <label class="block text-sm font-medium text-text-primary mb-2">Contraseña</label>
-            <input
-              type="password"
-              placeholder="Mínimo 8 caracteres"
-              v-model="registerData.password"
-              class="w-full bg-dark-bg border border-dark-border rounded-lg px-4 py-3 text-sm text-text-primary placeholder-text-muted focus:outline-none focus:border-accent transition-colors"
-            />
+            <div class="relative">
+              <input
+                :type="showPassword ? 'text' : 'password'"
+                placeholder="Mínimo 8 caracteres"
+                v-model="registerData.password"
+                class="w-full bg-dark-bg border border-dark-border rounded-lg px-4 py-3 text-sm text-text-primary placeholder-text-muted focus:outline-none focus:border-accent transition-colors pr-12"
+              />
+              <button
+                type="button"
+                @click="showPassword = !showPassword"
+                class="absolute right-3 top-1/2 -translate-y-1/2 text-text-muted hover:text-text-primary transition-colors text-xs"
+              >
+                {{ showPassword ? '🙈' : '👁️' }}
+              </button>
+            </div>
+          </div>
+
+          <div>
+            <label class="block text-sm font-medium text-text-primary mb-2">Confirmar contraseña</label>
+            <div class="relative">
+              <input
+                :type="showConfirmPassword ? 'text' : 'password'"
+                placeholder="Repite tu contraseña"
+                v-model="registerData.confirmPassword"
+                class="w-full bg-dark-bg border border-dark-border rounded-lg px-4 py-3 text-sm text-text-primary placeholder-text-muted focus:outline-none focus:border-accent transition-colors pr-12"
+                :class="registerData.confirmPassword && registerData.password !== registerData.confirmPassword
+                  ? 'border-red-500/50'
+                  : registerData.confirmPassword && registerData.password === registerData.confirmPassword
+                    ? 'border-green-500/50'
+                    : ''"
+              />
+              <button
+                type="button"
+                @click="showConfirmPassword = !showConfirmPassword"
+                class="absolute right-3 top-1/2 -translate-y-1/2 text-text-muted hover:text-text-primary transition-colors text-xs"
+              >
+                {{ showConfirmPassword ? '🙈' : '👁️' }}
+              </button>
+            </div>
+            <p v-if="registerData.confirmPassword && registerData.password !== registerData.confirmPassword"
+              class="text-xs text-red-400 mt-1">
+              Las contraseñas no coinciden
+            </p>
+            <p v-if="registerData.confirmPassword && registerData.password === registerData.confirmPassword"
+              class="text-xs text-green-400 mt-1">
+              ✓ Las contraseñas coinciden
+            </p>
           </div>
 
           <button
@@ -264,6 +320,7 @@ import { useAuth } from '../composables/useAuth'
 
 const tab = ref('login')
 const showPassword = ref(false)
+const showConfirmPassword = ref(false)
 const showTerms = ref(false)
 const showPrivacy = ref(false)
 const loading = ref(false)
@@ -273,7 +330,25 @@ const router = useRouter()
 const { login, register } = useAuth()
 
 const loginData = ref({ correo: '', password: '' })
-const registerData = ref({ nombre: '', apellido: '', correo: '', telefono: '', password: '' })
+const registerData = ref({
+  nombre: '',
+  apellido: '',
+  correo: '',
+  telefonoLocal: '',
+  password: '',
+  confirmPassword: ''
+})
+
+function handleTelefonoInput() {
+  let val = registerData.value.telefonoLocal.replace(/[^\d]/g, '')
+  if (val.length > 10) val = val.slice(0, 10)
+  if (val.length > 6) {
+    val = val.slice(0, 3) + ' ' + val.slice(3, 6) + ' ' + val.slice(6)
+  } else if (val.length > 3) {
+    val = val.slice(0, 3) + ' ' + val.slice(3)
+  }
+  registerData.value.telefonoLocal = val
+}
 
 async function handleLogin() {
   errorMsg.value = ''
@@ -293,16 +368,34 @@ async function handleLogin() {
 
 async function handleRegister() {
   errorMsg.value = ''
-  const { nombre, apellido, correo, telefono, password } = registerData.value
-  if (!nombre || !apellido || !correo || !password) {
-    return errorMsg.value = 'Completa todos los campos obligatorios'
+  const { nombre, apellido, correo, telefonoLocal, password, confirmPassword } = registerData.value
+
+  if (!nombre || !apellido || !correo || !telefonoLocal || !password || !confirmPassword) {
+    return errorMsg.value = 'Completa todos los campos'
+  }
+  if (nombre.trim().length < 2) {
+    return errorMsg.value = 'El nombre debe tener al menos 2 caracteres'
+  }
+  if (apellido.trim().length < 2) {
+    return errorMsg.value = 'El apellido debe tener al menos 2 caracteres'
   }
   if (password.length < 8) {
     return errorMsg.value = 'La contraseña debe tener al menos 8 caracteres'
   }
+  if (password !== confirmPassword) {
+    return errorMsg.value = 'Las contraseñas no coinciden'
+  }
+
+  const dígitos = telefonoLocal.replace(/\s/g, '')
+  if (dígitos.length !== 10 || !dígitos.startsWith('3')) {
+    return errorMsg.value = 'El número debe tener 10 dígitos y empezar por 3 (ej: 300 123 4567)'
+  }
+
+  const telefonoCompleto = '+57' + dígitos
+
   loading.value = true
   try {
-    const usuario = await register(nombre, apellido, correo, telefono, password)
+    const usuario = await register(nombre, apellido, correo, telefonoCompleto, password)
     redirectByRole(usuario.rol)
   } catch (e) {
     errorMsg.value = e.message
