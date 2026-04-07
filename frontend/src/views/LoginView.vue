@@ -47,10 +47,6 @@
         >
           {{ cargando ? 'Ingresando...' : 'Ingresar' }}
         </button>
-
-        <p class="text-center text-text-muted text-xs mt-4">
-          Admin: admin@pcmatch.com / password
-        </p>
       </div>
     </div>
   </div>
@@ -64,8 +60,8 @@ import { useAuth } from '@/composables/useAuth'
 const router  = useRouter()
 const { login } = useAuth()
 
-const form    = ref({ correo: '', password: '' })
-const error   = ref('')
+const form     = ref({ correo: '', password: '' })
+const error    = ref('')
 const cargando = ref(false)
 
 async function iniciarSesion() {
@@ -92,8 +88,13 @@ async function iniciarSesion() {
 
         login(data.token, data.usuario)
 
-        if (data.usuario.rol === 'admin') router.push('/admin')
-        else error.value = 'Este módulo es solo para administradores.'
+        if (data.usuario.rol === 'admin') {
+            router.push('/admin')
+        } else if (data.usuario.rol === 'bodega' || data.usuario.rol === 'proveedor') {
+            router.push('/proveedor')
+        } else {
+            error.value = 'Acceso no permitido.'
+        }
 
     } catch {
         error.value = 'No se pudo conectar con el servidor. ¿Está XAMPP corriendo?'

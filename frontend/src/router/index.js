@@ -1,6 +1,7 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import LoginView from '@/views/LoginView.vue'
 import AdminView from '@/views/AdminView.vue'
+import ProveedorView from '@/views/ProveedorView.vue'
 
 const routes = [
     {
@@ -18,6 +19,12 @@ const routes = [
         component: AdminView,
         meta: { requiresAuth: true, roles: ['admin'] }
     },
+    {
+        path: '/proveedor',
+        name: 'proveedor',
+        component: ProveedorView,
+        meta: { requiresAuth: true, roles: ['proveedor', 'bodega'] }
+    },
 ]
 
 const router = createRouter({
@@ -26,7 +33,7 @@ const router = createRouter({
 })
 
 router.beforeEach((to, from, next) => {
-    const token   = localStorage.getItem('token')
+    const token = localStorage.getItem('token')
     const usuario = JSON.parse(localStorage.getItem('usuario') || 'null')
 
     if (to.meta.requiresAuth) {
@@ -36,6 +43,7 @@ router.beforeEach((to, from, next) => {
 
     if (to.path === '/login' && token && usuario) {
         if (usuario.rol === 'admin') return next('/admin')
+        if (usuario.rol === 'bodega' || usuario.rol === 'proveedor') return next('/proveedor')
     }
 
     next()

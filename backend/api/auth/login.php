@@ -66,4 +66,29 @@ if ($bodega && password_verify($password, $bodega['password'])) {
     ]);
 }
 
+// Buscar en tabla proveedores
+$stmt = $db->prepare("SELECT id, nombre, correo, password FROM proveedores WHERE correo = ?");
+$stmt->bind_param("s", $correo);
+$stmt->execute();
+$proveedor = $stmt->get_result()->fetch_assoc();
+$stmt->close();
+
+if ($proveedor && password_verify($password, $proveedor['password'])) {
+    $token = jwt_generate([
+        'id'     => $proveedor['id'],
+        'nombre' => $proveedor['nombre'],
+        'correo' => $proveedor['correo'],
+        'rol'    => 'proveedor',
+    ]);
+    response([
+        'token'   => $token,
+        'usuario' => [
+            'id'     => $proveedor['id'],
+            'nombre' => $proveedor['nombre'],
+            'correo' => $proveedor['correo'],
+            'rol'    => 'proveedor',
+        ]
+    ]);
+}
+
 error('Correo o contraseña incorrectos', 401);

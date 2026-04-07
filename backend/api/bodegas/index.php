@@ -10,17 +10,16 @@ $method = $_SERVER['REQUEST_METHOD'];
 if ($method === 'OPTIONS') { http_response_code(200); exit(); }
  
 // Todos los métodos requieren ser admin (RN03)
-$payload = requireAuth(['admin']);
+$payload = requireAuth(['admin', 'bodega']);
  
 $db = getDB();
-// ════════════════════════════════════════════════════
-// GET — Listar bodegas
-// ════════════════════════════════════════════════════
 if ($method === 'GET') {
     $result  = $db->query("
-        SELECT id, nombre, correo, telefono, activa, created_at
-        FROM bodegas
-        ORDER BY created_at DESC
+        SELECT b.id, b.nombre, b.correo, b.telefono, b.activa, b.created_at, b.proveedor_id,
+               p.nombre AS proveedor_nombre
+        FROM bodegas b
+        LEFT JOIN proveedores p ON b.proveedor_id = p.id
+        ORDER BY b.created_at DESC
     ");
     $bodegas = [];
     while ($row = $result->fetch_assoc()) {

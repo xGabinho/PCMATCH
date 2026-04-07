@@ -30,7 +30,7 @@
         <button
           v-for="item in secciones"
           :key="item.id"
-          @click="seccionActiva = item.id"
+          @click="cambiarSeccion(item.id)"
           :class="[
             'w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-colors text-left',
             seccionActiva === item.id
@@ -56,106 +56,145 @@
     ════════════════════════════════════════ -->
     <main class="flex-1 ml-64 p-8">
 
-      <!-- ─── BODEGAS ──────────────────────── -->
+      <!-- ─── SECCIÓN: BODEGAS / PROVEEDORES ──────────────── -->
       <section v-if="seccionActiva === 'bodegas'">
-
-        <div class="flex items-center justify-between mb-6">
+        
+        <div class="flex items-center justify-between mb-8">
           <div>
-            <h2 class="text-2xl font-bold text-text-primary">Gestión de Bodegas</h2>
-            <p class="text-text-muted text-sm mt-1">Administra las bodegas del sistema</p>
-          </div>
-          <button class="btn-primary" @click="abrirModalCrear">
-            + Nueva Bodega
-          </button>
-        </div>
-
-        <!-- Stats rápidas -->
-        <div class="grid grid-cols-3 gap-4 mb-6">
-          <div class="card-dark text-center">
-            <p class="text-3xl font-bold text-text-primary">{{ bodegas.length }}</p>
-            <p class="text-text-muted text-sm mt-1">Total</p>
-          </div>
-          <div class="card-dark text-center">
-            <p class="text-3xl font-bold text-green-400">{{ bodegas.filter(b => b.activa).length }}</p>
-            <p class="text-text-muted text-sm mt-1">Activas</p>
-          </div>
-          <div class="card-dark text-center">
-            <p class="text-3xl font-bold text-red-400">{{ bodegas.filter(b => !b.activa).length }}</p>
-            <p class="text-text-muted text-sm mt-1">Inactivas</p>
+            <h2 class="text-2xl font-bold text-text-primary">Gestión de Proveedores y Bodegas</h2>
+            <p class="text-text-muted text-sm mt-1">Administra cuentas de proveedores y visualiza sus bodegas</p>
           </div>
         </div>
 
-        <!-- Tabla -->
-        <div class="card-dark overflow-x-auto p-0">
-          <table class="w-full text-sm">
-            <thead>
-              <tr class="border-b border-dark-border">
-                <th class="px-5 py-3.5 text-left text-text-muted font-medium">ID</th>
-                <th class="px-5 py-3.5 text-left text-text-muted font-medium">Nombre</th>
-                <th class="px-5 py-3.5 text-left text-text-muted font-medium">Correo</th>
-                <th class="px-5 py-3.5 text-left text-text-muted font-medium">Teléfono</th>
-                <th class="px-5 py-3.5 text-left text-text-muted font-medium">Estado</th>
-                <th class="px-5 py-3.5 text-right text-text-muted font-medium">Acciones</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr v-if="cargando">
-                <td colspan="6" class="px-5 py-12 text-center text-text-muted">
-                  <span class="animate-pulse">Cargando bodegas...</span>
-                </td>
-              </tr>
-              <tr v-else-if="bodegas.length === 0">
-                <td colspan="6" class="px-5 py-12 text-center text-text-muted">
-                  No hay bodegas registradas. Crea la primera.
-                </td>
-              </tr>
-              <tr
-                v-for="bodega in bodegas"
-                :key="bodega.id"
-                class="border-b border-dark-border hover:bg-dark-bg/50 transition-colors"
-              >
-                <td class="px-5 py-3.5 text-text-muted">#{{ bodega.id }}</td>
-                <td class="px-5 py-3.5 text-text-primary font-medium">{{ bodega.nombre }}</td>
-                <td class="px-5 py-3.5 text-text-muted">{{ bodega.correo }}</td>
-                <td class="px-5 py-3.5 text-text-muted">{{ bodega.telefono || '—' }}</td>
-                <td class="px-5 py-3.5">
-                  <span :class="bodega.activa
-                    ? 'bg-green-500/15 text-green-400 border border-green-500/30'
-                    : 'bg-red-500/15 text-red-400 border border-red-500/30'"
-                    class="text-xs font-semibold px-2.5 py-1 rounded-full"
-                  >
-                    {{ bodega.activa ? '● Activa' : '● Inactiva' }}
-                  </span>
-                </td>
-                <td class="px-5 py-3.5">
-                  <div class="flex justify-end gap-2">
-                    <button
-                      class="btn-ghost text-xs px-3 py-1.5"
-                      @click="abrirModalEditar(bodega)"
-                    >
-                      Editar
-                    </button>
-                    <!-- RF-12: Solo aparece si está activa -->
-                    <button
-                      v-if="bodega.activa"
-                      class="text-xs px-3 py-1.5 rounded-lg border border-red-500/40 text-red-400 hover:bg-red-500/10 transition-colors"
-                      @click="abrirModalDesactivar(bodega)"
-                    >
-                      Desactivar
-                    </button>
-                    <button
-                      v-else
-                      class="text-xs px-3 py-1.5 rounded-lg border border-green-500/40 text-green-400 hover:bg-green-500/10 transition-colors"
-                      @click="activarBodega(bodega)"
-                    >
-                      Activar
-                    </button>
-                  </div>
-                </td>
-              </tr>
-            </tbody>
-          </table>
+        <!-- 1. TABLA DE PROVEEDORES -->
+        <div class="mb-10">
+          <div class="flex items-center justify-between mb-4">
+            <h3 class="text-lg font-semibold text-text-primary border-l-4 border-accent pl-3">Cuentas de Proveedores</h3>
+            <button class="btn-primary py-2 text-sm" @click="abrirModalCrearProveedor">
+              + Nuevo Proveedor
+            </button>
+          </div>
+
+          <div class="card-dark overflow-x-auto p-0">
+            <table class="w-full text-sm">
+              <thead>
+                <tr class="border-b border-dark-border bg-dark-bg/30">
+                  <th class="px-5 py-3.5 text-left text-text-muted font-medium w-16">ID</th>
+                  <th class="px-5 py-3.5 text-left text-text-muted font-medium">Proveedor</th>
+                  <th class="px-5 py-3.5 text-left text-text-muted font-medium">Correo</th>
+                  <th class="px-5 py-3.5 text-left text-text-muted font-medium">Teléfono</th>
+                  <th class="px-5 py-3.5 text-left text-text-muted font-medium w-24">Bodegas</th>
+                  <th class="px-5 py-3.5 text-right text-text-muted font-medium w-40">Acciones</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr v-if="cargandoProveedores">
+                  <td colspan="6" class="px-5 py-8 text-center text-text-muted">
+                    <span class="animate-pulse">Cargando proveedores...</span>
+                  </td>
+                </tr>
+                <tr v-else-if="proveedores.length === 0">
+                  <td colspan="6" class="px-5 py-8 text-center text-text-muted">
+                    No hay proveedores registrados. Crea el primero.
+                  </td>
+                </tr>
+                <tr
+                  v-for="prov in proveedores"
+                  :key="prov.id"
+                  class="border-b border-dark-border hover:bg-dark-bg/50 transition-colors"
+                >
+                  <td class="px-5 py-3.5 text-text-muted">#{{ prov.id }}</td>
+                  <td class="px-5 py-3.5 text-text-primary font-medium">{{ prov.nombre }}</td>
+                  <td class="px-5 py-3.5 text-text-muted">{{ prov.correo }}</td>
+                  <td class="px-5 py-3.5 text-text-muted">{{ prov.telefono || '—' }}</td>
+                  <td class="px-5 py-3.5">
+                    <span class="inline-flex items-center justify-center min-w-[1.5rem] bg-accent/15 text-accent border border-accent/30 text-xs font-semibold px-2.5 py-1 rounded-full">
+                      {{ prov.total_bodegas || 0 }}
+                    </span>
+                  </td>
+                  <td class="px-5 py-3.5">
+                    <div class="flex justify-end gap-2">
+                      <button class="btn-ghost text-xs px-3 py-1.5" @click="abrirModalEditarProveedor(prov)">
+                        Editar
+                      </button>
+                      <button class="text-xs px-3 py-1.5 rounded-lg border border-red-500/40 text-red-400 hover:bg-red-500/10 transition-colors" @click="eliminarProveedor(prov)">
+                        Eliminar
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
         </div>
+
+        <!-- 2. TABLA DE BODEGAS (Global) -->
+        <div>
+          <div class="flex items-center justify-between mb-4">
+            <h3 class="text-lg font-semibold text-text-primary border-l-4 border-blue-500 pl-3">Bodegas (creadas por Proveedores)</h3>
+            <div class="flex gap-4 text-sm">
+               <span class="text-text-muted">Total: <b class="text-text-primary">{{bodegas.length}}</b></span>
+               <span class="text-green-400">Activas: <b>{{bodegas.filter(b=>b.activa).length}}</b></span>
+               <span class="text-red-400">Inactivas: <b>{{bodegas.filter(b=>!b.activa).length}}</b></span>
+            </div>
+          </div>
+
+          <div class="card-dark overflow-x-auto p-0 border-blue-500/20 shadow-[0_0_15px_rgba(59,130,246,0.05)]">
+            <table class="w-full text-sm">
+              <thead>
+                <tr class="border-b border-dark-border bg-dark-bg/30">
+                  <th class="px-5 py-3.5 text-left text-text-muted font-medium w-16">ID</th>
+                  <th class="px-5 py-3.5 text-left text-text-muted font-medium">Proveedor Dueño</th>
+                  <th class="px-5 py-3.5 text-left text-text-muted font-medium">Nombre Bodega</th>
+                  <th class="px-5 py-3.5 text-left text-text-muted font-medium">Correo Bodega</th>
+                  <th class="px-5 py-3.5 text-left text-text-muted font-medium w-24">Estado</th>
+                  <th class="px-5 py-3.5 text-right text-text-muted font-medium w-48">Acciones</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr v-if="cargandoBodegas">
+                  <td colspan="6" class="px-5 py-8 text-center text-text-muted">
+                    <span class="animate-pulse">Cargando bodegas...</span>
+                  </td>
+                </tr>
+                <tr v-else-if="bodegas.length === 0">
+                  <td colspan="6" class="px-5 py-8 text-center text-text-muted">
+                    Ningún proveedor ha creado bodegas todavía.
+                  </td>
+                </tr>
+                <tr
+                  v-for="bodega in bodegas"
+                  :key="bodega.id"
+                  class="border-b border-dark-border hover:bg-dark-bg/50 transition-colors"
+                >
+                  <td class="px-5 py-3.5 text-text-muted">#{{ bodega.id }}</td>
+                  <td class="px-5 py-3.5"><span class="text-blue-400 font-medium bg-blue-500/10 px-2 py-1 rounded">{{ bodega.proveedor_nombre || bodega.proveedor_id || '—' }}</span></td>
+                  <td class="px-5 py-3.5 text-text-primary font-medium">{{ bodega.nombre }}</td>
+                  <td class="px-5 py-3.5 text-text-muted">{{ bodega.correo }}</td>
+                  <td class="px-5 py-3.5">
+                    <span :class="bodega.activa ? 'bg-green-500/15 text-green-400 border border-green-500/30' : 'bg-red-500/15 text-red-400 border border-red-500/30'" class="inline-flex items-center whitespace-nowrap text-xs font-semibold px-2.5 py-1 rounded-full">
+                      {{ bodega.activa ? '● Activa' : '● Inactiva' }}
+                    </span>
+                  </td>
+                  <td class="px-5 py-3.5">
+                    <div class="flex justify-end gap-2">
+                      <button class="btn-ghost text-xs px-3 py-1.5" @click="abrirModalEditarBodega(bodega)">
+                        Editar
+                      </button>
+                      <button v-if="bodega.activa" class="text-xs px-3 py-1.5 rounded-lg border border-red-500/40 text-red-400 hover:bg-red-500/10 transition-colors" @click="abrirModalDesactivar(bodega)">
+                        Desactivar
+                      </button>
+                      <button v-else class="text-xs px-3 py-1.5 rounded-lg border border-green-500/40 text-green-400 hover:bg-green-500/10 transition-colors" @click="activarBodega(bodega)">
+                        Activar
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
       </section>
 
       <!-- ─── OTRAS SECCIONES ──────────────── -->
@@ -170,51 +209,80 @@
     </main>
 
     <!-- ═══════════════════════════════════════
-         MODAL — CREAR BODEGA
+         MODAL — CREAR PROVEEDOR
     ════════════════════════════════════════ -->
     <Teleport to="body">
       <Transition name="modal">
-        <div
-          v-if="modalCrear.visible"
-          class="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4"
-          @click.self="!modalCrear.loading && (modalCrear.visible = false)"
-        >
+        <div v-if="modalCrearProv.visible" class="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4" @click.self="!modalCrearProv.loading && (modalCrearProv.visible = false)">
           <div class="bg-dark-card border border-dark-border rounded-2xl w-full max-w-md p-6 shadow-2xl">
-            <h3 class="text-lg font-bold text-text-primary mb-5">🏭 Nueva Bodega</h3>
+            <h3 class="text-lg font-bold text-text-primary mb-5">👤 Nuevo Proveedor</h3>
 
             <div class="space-y-4">
               <div>
                 <label class="block text-xs text-text-muted mb-1.5 font-medium uppercase tracking-wide">Nombre *</label>
-                <input v-model="modalCrear.form.nombre" type="text"
-                  class="input-field" placeholder="TechStore Norte" />
+                <input v-model="modalCrearProv.form.nombre" type="text" class="input-field" placeholder="Proveedor ABC" />
               </div>
               <div>
                 <label class="block text-xs text-text-muted mb-1.5 font-medium uppercase tracking-wide">Correo *</label>
-                <input v-model="modalCrear.form.correo" type="email"
-                  class="input-field" placeholder="bodega@ejemplo.com" />
+                <input v-model="modalCrearProv.form.correo" type="email" class="input-field" placeholder="proveedor@ejemplo.com" />
               </div>
               <div>
                 <label class="block text-xs text-text-muted mb-1.5 font-medium uppercase tracking-wide">Teléfono</label>
-                <input v-model="modalCrear.form.telefono" type="text"
-                  class="input-field" placeholder="300 123 4567" />
+                <input v-model="modalCrearProv.form.telefono" type="text" class="input-field" placeholder="300 123 4567" />
               </div>
               <div>
                 <label class="block text-xs text-text-muted mb-1.5 font-medium uppercase tracking-wide">Contraseña *</label>
-                <input v-model="modalCrear.form.password" type="password"
-                  class="input-field" placeholder="••••••••" />
+                <input v-model="modalCrearProv.form.password" type="password" class="input-field" placeholder="••••••••" />
               </div>
             </div>
 
-            <div v-if="modalCrear.error" class="mt-4 p-3 rounded-lg bg-red-500/10 border border-red-500/30 text-red-400 text-sm">
-              {{ modalCrear.error }}
+            <div v-if="modalCrearProv.error" class="mt-4 p-3 rounded-lg bg-red-500/10 border border-red-500/30 text-red-400 text-sm">
+              {{ modalCrearProv.error }}
             </div>
 
             <div class="flex gap-3 justify-end mt-6">
-              <button class="btn-ghost" @click="modalCrear.visible = false" :disabled="modalCrear.loading">
-                Cancelar
+              <button class="btn-ghost" @click="modalCrearProv.visible = false" :disabled="modalCrearProv.loading">Cancelar</button>
+              <button class="btn-primary" @click="crearProveedor" :disabled="modalCrearProv.loading">
+                {{ modalCrearProv.loading ? 'Creando...' : 'Crear Proveedor' }}
               </button>
-              <button class="btn-primary" @click="crearBodega" :disabled="modalCrear.loading">
-                {{ modalCrear.loading ? 'Creando...' : 'Crear Bodega' }}
+            </div>
+          </div>
+        </div>
+      </Transition>
+    </Teleport>
+
+    <!-- ═══════════════════════════════════════
+         MODAL — EDITAR PROVEEDOR
+    ════════════════════════════════════════ -->
+    <Teleport to="body">
+      <Transition name="modal">
+        <div v-if="modalEditarProv.visible" class="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4" @click.self="!modalEditarProv.loading && (modalEditarProv.visible = false)">
+          <div class="bg-dark-card border border-dark-border rounded-2xl w-full max-w-md p-6 shadow-2xl">
+            <h3 class="text-lg font-bold text-text-primary mb-5">✏️ Editar Proveedor</h3>
+
+            <div class="space-y-4">
+              <div>
+                <label class="block text-xs text-text-muted mb-1.5 font-medium uppercase tracking-wide">Nombre *</label>
+                <input v-model="modalEditarProv.form.nombre" type="text" class="input-field" />
+              </div>
+              <div>
+                <label class="block text-xs text-text-muted mb-1.5 font-medium uppercase tracking-wide">Correo *</label>
+                <input v-model="modalEditarProv.form.correo" type="email" class="input-field" />
+              </div>
+              <div>
+                <label class="block text-xs text-text-muted mb-1.5 font-medium uppercase tracking-wide">Teléfono</label>
+                <input v-model="modalEditarProv.form.telefono" type="text" class="input-field" />
+              </div>
+            </div>
+
+            <div v-if="modalEditarProv.error" class="mt-4 p-3 rounded-lg bg-red-500/10 border border-red-500/30 text-red-400 text-sm">
+              {{ modalEditarProv.error }}
+            </div>
+
+            <div class="flex gap-3 justify-end mt-6">
+              <button class="btn-ghost" @click="modalEditarProv.visible = false" :disabled="modalEditarProv.loading">Cancelar</button>
+              <button class="btn-primary" @click="editarProveedor" :disabled="modalEditarProv.loading">
+                {{ modalEditarProv.loading ? 'Guardando...' : 'Guardar Cambios' }}
               </button>
             </div>
           </div>
@@ -227,39 +295,33 @@
     ════════════════════════════════════════ -->
     <Teleport to="body">
       <Transition name="modal">
-        <div
-          v-if="modalEditar.visible"
-          class="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4"
-          @click.self="!modalEditar.loading && (modalEditar.visible = false)"
-        >
+        <div v-if="modalEditarBodega.visible" class="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4" @click.self="!modalEditarBodega.loading && (modalEditarBodega.visible = false)">
           <div class="bg-dark-card border border-dark-border rounded-2xl w-full max-w-md p-6 shadow-2xl">
             <h3 class="text-lg font-bold text-text-primary mb-5">✏️ Editar Bodega</h3>
 
             <div class="space-y-4">
               <div>
                 <label class="block text-xs text-text-muted mb-1.5 font-medium uppercase tracking-wide">Nombre *</label>
-                <input v-model="modalEditar.form.nombre" type="text" class="input-field" />
+                <input v-model="modalEditarBodega.form.nombre" type="text" class="input-field" />
               </div>
               <div>
                 <label class="block text-xs text-text-muted mb-1.5 font-medium uppercase tracking-wide">Correo *</label>
-                <input v-model="modalEditar.form.correo" type="email" class="input-field" />
+                <input v-model="modalEditarBodega.form.correo" type="email" class="input-field" />
               </div>
               <div>
                 <label class="block text-xs text-text-muted mb-1.5 font-medium uppercase tracking-wide">Teléfono</label>
-                <input v-model="modalEditar.form.telefono" type="text" class="input-field" />
+                <input v-model="modalEditarBodega.form.telefono" type="text" class="input-field" />
               </div>
             </div>
 
-            <div v-if="modalEditar.error" class="mt-4 p-3 rounded-lg bg-red-500/10 border border-red-500/30 text-red-400 text-sm">
-              {{ modalEditar.error }}
+            <div v-if="modalEditarBodega.error" class="mt-4 p-3 rounded-lg bg-red-500/10 border border-red-500/30 text-red-400 text-sm">
+              {{ modalEditarBodega.error }}
             </div>
 
             <div class="flex gap-3 justify-end mt-6">
-              <button class="btn-ghost" @click="modalEditar.visible = false" :disabled="modalEditar.loading">
-                Cancelar
-              </button>
-              <button class="btn-primary" @click="editarBodega" :disabled="modalEditar.loading">
-                {{ modalEditar.loading ? 'Guardando...' : 'Guardar Cambios' }}
+              <button class="btn-ghost" @click="modalEditarBodega.visible = false" :disabled="modalEditarBodega.loading">Cancelar</button>
+              <button class="btn-primary" @click="editarBodega" :disabled="modalEditarBodega.loading">
+                {{ modalEditarBodega.loading ? 'Guardando...' : 'Guardar Cambios' }}
               </button>
             </div>
           </div>
@@ -268,74 +330,41 @@
     </Teleport>
 
     <!-- ═══════════════════════════════════════
-         MODAL — DESACTIVAR (RF-12)
+         MODAL — DESACTIVAR BODEGA
     ════════════════════════════════════════ -->
     <Teleport to="body">
       <Transition name="modal">
-        <div
-          v-if="modalDesactivar.visible"
-          class="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4"
-          @click.self="!modalDesactivar.loading && (modalDesactivar.visible = false)"
-        >
+        <div v-if="modalDesactivar.visible" class="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4" @click.self="!modalDesactivar.loading && (modalDesactivar.visible = false)">
           <div class="bg-dark-card border border-dark-border rounded-2xl w-full max-w-md p-6 shadow-2xl">
 
-            <!-- Header -->
             <div class="flex items-center gap-3 mb-4">
-              <div class="w-11 h-11 rounded-full bg-red-500/15 border border-red-500/30 flex items-center justify-center text-2xl flex-shrink-0">
-                ⚠️
-              </div>
+              <div class="w-11 h-11 rounded-full bg-red-500/15 border border-red-500/30 flex items-center justify-center text-2xl flex-shrink-0">⚠️</div>
               <div>
                 <h3 class="text-lg font-bold text-text-primary">Desactivar Bodega</h3>
                 <p class="text-xs text-text-muted">Esta acción no se puede deshacer fácilmente</p>
               </div>
             </div>
 
-            <!-- Nombre de la bodega destacado -->
             <div class="bg-dark-bg border border-dark-border rounded-lg px-4 py-3 mb-4">
               <p class="text-xs text-text-muted mb-0.5">Bodega seleccionada</p>
               <p class="text-text-primary font-semibold">{{ modalDesactivar.bodega?.nombre }}</p>
             </div>
 
-            <!-- Consecuencias -->
             <div class="space-y-2 mb-5">
-              <div class="flex items-start gap-2 text-sm">
-                <span class="text-red-400 mt-0.5 flex-shrink-0">●</span>
-                <span class="text-text-muted">La bodega quedará <strong class="text-red-400">inactiva</strong> y no podrá operar.</span>
-              </div>
-              <div class="flex items-start gap-2 text-sm">
-                <span class="text-blue-400 mt-0.5 flex-shrink-0">●</span>
-                <span class="text-text-muted">El historial e inventario se <strong class="text-text-primary">conservará</strong> intacto.</span>
-              </div>
-              <div class="flex items-start gap-2 text-sm">
-                <span class="text-yellow-400 mt-0.5 flex-shrink-0">●</span>
-                <span class="text-text-muted">Solo posible si la bodega <strong class="text-yellow-400">no tiene stock disponible</strong>.</span>
-              </div>
+              <div class="flex items-start gap-2 text-sm"><span class="text-red-400 mt-0.5 flex-shrink-0">●</span><span class="text-text-muted">La bodega quedará <strong class="text-red-400">inactiva</strong>.</span></div>
+              <div class="flex items-start gap-2 text-sm"><span class="text-blue-400 mt-0.5 flex-shrink-0">●</span><span class="text-text-muted">El historial e inventario se <strong class="text-text-primary">conservará</strong> intacto.</span></div>
+              <div class="flex items-start gap-2 text-sm"><span class="text-yellow-400 mt-0.5 flex-shrink-0">●</span><span class="text-text-muted">Solo posible si la bodega <strong class="text-yellow-400">no tiene stock disponible</strong>.</span></div>
             </div>
 
-            <!-- Error (RN02 u otro) -->
             <Transition name="fade">
-              <div
-                v-if="modalDesactivar.error"
-                class="mb-4 p-3 rounded-lg bg-red-500/10 border border-red-500/30 text-red-400 text-sm flex items-start gap-2"
-              >
-                <span class="flex-shrink-0 mt-0.5">🚫</span>
-                <span>{{ modalDesactivar.error }}</span>
+              <div v-if="modalDesactivar.error" class="mb-4 p-3 rounded-lg bg-red-500/10 border border-red-500/30 text-red-400 text-sm flex items-start gap-2">
+                <span class="flex-shrink-0 mt-0.5">🚫</span><span>{{ modalDesactivar.error }}</span>
               </div>
             </Transition>
 
             <div class="flex gap-3 justify-end">
-              <button
-                class="btn-ghost"
-                @click="modalDesactivar.visible = false"
-                :disabled="modalDesactivar.loading"
-              >
-                Cancelar
-              </button>
-              <button
-                class="px-4 py-2 rounded-lg bg-red-600 hover:bg-red-700 text-white text-sm font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                @click="confirmarDesactivar"
-                :disabled="modalDesactivar.loading"
-              >
+              <button class="btn-ghost" @click="modalDesactivar.visible = false" :disabled="modalDesactivar.loading">Cancelar</button>
+              <button class="px-4 py-2 rounded-lg bg-red-600 hover:bg-red-700 text-white text-sm font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed" @click="confirmarDesactivar" :disabled="modalDesactivar.loading">
                 {{ modalDesactivar.loading ? 'Desactivando...' : 'Sí, desactivar' }}
               </button>
             </div>
@@ -349,13 +378,8 @@
     ════════════════════════════════════════ -->
     <Teleport to="body">
       <Transition name="toast">
-        <div
-          v-if="toast.visible"
-          :class="toast.tipo === 'error' ? 'bg-red-600' : 'bg-green-600'"
-          class="fixed bottom-6 right-6 z-50 px-5 py-3 rounded-xl shadow-2xl text-white text-sm font-medium flex items-center gap-2"
-        >
-          <span>{{ toast.tipo === 'error' ? '✗' : '✓' }}</span>
-          <span>{{ toast.mensaje }}</span>
+        <div v-if="toast.visible" :class="toast.tipo === 'error' ? 'bg-red-600' : 'bg-green-600'" class="fixed bottom-6 right-6 z-50 px-5 py-3 rounded-xl shadow-2xl text-white text-sm font-medium flex items-center gap-2">
+          <span>{{ toast.tipo === 'error' ? '✗' : '✓' }}</span><span>{{ toast.mensaje }}</span>
         </div>
       </Transition>
     </Teleport>
@@ -375,25 +399,33 @@ const API = 'http://localhost/pcmatch/backend/api'
 
 // ── Sidebar ─────────────────────────────────────────────
 const secciones = [
-  { id: 'bodegas',            icon: '🏭', label: 'Bodegas'            },
-  { id: 'componentes',        icon: '🔧', label: 'Componentes'        },
-  { id: 'cotizaciones',       icon: '📋', label: 'Cotizaciones'       },
-  { id: 'crear-usuario',      icon: '➕', label: 'Crear Usuario'      },
-  { id: 'gestionar-usuarios', icon: '👥', label: 'Gestionar Usuarios' },
+  { id: 'bodegas',           icon: '🏭', label: 'Bodegas'           },
+  { id: 'componentes',       icon: '🔧', label: 'Componentes'       },
+  { id: 'cotizaciones',      icon: '📋', label: 'Cotizaciones'      },
+  { id: 'crear-usuario',     icon: '➕', label: 'Crear Usuario'     },
+  { id: 'gestionar-usuarios',icon: '👥', label: 'Gestionar Usuarios'},
 ]
 const seccionActiva = ref('bodegas')
 
 // ── Estado ───────────────────────────────────────────────
-const bodegas = ref([])
-const cargando = ref(false)
+const proveedores        = ref([])
+const cargandoProveedores = ref(false)
+const bodegas            = ref([])
+const cargandoBodegas    = ref(false)
 
-// ── Modales ──────────────────────────────────────────────
-const modalCrear = ref({
+// ── Modales Proveedores ──────────────────────────────────
+const modalCrearProv = ref({
   visible: false, loading: false, error: '',
   form: { nombre: '', correo: '', telefono: '', password: '' }
 })
 
-const modalEditar = ref({
+const modalEditarProv = ref({
+  visible: false, loading: false, error: '',
+  form: { id: null, nombre: '', correo: '', telefono: '' }
+})
+
+// ── Modales Bodegas ──────────────────────────────────────
+const modalEditarBodega = ref({
   visible: false, loading: false, error: '',
   form: { id: null, nombre: '', correo: '', telefono: '' }
 })
@@ -406,14 +438,133 @@ const modalDesactivar = ref({
 const toast = ref({ visible: false, mensaje: '', tipo: 'ok' })
 
 // ── Inicio ───────────────────────────────────────────────
-onMounted(() => cargarBodegas())
+onMounted(() => {
+  cargarProveedores()
+  cargarBodegas()
+})
+
+function cambiarSeccion(id) {
+  seccionActiva.value = id
+  if (id === 'bodegas') {
+    if (proveedores.value.length === 0) cargarProveedores()
+    if (bodegas.value.length === 0) cargarBodegas()
+  }
+}
 
 // ════════════════════════════════════════════════════════
-// FUNCIONES
+// PROVEEDORES
+// ════════════════════════════════════════════════════════
+
+async function cargarProveedores() {
+  cargandoProveedores.value = true
+  try {
+    const res  = await fetch(`${API}/admin-proveedores/`, {
+      headers: { Authorization: `Bearer ${getToken()}` }
+    })
+    const data = await res.json()
+    proveedores.value = Array.isArray(data) ? data : []
+  } catch {
+    mostrarToast('Error al cargar proveedores', 'error')
+  } finally {
+    cargandoProveedores.value = false
+  }
+}
+
+function abrirModalCrearProveedor() {
+  modalCrearProv.value = {
+    visible: true, loading: false, error: '',
+    form: { nombre: '', correo: '', telefono: '', password: '' }
+  }
+}
+
+async function crearProveedor() {
+  const { form } = modalCrearProv.value
+  if (!form.nombre || !form.correo || !form.password) {
+    modalCrearProv.value.error = 'Nombre, correo y contraseña son obligatorios.'
+    return
+  }
+  modalCrearProv.value.loading = true
+  modalCrearProv.value.error   = ''
+  try {
+    const res = await fetch(`${API}/admin-proveedores/`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getToken()}` },
+      body: JSON.stringify(form)
+    })
+    const data = await res.json()
+    if (!res.ok) { modalCrearProv.value.error = data.error || 'No se pudo crear.'; return }
+    modalCrearProv.value.visible = false
+    await cargarProveedores()
+    mostrarToast('Proveedor creado correctamente.')
+  } catch {
+    modalCrearProv.value.error = 'Error de conexión.'
+  } finally {
+    modalCrearProv.value.loading = false
+  }
+}
+
+function abrirModalEditarProveedor(prov) {
+  modalEditarProv.value = {
+    visible: true, loading: false, error: '',
+    form: { id: prov.id, nombre: prov.nombre, correo: prov.correo, telefono: prov.telefono || '' }
+  }
+}
+
+async function editarProveedor() {
+  const { form } = modalEditarProv.value
+  if (!form.nombre || !form.correo) {
+    modalEditarProv.value.error = 'Nombre y correo son obligatorios.'
+    return
+  }
+  modalEditarProv.value.loading = true
+  modalEditarProv.value.error   = ''
+  try {
+    const res = await fetch(`${API}/admin-proveedores/`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getToken()}` },
+      body: JSON.stringify(form)
+    })
+    const data = await res.json()
+    if (!res.ok) { modalEditarProv.value.error = data.error || 'No se pudo actualizar.'; return }
+    modalEditarProv.value.visible = false
+    const idx = proveedores.value.findIndex(p => p.id === form.id)
+    if (idx !== -1) Object.assign(proveedores.value[idx], { nombre: form.nombre, correo: form.correo, telefono: form.telefono })
+    
+    // Recargar bodegas para actualizar los nombres de proveedores mostrados
+    cargarBodegas()
+    
+    mostrarToast('Proveedor actualizado correctamente.')
+  } catch {
+    modalEditarProv.value.error = 'Error de conexión.'
+  } finally {
+    modalEditarProv.value.loading = false
+  }
+}
+
+async function eliminarProveedor(prov) {
+  if (!confirm(`¿Eliminar al proveedor "${prov.nombre}"?`)) return
+  try {
+    const res = await fetch(`${API}/admin-proveedores/?id=${prov.id}`, {
+      method: 'DELETE',
+      headers: { Authorization: `Bearer ${getToken()}` }
+    })
+    const data = await res.json()
+    if (!res.ok) { mostrarToast(data.error || 'No se pudo eliminar.', 'error'); return }
+    proveedores.value = proveedores.value.filter(p => p.id !== prov.id)
+    // Recargar bodegas para desaparecer las bodegas eliminadas asosciadas a ese proveedor
+    cargarBodegas()
+    mostrarToast(`Proveedor "${prov.nombre}" eliminado.`)
+  } catch {
+    mostrarToast('Error de conexión.', 'error')
+  }
+}
+
+// ════════════════════════════════════════════════════════
+// BODEGAS
 // ════════════════════════════════════════════════════════
 
 async function cargarBodegas() {
-  cargando.value = true
+  cargandoBodegas.value = true
   try {
     const res  = await fetch(`${API}/bodegas/`, {
       headers: { Authorization: `Bearer ${getToken()}` }
@@ -423,80 +574,45 @@ async function cargarBodegas() {
   } catch {
     mostrarToast('Error al cargar bodegas', 'error')
   } finally {
-    cargando.value = false
+    cargandoBodegas.value = false
   }
 }
 
-// ── Crear ────────────────────────────────────────────────
-function abrirModalCrear() {
-  modalCrear.value = {
-    visible: true, loading: false, error: '',
-    form: { nombre: '', correo: '', telefono: '', password: '' }
-  }
-}
-
-async function crearBodega() {
-  const { form } = modalCrear.value
-  if (!form.nombre || !form.correo || !form.password) {
-    modalCrear.value.error = 'Nombre, correo y contraseña son obligatorios.'
-    return
-  }
-  modalCrear.value.loading = true
-  modalCrear.value.error   = ''
-  try {
-    const res  = await fetch(`${API}/bodegas/`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getToken()}` },
-      body: JSON.stringify(form)
-    })
-    const data = await res.json()
-    if (!res.ok) { modalCrear.value.error = data.error || 'No se pudo crear.'; return }
-    modalCrear.value.visible = false
-    await cargarBodegas()
-    mostrarToast('Bodega creada correctamente.')
-  } catch {
-    modalCrear.value.error = 'Error de conexión.'
-  } finally {
-    modalCrear.value.loading = false
-  }
-}
-
-// ── Editar ───────────────────────────────────────────────
-function abrirModalEditar(bodega) {
-  modalEditar.value = {
+function abrirModalEditarBodega(bodega) {
+  modalEditarBodega.value = {
     visible: true, loading: false, error: '',
     form: { id: bodega.id, nombre: bodega.nombre, correo: bodega.correo, telefono: bodega.telefono || '' }
   }
 }
 
 async function editarBodega() {
-  const { form } = modalEditar.value
+  const { form } = modalEditarBodega.value
   if (!form.nombre || !form.correo) {
-    modalEditar.value.error = 'Nombre y correo son obligatorios.'
+    modalEditarBodega.value.error = 'Nombre y correo son obligatorios.'
     return
   }
-  modalEditar.value.loading = true
-  modalEditar.value.error   = ''
+  modalEditarBodega.value.loading = true
+  modalEditarBodega.value.error   = ''
   try {
-    const res  = await fetch(`${API}/bodegas/`, {
+    const res = await fetch(`${API}/bodegas/`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getToken()}` },
       body: JSON.stringify(form)
     })
     const data = await res.json()
-    if (!res.ok) { modalEditar.value.error = data.error || 'No se pudo actualizar.'; return }
-    modalEditar.value.visible = false
+    if (!res.ok) { modalEditarBodega.value.error = data.error || 'No se pudo actualizar.'; return }
+    modalEditarBodega.value.visible = false
     const idx = bodegas.value.findIndex(b => b.id === form.id)
     if (idx !== -1) Object.assign(bodegas.value[idx], { nombre: form.nombre, correo: form.correo, telefono: form.telefono })
     mostrarToast('Bodega actualizada correctamente.')
   } catch {
-    modalEditar.value.error = 'Error de conexión.'
+    modalEditarBodega.value.error = 'Error de conexión.'
   } finally {
-    modalEditar.value.loading = false
+    modalEditarBodega.value.loading = false
   }
 }
 
-// ── Desactivar (RF-12) ───────────────────────────────────
+// ── Desactivar ───────────────────────────────────────────
 function abrirModalDesactivar(bodega) {
   modalDesactivar.value = { visible: true, loading: false, error: '', bodega }
 }
@@ -507,7 +623,7 @@ async function confirmarDesactivar() {
   modalDesactivar.value.loading = true
   modalDesactivar.value.error   = ''
   try {
-    const res  = await fetch(`${API}/bodegas/?id=${bodega.id}`, {
+    const res = await fetch(`${API}/bodegas/?id=${bodega.id}`, {
       method: 'DELETE',
       headers: { Authorization: `Bearer ${getToken()}` }
     })
@@ -517,7 +633,6 @@ async function confirmarDesactivar() {
       modalDesactivar.value.loading = false
       return
     }
-    // RN01: actualizar local sin recargar
     const idx = bodegas.value.findIndex(b => b.id === bodega.id)
     if (idx !== -1) bodegas.value[idx].activa = false
     modalDesactivar.value.visible = false
@@ -528,10 +643,9 @@ async function confirmarDesactivar() {
   }
 }
 
-// ── Activar ──────────────────────────────────────────────
 async function activarBodega(bodega) {
   try {
-    const res  = await fetch(`${API}/bodegas/?id=${bodega.id}`, {
+    const res = await fetch(`${API}/bodegas/?id=${bodega.id}`, {
       method: 'PATCH',
       headers: { Authorization: `Bearer ${getToken()}` }
     })
@@ -545,13 +659,12 @@ async function activarBodega(bodega) {
   }
 }
 
-
+// ── Generales ────────────────────────────────────────────
 function cerrarSesion() {
   logout()
   router.push('/login')
 }
 
-// ── Toast ────────────────────────────────────────────────
 function mostrarToast(mensaje, tipo = 'ok') {
   toast.value = { visible: true, mensaje, tipo }
   setTimeout(() => { toast.value.visible = false }, 3500)
