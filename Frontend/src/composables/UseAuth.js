@@ -1,6 +1,6 @@
 import { ref } from 'vue'
 
-const API = 'http://localhost/pcmatch/backend/api'
+const API = 'http://127.0.0.1:8000/api'
 
 // Estado global compartido entre componentes
 const isLoggedIn = ref(!!localStorage.getItem('token'))
@@ -9,7 +9,7 @@ const user = ref(JSON.parse(localStorage.getItem('usuario') ?? 'null'))
 export function useAuth() {
 
   async function login(correo, password) {
-    const res = await fetch(`${API}/auth/login.php`, {
+    const res = await fetch(`${API}/auth/login`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ correo, password })
@@ -31,7 +31,7 @@ export function useAuth() {
   }
 
   async function register(nombre, apellido, correo, telefono, password) {
-    const res = await fetch(`${API}/auth/register.php`, {
+    const res = await fetch(`${API}/auth/register`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ nombre, apellido, correo, telefono, password })

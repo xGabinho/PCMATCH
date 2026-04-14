@@ -230,7 +230,7 @@ import { useRouter } from 'vue-router'
 import ComponentCard from '../components/ComponentCard.vue'
 import { useBuilder } from '../composables/useBuilder'
 
-const API = 'http://localhost/pcmatch/backend/api'
+const API = 'http://127.0.0.1:8000/api'
 const router = useRouter()
 const { steps, selectedItems, selectedComponents, totalPrice, selectItem, removeItem } = useBuilder()
 

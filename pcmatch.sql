@@ -3,9 +3,9 @@
 -- https://www.phpmyadmin.net/
 --
 -- Servidor: 127.0.0.1
--- Tiempo de generación: 02-03-2026 a las 16:15:15
+-- Tiempo de generación: 07-04-2026 a las 19:51:39
 -- Versión del servidor: 10.4.32-MariaDB
--- Versión de PHP: 8.2.29
+-- Versión de PHP: 8.2.12
 
 SET SQL_MODE = "NO_AUTO_VALUE_ON_ZERO";
 START TRANSACTION;
@@ -34,15 +34,17 @@ CREATE TABLE `bodegas` (
   `correo` varchar(150) DEFAULT NULL,
   `password` varchar(255) NOT NULL,
   `activa` tinyint(1) DEFAULT 1,
-  `created_at` timestamp NOT NULL DEFAULT current_timestamp()
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  `proveedor_id` int(11) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 --
 -- Volcado de datos para la tabla `bodegas`
 --
 
-INSERT INTO `bodegas` (`id`, `nombre`, `telefono`, `correo`, `password`, `activa`, `created_at`) VALUES
-(1, 'TecnoStore', '+57 123 456 7891', 'tecnostore@gmail.com', '$2y$10$T.zIISmAidQnT3y0om5/LOg.pLsufltFeb6MNgLQQfSrbvH3Z785K', 1, '2026-03-02 04:10:33');
+INSERT INTO `bodegas` (`id`, `nombre`, `telefono`, `correo`, `password`, `activa`, `created_at`, `proveedor_id`) VALUES
+(1, 'TecnoStore', '+57 123 456 9871', 'tecnostore@gmail.com', '$2y$10$T.zIISmAidQnT3y0om5/LOg.pLsufltFeb6MNgLQQfSrbvH3Z785K', 1, '2026-03-02 04:10:33', NULL),
+(3, '.', '12345678902345', 'hmaya@gmail.com', '$2y$10$JjDqWye24Sj4U8oVhnEgLuXDXANv0QGmSJ8xuIcoTrMcKQwZkmFI2', 0, '2026-03-10 21:47:14', NULL);
 
 -- --------------------------------------------------------
 
@@ -82,6 +84,14 @@ CREATE TABLE `cotizaciones` (
   `created_at` timestamp NOT NULL DEFAULT current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+--
+-- Volcado de datos para la tabla `cotizaciones`
+--
+
+INSERT INTO `cotizaciones` (`id`, `usuario_id`, `perfil`, `total`, `created_at`) VALUES
+(1, 1, '', 100000, '2026-03-02 17:32:53'),
+(2, 1, '', 100000, '2026-03-10 21:54:30');
+
 -- --------------------------------------------------------
 
 --
@@ -95,6 +105,14 @@ CREATE TABLE `cotizacion_items` (
   `cantidad` int(11) DEFAULT 1,
   `precio_unitario` decimal(10,0) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+--
+-- Volcado de datos para la tabla `cotizacion_items`
+--
+
+INSERT INTO `cotizacion_items` (`id`, `cotizacion_id`, `componente_id`, `cantidad`, `precio_unitario`) VALUES
+(1, 1, 1, 1, 100000),
+(2, 2, 1, 1, 100000);
 
 -- --------------------------------------------------------
 
@@ -176,6 +194,21 @@ INSERT INTO `productos_catalogo` (`id`, `nombre`, `categoria`, `created_at`) VAL
 -- --------------------------------------------------------
 
 --
+-- Estructura de tabla para la tabla `proveedores`
+--
+
+CREATE TABLE `proveedores` (
+  `id` int(11) NOT NULL,
+  `nombre` varchar(100) NOT NULL,
+  `correo` varchar(100) NOT NULL,
+  `password` varchar(255) NOT NULL,
+  `activo` tinyint(1) DEFAULT 1,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- --------------------------------------------------------
+
+--
 -- Estructura de tabla para la tabla `sesiones`
 --
 
@@ -198,7 +231,7 @@ CREATE TABLE `usuarios` (
   `correo` varchar(150) NOT NULL,
   `telefono` varchar(20) DEFAULT NULL,
   `password` varchar(255) NOT NULL,
-  `rol` enum('admin','cliente','bodega') NOT NULL DEFAULT 'cliente',
+  `rol` enum('superadmin','admin','cliente') NOT NULL DEFAULT 'cliente',
   `created_at` timestamp NOT NULL DEFAULT current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
@@ -208,7 +241,9 @@ CREATE TABLE `usuarios` (
 
 INSERT INTO `usuarios` (`id`, `nombre`, `apellido`, `correo`, `telefono`, `password`, `rol`, `created_at`) VALUES
 (1, 'Juan', 'Pérez', 'Juanperezoso@gmail.com', '+57 123 456 7891', '$2y$10$x/cuphUo3SFJF7fpUDGUq.yCcsjw/s.wWm/8CdrhsxvdnLUd3lWcK', 'cliente', '2026-02-28 19:25:52'),
-(2, 'Admin', 'PCMATCH', 'admin@pcmatch.com', NULL, '$2y$10$Q9gxEykl6iq4tCysFfgeZ.7cWMFhmt9CMP.Xt.jCw5K3di3S/HIuG', 'admin', '2026-02-28 19:47:57');
+(2, 'Admin', 'PCMATCH', 'admin@pcmatch.com', NULL, '$2y$10$Q9gxEykl6iq4tCysFfgeZ.7cWMFhmt9CMP.Xt.jCw5K3di3S/HIuG', 'admin', '2026-02-28 19:47:57'),
+(5, 'm', '', 'hmayaa@gmail.com', '316987656598', '$2y$10$7CrqNG5i/hl2Tk79saxiSORpx7Vefziy/YQD8Wv6dlGom88S1zaUO', 'cliente', '2026-03-10 21:42:10'),
+(6, 'Super', 'Admin', 'superadmin@pcmatch.com', NULL, '$2y$10$zBVIvKEqbAS10kJyn7jAx.HGCw9IHjUXo4rIH4CAIRL13/scc0jpO', 'superadmin', '2026-04-06 17:33:51');
 
 --
 -- Índices para tablas volcadas
@@ -218,7 +253,8 @@ INSERT INTO `usuarios` (`id`, `nombre`, `apellido`, `correo`, `telefono`, `passw
 -- Indices de la tabla `bodegas`
 --
 ALTER TABLE `bodegas`
-  ADD PRIMARY KEY (`id`);
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `proveedor_id` (`proveedor_id`);
 
 --
 -- Indices de la tabla `componentes`
@@ -251,6 +287,13 @@ ALTER TABLE `productos_catalogo`
   ADD UNIQUE KEY `nombre` (`nombre`);
 
 --
+-- Indices de la tabla `proveedores`
+--
+ALTER TABLE `proveedores`
+  ADD PRIMARY KEY (`id`),
+  ADD UNIQUE KEY `correo` (`correo`);
+
+--
 -- Indices de la tabla `sesiones`
 --
 ALTER TABLE `sesiones`
@@ -272,7 +315,7 @@ ALTER TABLE `usuarios`
 -- AUTO_INCREMENT de la tabla `bodegas`
 --
 ALTER TABLE `bodegas`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
 
 --
 -- AUTO_INCREMENT de la tabla `componentes`
@@ -284,13 +327,13 @@ ALTER TABLE `componentes`
 -- AUTO_INCREMENT de la tabla `cotizaciones`
 --
 ALTER TABLE `cotizaciones`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
 
 --
 -- AUTO_INCREMENT de la tabla `cotizacion_items`
 --
 ALTER TABLE `cotizacion_items`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
 
 --
 -- AUTO_INCREMENT de la tabla `productos_catalogo`
@@ -299,14 +342,26 @@ ALTER TABLE `productos_catalogo`
   MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=59;
 
 --
+-- AUTO_INCREMENT de la tabla `proveedores`
+--
+ALTER TABLE `proveedores`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+
+--
 -- AUTO_INCREMENT de la tabla `usuarios`
 --
 ALTER TABLE `usuarios`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=7;
 
 --
 -- Restricciones para tablas volcadas
 --
+
+--
+-- Filtros para la tabla `bodegas`
+--
+ALTER TABLE `bodegas`
+  ADD CONSTRAINT `bodegas_ibfk_1` FOREIGN KEY (`proveedor_id`) REFERENCES `proveedores` (`id`);
 
 --
 -- Filtros para la tabla `componentes`
