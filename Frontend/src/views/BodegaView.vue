@@ -399,7 +399,7 @@ import { useRouter } from 'vue-router'
 import { useAuth } from '../composables/useAuth'
 import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
 
-const API = 'http://localhost/pcmatch/backend/api'
+const API = 'http://127.0.0.1:8000/api'
 
 const router = useRouter()
 const { logout } = useAuth()

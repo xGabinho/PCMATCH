@@ -121,21 +121,62 @@
           </div>
           <div>
             <label class="block text-sm font-medium text-text-primary mb-2">Número de celular</label>
-            <input
-              type="tel"
-              placeholder="+56 9 1234 5678"
-              v-model="registerData.telefono"
-              class="w-full bg-dark-bg border border-dark-border rounded-lg px-4 py-3 text-sm text-text-primary placeholder-text-muted focus:outline-none focus:border-accent transition-colors"
-            />
+            <div class="flex gap-2">
+              <select
+                v-model="registerData.prefijo"
+                class="w-24 bg-dark-bg border border-dark-border rounded-lg px-2 py-3 text-sm text-text-primary focus:outline-none focus:border-accent transition-colors"
+              >
+                <option value="+57">🇨🇴 +57</option>
+                <option value="+56">🇨🇱 +56</option>
+                <option value="+58">🇻🇪 +58</option>
+                <option value="+52">🇲🇽 +52</option>
+                <option value="+1">🇺🇸 +1</option>
+                <option value="+34">🇪🇸 +34</option>
+              </select>
+              <input
+                type="tel"
+                placeholder="300 123 4567"
+                v-model="registerData.telefono"
+                @input="limitTelefono"
+                class="flex-1 bg-dark-bg border border-dark-border rounded-lg px-4 py-3 text-sm text-text-primary placeholder-text-muted focus:outline-none focus:border-accent transition-colors"
+              />
+            </div>
           </div>
           <div>
             <label class="block text-sm font-medium text-text-primary mb-2">Contraseña</label>
-            <input
-              type="password"
-              placeholder="Mínimo 8 caracteres"
-              v-model="registerData.password"
-              class="w-full bg-dark-bg border border-dark-border rounded-lg px-4 py-3 text-sm text-text-primary placeholder-text-muted focus:outline-none focus:border-accent transition-colors"
-            />
+            <div class="relative">
+              <input
+                :type="showRegisterPassword ? 'text' : 'password'"
+                placeholder="Mínimo 8 caracteres"
+                v-model="registerData.password"
+                class="w-full bg-dark-bg border border-dark-border rounded-lg px-4 py-3 text-sm text-text-primary placeholder-text-muted focus:outline-none focus:border-accent transition-colors pr-10"
+              />
+              <button
+                type="button"
+                @click="showRegisterPassword = !showRegisterPassword"
+                class="absolute right-3 top-1/2 -translate-y-1/2 text-text-muted hover:text-text-primary transition-colors text-xs"
+              >
+                {{ showRegisterPassword ? '🙈' : '👁️' }}
+              </button>
+            </div>
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-text-primary mb-2">Confirmar contraseña</label>
+            <div class="relative">
+              <input
+                :type="showConfirmPassword ? 'text' : 'password'"
+                placeholder="Repetir contraseña"
+                v-model="registerData.confirmPassword"
+                class="w-full bg-dark-bg border border-dark-border rounded-lg px-4 py-3 text-sm text-text-primary placeholder-text-muted focus:outline-none focus:border-accent transition-colors pr-10"
+              />
+              <button
+                type="button"
+                @click="showConfirmPassword = !showConfirmPassword"
+                class="absolute right-3 top-1/2 -translate-y-1/2 text-text-muted hover:text-text-primary transition-colors text-xs"
+              >
+                {{ showConfirmPassword ? '🙈' : '👁️' }}
+              </button>
+            </div>
           </div>
 
           <button
@@ -264,6 +305,8 @@ import { useAuth } from '../composables/useAuth'
 
 const tab = ref('login')
 const showPassword = ref(false)
+const showRegisterPassword = ref(false)
+const showConfirmPassword = ref(false)
 const showTerms = ref(false)
 const showPrivacy = ref(false)
 const loading = ref(false)
@@ -273,7 +316,13 @@ const router = useRouter()
 const { login, register } = useAuth()
 
 const loginData = ref({ correo: '', password: '' })
-const registerData = ref({ nombre: '', apellido: '', correo: '', telefono: '', password: '' })
+const registerData = ref({ nombre: '', apellido: '', correo: '', prefijo: '+57', telefono: '', password: '', confirmPassword: '' })
+
+function limitTelefono(e) {
+  let val = e.target.value.replace(/\D/g, '')
+  if (val.length > 10) val = val.slice(0, 10)
+  registerData.value.telefono = val
+}
 
 async function handleLogin() {
   errorMsg.value = ''
@@ -293,16 +342,24 @@ async function handleLogin() {
 
 async function handleRegister() {
   errorMsg.value = ''
-  const { nombre, apellido, correo, telefono, password } = registerData.value
-  if (!nombre || !apellido || !correo || !password) {
+  const { nombre, apellido, correo, prefijo, telefono, password, confirmPassword } = registerData.value
+  if (!nombre || !apellido || !correo || !password || !confirmPassword) {
     return errorMsg.value = 'Completa todos los campos obligatorios'
   }
   if (password.length < 8) {
     return errorMsg.value = 'La contraseña debe tener al menos 8 caracteres'
   }
+  if (password !== confirmPassword) {
+    return errorMsg.value = 'Las contraseñas no coinciden'
+  }
+  if (telefono && telefono.length !== 10) {
+    return errorMsg.value = 'El celular debe tener exactamente 10 dígitos numéricos'
+  }
+  
   loading.value = true
+  const numeroCompleto = telefono ? `${prefijo} ${telefono}` : ''
   try {
-    const usuario = await register(nombre, apellido, correo, telefono, password)
+    const usuario = await register(nombre, apellido, correo, numeroCompleto, password)
     redirectByRole(usuario.rol)
   } catch (e) {
     errorMsg.value = e.message
