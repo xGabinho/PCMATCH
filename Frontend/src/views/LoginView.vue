@@ -97,6 +97,8 @@
                 type="text"
                 placeholder="Juan"
                 v-model="registerData.nombre"
+                @input="registerData.nombre = registerData.nombre.replace(/[^a-záéíóúñüA-ZÁÉÍÓÚÑÜ]/g, '')"
+                maxlength="40"
                 class="w-full bg-dark-bg border border-dark-border rounded-lg px-4 py-3 text-sm text-text-primary placeholder-text-muted focus:outline-none focus:border-accent transition-colors"
               />
             </div>
@@ -106,68 +108,73 @@
                 type="text"
                 placeholder="Pérez"
                 v-model="registerData.apellido"
+                @input="registerData.apellido = registerData.apellido.replace(/[^a-záéíóúñüA-ZÁÉÍÓÚÑÜ]/g, '')"
+                maxlength="40"
                 class="w-full bg-dark-bg border border-dark-border rounded-lg px-4 py-3 text-sm text-text-primary placeholder-text-muted focus:outline-none focus:border-accent transition-colors"
               />
             </div>
           </div>
+
           <div>
             <label class="block text-sm font-medium text-text-primary mb-2">Correo electrónico</label>
             <input
               type="email"
-              placeholder="tucorreo@email.com"
+              placeholder="tucorreo@gmail.com"
               v-model="registerData.correo"
               class="w-full bg-dark-bg border border-dark-border rounded-lg px-4 py-3 text-sm text-text-primary placeholder-text-muted focus:outline-none focus:border-accent transition-colors"
             />
           </div>
+
           <div>
             <label class="block text-sm font-medium text-text-primary mb-2">Número de celular</label>
             <div class="flex gap-2">
-              <select
-                v-model="registerData.prefijo"
-                class="w-24 bg-dark-bg border border-dark-border rounded-lg px-2 py-3 text-sm text-text-primary focus:outline-none focus:border-accent transition-colors"
-              >
-                <option value="+57">🇨🇴 +57</option>
-                <option value="+56">🇨🇱 +56</option>
-                <option value="+58">🇻🇪 +58</option>
-                <option value="+52">🇲🇽 +52</option>
-                <option value="+1">🇺🇸 +1</option>
-                <option value="+34">🇪🇸 +34</option>
-              </select>
+              <div class="flex items-center px-3 rounded-lg bg-dark-bg border border-dark-border text-text-muted text-sm select-none flex-shrink-0">
+                🇨🇴 +57
+              </div>
               <input
                 type="tel"
                 placeholder="300 123 4567"
-                v-model="registerData.telefono"
-                @input="limitTelefono"
+                v-model="registerData.telefonoLocal"
+                @input="handleTelefonoInput"
+                maxlength="13"
                 class="flex-1 bg-dark-bg border border-dark-border rounded-lg px-4 py-3 text-sm text-text-primary placeholder-text-muted focus:outline-none focus:border-accent transition-colors"
               />
             </div>
+            <p class="text-xs text-text-muted mt-1">Debe ser un número colombiano válido (3XX XXX XXXX)</p>
           </div>
+
           <div>
             <label class="block text-sm font-medium text-text-primary mb-2">Contraseña</label>
             <div class="relative">
               <input
-                :type="showRegisterPassword ? 'text' : 'password'"
+                :type="showPassword ? 'text' : 'password'"
                 placeholder="Mínimo 8 caracteres"
                 v-model="registerData.password"
-                class="w-full bg-dark-bg border border-dark-border rounded-lg px-4 py-3 text-sm text-text-primary placeholder-text-muted focus:outline-none focus:border-accent transition-colors pr-10"
+                class="w-full bg-dark-bg border border-dark-border rounded-lg px-4 py-3 text-sm text-text-primary placeholder-text-muted focus:outline-none focus:border-accent transition-colors pr-12"
               />
               <button
                 type="button"
-                @click="showRegisterPassword = !showRegisterPassword"
+                @click="showPassword = !showPassword"
                 class="absolute right-3 top-1/2 -translate-y-1/2 text-text-muted hover:text-text-primary transition-colors text-xs"
               >
-                {{ showRegisterPassword ? '🙈' : '👁️' }}
+                {{ showPassword ? '🙈' : '👁️' }}
               </button>
             </div>
           </div>
+
           <div>
             <label class="block text-sm font-medium text-text-primary mb-2">Confirmar contraseña</label>
             <div class="relative">
               <input
                 :type="showConfirmPassword ? 'text' : 'password'"
-                placeholder="Repetir contraseña"
+                placeholder="Repite tu contraseña"
                 v-model="registerData.confirmPassword"
-                class="w-full bg-dark-bg border border-dark-border rounded-lg px-4 py-3 text-sm text-text-primary placeholder-text-muted focus:outline-none focus:border-accent transition-colors pr-10"
+                class="w-full bg-dark-bg border border-dark-border rounded-lg px-4 py-3 text-sm text-text-primary placeholder-text-muted focus:outline-none focus:border-accent transition-colors pr-12"
+                :class="registerData.confirmPassword && registerData.password !== registerData.confirmPassword
+                  ? 'border-red-500/50'
+                  : registerData.confirmPassword && registerData.password === registerData.confirmPassword
+                    ? 'border-green-500/50'
+                    : ''"
               />
               <button
                 type="button"
@@ -177,6 +184,14 @@
                 {{ showConfirmPassword ? '🙈' : '👁️' }}
               </button>
             </div>
+            <p v-if="registerData.confirmPassword && registerData.password !== registerData.confirmPassword"
+              class="text-xs text-red-400 mt-1">
+              Las contraseñas no coinciden
+            </p>
+            <p v-if="registerData.confirmPassword && registerData.password === registerData.confirmPassword"
+              class="text-xs text-green-400 mt-1">
+              ✓ Las contraseñas coinciden
+            </p>
           </div>
 
           <button
@@ -305,7 +320,6 @@ import { useAuth } from '../composables/useAuth'
 
 const tab = ref('login')
 const showPassword = ref(false)
-const showRegisterPassword = ref(false)
 const showConfirmPassword = ref(false)
 const showTerms = ref(false)
 const showPrivacy = ref(false)
@@ -316,12 +330,24 @@ const router = useRouter()
 const { login, register } = useAuth()
 
 const loginData = ref({ correo: '', password: '' })
-const registerData = ref({ nombre: '', apellido: '', correo: '', prefijo: '+57', telefono: '', password: '', confirmPassword: '' })
+const registerData = ref({
+  nombre: '',
+  apellido: '',
+  correo: '',
+  telefonoLocal: '',
+  password: '',
+  confirmPassword: ''
+})
 
-function limitTelefono(e) {
-  let val = e.target.value.replace(/\D/g, '')
+function handleTelefonoInput() {
+  let val = registerData.value.telefonoLocal.replace(/[^\d]/g, '')
   if (val.length > 10) val = val.slice(0, 10)
-  registerData.value.telefono = val
+  if (val.length > 6) {
+    val = val.slice(0, 3) + ' ' + val.slice(3, 6) + ' ' + val.slice(6)
+  } else if (val.length > 3) {
+    val = val.slice(0, 3) + ' ' + val.slice(3)
+  }
+  registerData.value.telefonoLocal = val
 }
 
 async function handleLogin() {
@@ -342,9 +368,16 @@ async function handleLogin() {
 
 async function handleRegister() {
   errorMsg.value = ''
-  const { nombre, apellido, correo, prefijo, telefono, password, confirmPassword } = registerData.value
-  if (!nombre || !apellido || !correo || !password || !confirmPassword) {
-    return errorMsg.value = 'Completa todos los campos obligatorios'
+  const { nombre, apellido, correo, telefonoLocal, password, confirmPassword } = registerData.value
+
+  if (!nombre || !apellido || !correo || !telefonoLocal || !password || !confirmPassword) {
+    return errorMsg.value = 'Completa todos los campos'
+  }
+  if (nombre.trim().length < 2) {
+    return errorMsg.value = 'El nombre debe tener al menos 2 caracteres'
+  }
+  if (apellido.trim().length < 2) {
+    return errorMsg.value = 'El apellido debe tener al menos 2 caracteres'
   }
   if (password.length < 8) {
     return errorMsg.value = 'La contraseña debe tener al menos 8 caracteres'
@@ -352,14 +385,17 @@ async function handleRegister() {
   if (password !== confirmPassword) {
     return errorMsg.value = 'Las contraseñas no coinciden'
   }
-  if (telefono && telefono.length !== 10) {
-    return errorMsg.value = 'El celular debe tener exactamente 10 dígitos numéricos'
+
+  const dígitos = telefonoLocal.replace(/\s/g, '')
+  if (dígitos.length !== 10 || !dígitos.startsWith('3')) {
+    return errorMsg.value = 'El número debe tener 10 dígitos y empezar por 3 (ej: 300 123 4567)'
   }
-  
+
+  const telefonoCompleto = '+57' + dígitos
+
   loading.value = true
-  const numeroCompleto = telefono ? `${prefijo} ${telefono}` : ''
   try {
-    const usuario = await register(nombre, apellido, correo, numeroCompleto, password)
+    const usuario = await register(nombre, apellido, correo, telefonoCompleto, password)
     redirectByRole(usuario.rol)
   } catch (e) {
     errorMsg.value = e.message

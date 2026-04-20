@@ -10,6 +10,7 @@ use App\Http\Controllers\Api\ProveedorController;
 use App\Http\Controllers\Api\ComponenteController;
 use App\Http\Controllers\Api\CatalogoController;
 use App\Http\Controllers\Api\CotizacionController;
+use App\Http\Controllers\Api\HistorialController;
 
 Route::post('/auth/login', [AuthController::class, 'login']);
 Route::post('/auth/register', [AuthController::class, 'register']);
@@ -46,13 +47,21 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::delete('/proveedores', [ProveedorController::class, 'destroy']); // Eliminar
     Route::delete('/proveedores/{id}', [ProveedorController::class, 'destroy']); // Soporte params
 
-    // RUTAS DE COMPONENTES (Admin/Proveedor)
-    Route::get('/componentes/admin', [ComponenteController::class, 'indexAdmin']); // Ver Componentes
-    Route::post('/componentes/admin', [ComponenteController::class, 'store']); // Crear Componentes
+    // RUTAS DE COMPONENTES (Admin/Proveedor/Bodega)
+    Route::get('/componentes/admin', [ComponenteController::class, 'indexAdmin']); // Ver Componentes (admin/superadmin)
+    Route::get('/componentes', [ComponenteController::class, 'indexBodega']);      // Ver los propios (bodega)
+    Route::post('/componentes/admin', [ComponenteController::class, 'store']);     // Crear (admin/superadmin)
+    Route::post('/componentes', [ComponenteController::class, 'store']);           // Crear (bodega/proveedor)
+    Route::put('/componentes', [ComponenteController::class, 'update']);           // Editar
+    Route::delete('/componentes', [ComponenteController::class, 'destroy']);       // Eliminar
+    Route::delete('/componentes/{id}', [ComponenteController::class, 'destroy']); // Eliminar por ID
 
     // RUTAS DE COTIZACIONES
     Route::get('/cotizaciones', [CotizacionController::class, 'index']); // Listar
     Route::post('/cotizaciones', [CotizacionController::class, 'store']); // Crear (Solo cliente)
     Route::delete('/cotizaciones', [CotizacionController::class, 'destroy']); // Eliminar
     Route::delete('/cotizaciones/{id}', [CotizacionController::class, 'destroy']); // Soporte params
+
+    // RUTAS DE HISTORIAL (Admin / Superadmin)
+    Route::get('/historial', [HistorialController::class, 'index']);
 });

@@ -202,7 +202,7 @@
 import { ref, computed, onMounted } from 'vue'
 import { useAuth } from '../composables/useAuth'
 
-const API = 'http://127.0.0.1:8000/api'
+const API = 'http://localhost/pcmatch/backend/api'
 const { user } = useAuth()
 
 const searchQuery    = ref('')

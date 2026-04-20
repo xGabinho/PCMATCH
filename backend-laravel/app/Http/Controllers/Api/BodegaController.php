@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use App\Helpers\AuditLog;
 
 class BodegaController extends Controller
 {
@@ -70,8 +71,8 @@ class BodegaController extends Controller
         $clase = get_class($user);
         $rol = $clase === \App\Models\Proveedor::class ? 'proveedor' : ($clase === \App\Models\Usuario::class ? $user->rol : 'bodega');
 
-        // Según legacy, 'admin' NO puede crear bodegas, solo superadmin y proveedor.
-        if ($rol === 'admin' || $rol === 'bodega') {
+        // admin, superadmin y proveedor pueden crear bodegas. 'bodega' no puede.
+        if ($rol === 'bodega') {
             return response()->json(['success' => false, 'message' => 'No tienes permiso para crear bodegas'], 403);
         }
 
@@ -106,6 +107,8 @@ class BodegaController extends Controller
         $bodega->activa = 1;
         $bodega->proveedor_id = $proveedor_id;
         $bodega->save();
+
+        AuditLog::log($request, "Creó la bodega: {$bodega->nombre}", 'Bodegas');
 
         return response()->json(['message' => 'Bodega creada', 'id' => $bodega->id], 201);
     }
@@ -142,10 +145,21 @@ class BodegaController extends Controller
 
         // Superadmin puede reasignar proveedor
         if ($rol === 'superadmin' && $request->has('proveedor_id')) {
-            $bodega->proveedor_id = $request->input('proveedor_id') === '' ? null : (int) $request->input('proveedor_id');
+            $prov = $request->input('proveedor_id');
+            $bodega->proveedor_id = ($prov === '' || $prov === null) ? null : (int) $prov;
         }
 
+        $dirty = $bodega->getDirty();
+        $cambios = [];
+        foreach ($dirty as $campo => $nuevo) {
+            if ($campo === 'updated_at') continue;
+            $viejo = $bodega->getOriginal($campo);
+            $cambios[] = "{$campo}: '{$viejo}' -> '{$nuevo}'";
+        }
         $bodega->save();
+
+        $detalles = empty($cambios) ? 'Sin cambios aparentes' : implode(', ', $cambios);
+        AuditLog::log($request, "Modificó la bodega: {$bodega->nombre}. Cambios: {$detalles}", 'Bodegas');
 
         return response()->json(['message' => 'Bodega actualizada']);
     }
@@ -159,7 +173,7 @@ class BodegaController extends Controller
         $clase = get_class($user);
         $rol = $clase === \App\Models\Proveedor::class ? 'proveedor' : ($clase === \App\Models\Usuario::class ? $user->rol : 'bodega');
 
-        if ($rol === 'admin' || $rol === 'bodega') {
+        if ($rol === 'bodega') {
             return response()->json(['success' => false, 'message' => 'No tienes permiso para eliminar bodegas'], 403);
         }
 
@@ -173,11 +187,17 @@ class BodegaController extends Controller
             return response()->json(['success' => false, 'message' => 'Bodega no encontrada'], 404);
         }
 
+        if (!is_null($bodega->proveedor_id)) {
+            return response()->json(['success' => false, 'message' => 'No se puede eliminar una bodega si tiene un proveedor asignado'], 400);
+        }
+
         if ($rol === 'proveedor' && $bodega->proveedor_id !== $user->id) {
             return response()->json(['success' => false, 'message' => 'No tienes permiso para eliminar esta bodega'], 403);
         }
 
         $bodega->delete();
+
+        AuditLog::log($request, "Eliminó la bodega: {$bodega->nombre}", 'Bodegas');
 
         return response()->json(['message' => 'Bodega eliminada']);
     }

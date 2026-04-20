@@ -157,7 +157,7 @@ import { useRouter } from 'vue-router'
 import { useBuilder } from '../composables/useBuilder'
 import { useAuth } from '../composables/useAuth'
 
-const API = 'http://127.0.0.1:8000/api'
+const API = 'http://localhost/pcmatch/backend/api'
 const router = useRouter()
 const { steps, selectedComponents, totalPrice, perfil, removeItem, clearAll } = useBuilder()
 const { getToken } = useAuth()

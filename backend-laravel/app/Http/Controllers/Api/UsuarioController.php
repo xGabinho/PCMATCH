@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\Usuario;
+use App\Helpers\AuditLog;
 
 class UsuarioController extends Controller
 {
@@ -76,6 +77,8 @@ class UsuarioController extends Controller
             return response()->json(['success' => false, 'message' => 'Error al crear el usuario'], 500);
         }
 
+        AuditLog::log($request, "Creó el usuario con correo: {$usuario->correo}", 'Usuarios');
+
         return response()->json([
             'message' => 'Usuario creado',
             'id' => $usuario->id
@@ -132,7 +135,17 @@ class UsuarioController extends Controller
         if ($request->has('activo')) {
             $usuario->activo = $request->input('activo');
         }
+        $dirty = $usuario->getDirty();
+        $cambios = [];
+        foreach ($dirty as $campo => $nuevo) {
+            if ($campo === 'updated_at') continue;
+            $viejo = $usuario->getOriginal($campo);
+            $cambios[] = "{$campo}: '{$viejo}' -> '{$nuevo}'";
+        }
         $usuario->save();
+
+        $detalles = empty($cambios) ? 'Sin cambios aparentes' : implode(', ', $cambios);
+        AuditLog::log($request, "Modificó el usuario con correo: {$usuario->correo}. Cambios: {$detalles}", 'Usuarios');
 
         return response()->json([
             'message' => 'Usuario actualizado'
@@ -161,6 +174,8 @@ class UsuarioController extends Controller
         }
 
         $usuario->delete();
+
+        AuditLog::log($request, "Eliminó el usuario con correo: {$usuario->correo}", 'Usuarios');
 
         return response()->json([
             'message' => 'Usuario eliminado'

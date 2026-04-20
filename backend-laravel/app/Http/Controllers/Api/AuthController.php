@@ -9,6 +9,7 @@ use Illuminate\Support\Facades\Validator;
 use App\Models\Usuario;
 use App\Models\Proveedor;
 use App\Models\Bodega;
+use App\Helpers\AuditLog;
 
 class AuthController extends Controller
 {
@@ -137,6 +138,9 @@ class AuthController extends Controller
 
         // 3. Generar token
         $token = $usuario->createToken('auth_token_usuario')->plainTextToken;
+
+        // Registrar en historial de auditoría
+        AuditLog::log($request, "Se registró como nuevo usuario", 'Usuarios', $usuario);
 
         // 4. Respuesta JSON tal cual la esperaba el viejo frontend
         return response()->json([

@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use App\Helpers\AuditLog;
 
 class ComponenteController extends Controller
 {
@@ -33,6 +34,35 @@ class ComponenteController extends Controller
         return response()->json([
             'componentes' => $componentes
         ]);
+    }
+
+    /**
+     * GET /api/componentes - Lista los componentes de la bodega autenticada
+     */
+    public function indexBodega(Request $request)
+    {
+        $user = $request->user();
+        $clase = get_class($user);
+        $rol = 'cliente';
+        if ($clase === \App\Models\Usuario::class) $rol = $user->rol;
+        if ($clase === \App\Models\Proveedor::class) $rol = 'proveedor';
+        if ($clase === \App\Models\Bodega::class) $rol = 'bodega';
+
+        $query = DB::table('componentes as c')
+            ->join('productos_catalogo as p', 'c.producto_id', '=', 'p.id')
+            ->select('c.id', 'p.nombre', 'p.categoria', 'c.especificacion', 'c.gama', 'c.precio', 'c.stock', 'c.bodega_id');
+
+        if ($rol === 'bodega') {
+            $query->where('c.bodega_id', $user->id);
+        } elseif ($rol === 'proveedor') {
+            $query->whereIn('c.bodega_id', function($sub) use ($user) {
+                $sub->select('id')->from('bodegas')->where('proveedor_id', $user->id);
+            });
+        }
+
+        $componentes = $query->orderBy('p.categoria')->get();
+
+        return response()->json(['componentes' => $componentes]);
     }
 
     /**
@@ -79,17 +109,17 @@ class ComponenteController extends Controller
         if ($clase === \App\Models\Proveedor::class) $rol = 'proveedor';
         if ($clase === \App\Models\Bodega::class) $rol = 'bodega';
 
-        if (!in_array($rol, ['admin', 'superadmin', 'proveedor'])) {
+        if (!in_array($rol, ['admin', 'superadmin', 'proveedor', 'bodega'])) {
             return response()->json(['success' => false, 'message' => 'No autorizado para crear componentes'], 403);
         }
 
         $validator = \Illuminate\Support\Facades\Validator::make($request->all(), [
-            'bodega_id' => 'required|integer',
-            'producto_id' => 'required|integer',
-            'especificacion' => 'required|string|max:255',
-            'gama' => 'required|in:alta,media,baja',
-            'precio' => 'required|numeric|min:0',
-            'stock' => 'required|integer|min:0'
+            'bodega_id'     => ($rol === 'bodega') ? 'nullable|integer' : 'required|integer',
+            'producto_id'   => 'required|integer',
+            'especificacion'=> 'required|string|max:255',
+            'gama'          => 'required|in:alta,media,baja',
+            'precio'        => 'required|numeric|min:0',
+            'stock'         => 'required|integer|min:0'
         ], [
             'gama.in' => 'La gama debe ser alta, media o baja'
         ]);
@@ -108,6 +138,11 @@ class ComponenteController extends Controller
             }
         }
 
+        // Si es bodega, se auto-asigna su propio ID
+        if ($rol === 'bodega') {
+            $bodega_id = $user->id;
+        }
+
         $componenteId = DB::table('componentes')->insertGetId([
             'bodega_id' => $bodega_id,
             'producto_id' => $request->input('producto_id'),
@@ -118,6 +153,82 @@ class ComponenteController extends Controller
             'created_at' => now(),
         ]);
 
+        $producto = DB::table('productos_catalogo')->where('id', $request->input('producto_id'))->first();
+        $nombreProducto = $producto ? $producto->nombre : "ID {$request->input('producto_id')}";
+        $bodegaNombre = DB::table('bodegas')->where('id', $bodega_id)->value('nombre') ?? "ID {$bodega_id}";
+
+        AuditLog::log($request, "Agregó el componente: {$nombreProducto} ({$request->input('especificacion')}, {$request->input('gama')}) a la bodega {$bodegaNombre}", 'Componentes');
+
         return response()->json(['message' => 'Componente registrado en Bodega correctamente', 'id' => $componenteId], 201);
+    }
+
+    /**
+     * PUT /api/componentes - Editar componente (bodega propia, admin, superadmin, proveedor)
+     */
+    public function update(Request $request)
+    {
+        $user = $request->user();
+        $clase = get_class($user);
+        $rol = 'cliente';
+        if ($clase === \App\Models\Usuario::class) $rol = $user->rol;
+        if ($clase === \App\Models\Proveedor::class) $rol = 'proveedor';
+        if ($clase === \App\Models\Bodega::class) $rol = 'bodega';
+
+        if (!in_array($rol, ['admin', 'superadmin', 'proveedor', 'bodega'])) {
+            return response()->json(['success' => false, 'message' => 'No autorizado'], 403);
+        }
+
+        $id = $request->input('id');
+        if (!$id) return response()->json(['success' => false, 'message' => 'id es requerido'], 400);
+
+        $comp = DB::table('componentes')->where('id', $id)->first();
+        if (!$comp) return response()->json(['success' => false, 'message' => 'Componente no encontrado'], 404);
+
+        if ($rol === 'bodega' && $comp->bodega_id != $user->id) {
+            return response()->json(['success' => false, 'message' => 'No puedes editar componentes de otra bodega'], 403);
+        }
+
+        $data = [];
+        if ($request->has('especificacion')) $data['especificacion'] = $request->input('especificacion');
+        if ($request->has('gama'))           $data['gama']           = $request->input('gama');
+        if ($request->has('precio'))         $data['precio']         = $request->input('precio');
+        if ($request->has('stock'))          $data['stock']          = $request->input('stock');
+
+        DB::table('componentes')->where('id', $id)->update($data);
+        AuditLog::log($request, "Modificó el componente ID {$id}", 'Componentes');
+
+        return response()->json(['message' => 'Componente actualizado']);
+    }
+
+    /**
+     * DELETE /api/componentes - Eliminar componente (bodega propia, admin, superadmin, proveedor)
+     */
+    public function destroy(Request $request, $id = null)
+    {
+        $user = $request->user();
+        $clase = get_class($user);
+        $rol = 'cliente';
+        if ($clase === \App\Models\Usuario::class) $rol = $user->rol;
+        if ($clase === \App\Models\Proveedor::class) $rol = 'proveedor';
+        if ($clase === \App\Models\Bodega::class) $rol = 'bodega';
+
+        if (!in_array($rol, ['admin', 'superadmin', 'proveedor', 'bodega'])) {
+            return response()->json(['success' => false, 'message' => 'No autorizado'], 403);
+        }
+
+        $id = $id ?? $request->query('id');
+        if (!$id) return response()->json(['success' => false, 'message' => 'id es requerido'], 400);
+
+        $comp = DB::table('componentes')->where('id', $id)->first();
+        if (!$comp) return response()->json(['success' => false, 'message' => 'Componente no encontrado'], 404);
+
+        if ($rol === 'bodega' && $comp->bodega_id != $user->id) {
+            return response()->json(['success' => false, 'message' => 'No puedes eliminar componentes de otra bodega'], 403);
+        }
+
+        DB::table('componentes')->where('id', $id)->delete();
+        AuditLog::log($request, "Eliminó el componente ID {$id}", 'Componentes');
+
+        return response()->json(['message' => 'Componente eliminado']);
     }
 }

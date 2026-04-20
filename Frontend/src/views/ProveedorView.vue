@@ -335,11 +335,11 @@ async function saveNewBodega() {
   try {
     const res = await fetch(`${API}/bodegas/`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getToken()}` },
+      headers: { 'Content-Type': 'application/json', Accept: 'application/json', Authorization: `Bearer ${getToken()}` },
       body: JSON.stringify(newBodega.value)
     })
     const data = await res.json()
-    if (!res.ok) return bodegaError.value = data.error ?? 'Error al crear'
+    if (!res.ok) return bodegaError.value = data.message ?? 'Error al crear'
     await fetchBodegas()
     showBodegaModal.value = false
   } catch(e) { bodegaError.value = 'Error de conexión' } finally { savingBodega.value = false }
@@ -354,11 +354,11 @@ async function saveEditBodega() {
   try {
     const res = await fetch(`${API}/bodegas/`, {
       method: 'PUT',
-      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getToken()}` },
+      headers: { 'Content-Type': 'application/json', Accept: 'application/json', Authorization: `Bearer ${getToken()}` },
       body: JSON.stringify({ id: editingBodega.value.id, nombre: editingBodega.value.nombre, telefono: editingBodega.value.telefono, activa: editingBodega.value.activa })
     })
     const data = await res.json()
-    if (!res.ok) return editBodegaError.value = data.error ?? 'Error'
+    if (!res.ok) return editBodegaError.value = data.message ?? 'Error'
     await fetchBodegas()
     showEditBodegaModal.value = false
   } catch(e) { editBodegaError.value = 'Error de conexión' } finally { savingEditBodega.value = false }
@@ -382,7 +382,7 @@ async function toggleActivoBodega(b) {
   try {
     const res = await fetch(`${API}/bodegas/`, {
       method: 'PUT',
-      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getToken()}` },
+      headers: { 'Content-Type': 'application/json', Accept: 'application/json', Authorization: `Bearer ${getToken()}` },
       body: JSON.stringify({
         id: b.id,
         nombre: b.nombre,

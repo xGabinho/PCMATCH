@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use App\Models\Proveedor;
 use App\Models\Bodega;
+use App\Helpers\AuditLog;
 
 class ProveedorController extends Controller
 {
@@ -107,6 +108,8 @@ class ProveedorController extends Controller
 
         $proveedor->save();
 
+        AuditLog::log($request, "Creó el proveedor: {$proveedor->nombre}", 'Proveedores');
+
         return response()->json(['message' => 'Proveedor creado', 'id' => $proveedor->id], 201);
     }
 
@@ -161,7 +164,17 @@ class ProveedorController extends Controller
             $proveedor->estado_aprobacion = $request->input('estado_aprobacion');
         }
 
+        $dirty = $proveedor->getDirty();
+        $cambios = [];
+        foreach ($dirty as $campo => $nuevo) {
+            if ($campo === 'updated_at') continue;
+            $viejo = $proveedor->getOriginal($campo);
+            $cambios[] = "{$campo}: '{$viejo}' -> '{$nuevo}'";
+        }
         $proveedor->save();
+
+        $detalles = empty($cambios) ? 'Sin cambios aparentes' : implode(', ', $cambios);
+        AuditLog::log($request, "Modificó el proveedor: {$proveedor->nombre}. Cambios: {$detalles}", 'Proveedores');
 
         return response()->json(['message' => 'Proveedor actualizado']);
     }
@@ -189,6 +202,8 @@ class ProveedorController extends Controller
         Bodega::where('proveedor_id', $id)->update(['proveedor_id' => null]);
 
         $proveedor->delete();
+
+        AuditLog::log($request, "Eliminó el proveedor: {$proveedor->nombre}", 'Proveedores');
 
         return response()->json(['message' => 'Proveedor eliminado']);
     }

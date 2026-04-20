@@ -345,6 +345,33 @@
           </div>
         </template>
 
+        <!-- ===== HISTORIAL ===== -->
+        <template v-if="activeSection === 'historial'">
+          <div class="card-dark rounded-xl overflow-hidden overflow-x-auto">
+            <div class="px-6 py-4 border-b border-dark-border flex items-center justify-between">
+              <h2 class="font-semibold text-text-primary">Historial de Acciones</h2>
+            </div>
+            <div v-if="loadingHistorial" class="px-6 py-12 text-center text-text-muted text-sm">Cargando historial...</div>
+            <table v-else class="w-full min-w-[800px]">
+              <thead class="border-b border-dark-border">
+                <tr><th v-for="h in ['Fecha','Usuario','Rol','Acción','Módulo']" :key="h" class="px-6 py-3 text-left text-xs text-text-muted uppercase tracking-wider font-medium">{{ h }}</th></tr>
+              </thead>
+              <tbody class="divide-y divide-dark-border">
+                <tr v-if="historial.length === 0"><td colspan="5" class="px-6 py-12 text-center text-text-muted text-sm">Sin registros</td></tr>
+                <tr v-for="h in historial" :key="h.id" class="hover:bg-dark-bg/50 transition-colors">
+                  <td class="px-6 py-4 text-sm text-text-muted whitespace-nowrap">{{ new Date(h.created_at).toLocaleString('es-CL') }}</td>
+                  <td class="px-6 py-4 text-sm font-medium text-text-primary">{{ h.usuario_nombre || 'Usuario Eliminado' }}</td>
+                  <td class="px-6 py-4">
+                    <span class="badge text-[10px] px-2 py-0.5 border" :class="roleStyles[h.rol_usuario]?.badge ?? 'bg-dark-card border-dark-border'">{{ h.rol_usuario?.toUpperCase() ?? 'DESCONOCIDO' }}</span>
+                  </td>
+                  <td class="px-6 py-4 text-sm text-text-primary">{{ h.accion }}</td>
+                  <td class="px-6 py-4 text-sm text-text-muted"><span class="badge text-xs bg-dark-bg border border-dark-border">{{ h.modulo }}</span></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </template>
+
       </div>
     </main>
 
@@ -479,6 +506,52 @@
       </div>
     </div>
 
+    <!-- ===== MODAL AGREGAR BODEGA ===== -->
+    <div v-if="showBodegaModal" class="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto py-6 px-4">
+      <div class="fixed inset-0 bg-black/60 backdrop-blur-sm" @click="closeBodegaModal"></div>
+      <div class="relative card-dark rounded-2xl p-6 w-full max-w-md my-auto shadow-2xl">
+        <div class="flex items-center justify-between mb-6">
+          <div>
+            <h2 class="text-lg font-bold text-text-primary">Agregar bodega</h2>
+            <p class="text-xs text-text-muted mt-0.5">Crea el acceso para el gestor de la bodega</p>
+          </div>
+          <button @click="closeBodegaModal" class="text-text-muted hover:text-text-primary transition-colors text-2xl leading-none w-8 h-8 flex items-center justify-center rounded-lg hover:bg-dark-bg">×</button>
+        </div>
+        <div class="space-y-5">
+          <div>
+            <label class="block text-sm font-medium text-text-primary mb-2">Nombre de la bodega</label>
+            <input v-model="newBodega.nombre" type="text" placeholder="Ej: TecnoStore Santiago" class="w-full bg-dark-bg border border-dark-border rounded-lg px-4 py-3 text-sm text-text-primary placeholder-text-muted focus:outline-none focus:border-accent transition-colors" />
+          </div>
+          <div class="border-t border-dark-border pt-1">
+            <p class="text-xs text-text-muted mb-4">Credenciales de acceso para el gestor</p>
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-text-primary mb-2">Correo electrónico</label>
+            <input v-model="newBodega.correo" type="email" placeholder="gestor@bodega.com" class="w-full bg-dark-bg border border-dark-border rounded-lg px-4 py-3 text-sm text-text-primary placeholder-text-muted focus:outline-none focus:border-accent transition-colors" />
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-text-primary mb-2">Número de teléfono</label>
+            <input v-model="newBodega.telefono" type="tel" placeholder="+56 9 1234 5678" class="w-full bg-dark-bg border border-dark-border rounded-lg px-4 py-3 text-sm text-text-primary placeholder-text-muted focus:outline-none focus:border-accent transition-colors" />
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-text-primary mb-2">Contraseña de acceso</label>
+            <input v-model="newBodega.password" type="password" placeholder="Mínimo 8 caracteres" class="w-full bg-dark-bg border border-dark-border rounded-lg px-4 py-3 text-sm text-text-primary placeholder-text-muted focus:outline-none focus:border-accent transition-colors" />
+          </div>
+          <div class="rounded-lg border border-accent/20 bg-accent/5 p-3 flex items-start gap-2">
+            <span class="text-accent text-sm mt-0.5">ℹ️</span>
+            <p class="text-xs text-text-muted leading-relaxed">El gestor usará estas credenciales para ingresar al sistema y administrar el stock de su bodega.</p>
+          </div>
+          <p v-if="bodegaError" class="text-xs text-red-400 bg-red-500/10 border border-red-500/20 rounded-lg px-4 py-2.5">{{ bodegaError }}</p>
+        </div>
+        <div class="flex gap-3 mt-8">
+          <button @click="saveNewBodega" :disabled="savingBodega" class="btn-primary flex-1 text-sm">
+            {{ savingBodega ? 'Creando...' : 'Crear bodega' }}
+          </button>
+          <button @click="closeBodegaModal" class="btn-secondary text-sm px-5">Cancelar</button>
+        </div>
+      </div>
+    </div>
+
     <!-- ===== MODAL ELIMINAR BODEGA ===== -->
     <div v-if="showDeleteBodegaModal" class="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto py-6 px-4">
       <div class="fixed inset-0 bg-black/60 backdrop-blur-sm" @click="showDeleteBodegaModal = false"></div>
@@ -486,6 +559,7 @@
         <div class="w-14 h-14 rounded-full bg-red-500/10 border border-red-500/20 flex items-center justify-center mx-auto mb-4 text-2xl">🗑️</div>
         <h2 class="text-lg font-bold text-text-primary mb-2">Eliminar bodega</h2>
         <p class="text-text-muted text-sm mb-1">¿Eliminar <span class="text-text-primary font-semibold">{{ deletingBodega?.nombre }}</span>?</p>
+        <p v-if="deleteBodegaError" class="text-xs text-red-400 bg-red-500/10 border border-red-500/20 rounded-lg px-4 py-2.5 mb-2">{{ deleteBodegaError }}</p>
         <p class="text-xs text-text-muted mb-6 px-4">Se eliminarán también todos sus componentes.</p>
         <div class="flex gap-3">
           <button @click="confirmDeleteBodega" :disabled="savingDeleteBodega" class="flex-1 py-3 rounded-lg text-sm font-medium bg-red-500/10 text-red-400 border border-red-500/20 hover:bg-red-500/20 transition-colors">
@@ -580,17 +654,19 @@ const activeSection = ref('proveedores')
 
 const sections = computed(() => [
   { id: 'proveedores',       icon: '🏢', label: 'Proveedores',       description: `${proveedores.value.length} proveedores`,       cta: '+ Agregar proveedor', count: proveedores.value.length   },
-  { id: 'bodegas',           icon: '🏪', label: 'Bodegas',           description: `${bodegas.value.length} bodegas`,               cta: null,                  count: bodegas.value.length        },
+  { id: 'bodegas',           icon: '🏪', label: 'Bodegas',           description: `${bodegas.value.length} bodegas`,               cta: '+ Agregar bodega',                  count: bodegas.value.length        },
   { id: 'componentes',       icon: '🔧', label: 'Componentes',       description: `${componentes.value.length} componentes`,       cta: null,                  count: componentes.value.length    },
   { id: 'cotizaciones',      icon: '📄', label: 'Cotizaciones',      description: `${cotizaciones.value.length} cotizaciones`,     cta: null,                  count: cotizaciones.value.length   },
   { id: 'crear-usuario',     icon: '➕', label: 'Crear usuario',     description: 'Registrar nuevo usuario',                       cta: null,                  count: null                        },
   { id: 'gestionar-usuarios',icon: '👥', label: 'Gestionar usuarios',description: `${usuarios.value.length} usuarios`,            cta: '+ Crear usuario',     count: usuarios.value.length       },
+  { id: 'historial',         icon: '📋', label: 'Historial',         description: 'Registro global de acciones',                   cta: null,                  count: historial.value.length      },
 ])
 
 const currentSection = computed(() => sections.value.find(s => s.id === activeSection.value))
 
 function handleCta() {
   if (activeSection.value === 'proveedores')        showProveedorModal.value = true
+  if (activeSection.value === 'bodegas')            showBodegaModal.value = true
   if (activeSection.value === 'gestionar-usuarios') activeSection.value = 'crear-usuario'
 }
 
@@ -692,7 +768,7 @@ async function saveNewProveedor() {
     })
     const data = await res.json()
     if (!res.ok) return proveedorError.value = data.message ?? 'Error al crear'
-    await fetchProveedores()
+    await fetchProveedores(); await fetchHistorial()
     closeProveedorModal()
   } catch(e) { proveedorError.value = 'Error de conexión' } finally { savingProveedor.value = false }
 }
@@ -701,7 +777,7 @@ async function cambiarEstadoProveedor(p, estadoNuevo) {
   try {
     const res = await fetch(`${API}/proveedores`, {
       method: 'PUT',
-      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getToken()}` },
+      headers: { 'Content-Type': 'application/json', Accept: 'application/json', Authorization: `Bearer ${getToken()}` },
       body: JSON.stringify({
         id: p.id,
         nombre: p.nombre, // Requerido por la validación
@@ -709,7 +785,7 @@ async function cambiarEstadoProveedor(p, estadoNuevo) {
       })
     })
     if (res.ok) {
-      await fetchProveedores()
+      await fetchProveedores(); await fetchHistorial()
     }
   } catch(e) { console.error('Error al cambiar de estado', e) }
 }
@@ -719,7 +795,7 @@ async function toggleActivoProveedor(p) {
   try {
     const res = await fetch(`${API}/proveedores`, {
       method: 'PUT',
-      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getToken()}` },
+      headers: { 'Content-Type': 'application/json', Accept: 'application/json', Authorization: `Bearer ${getToken()}` },
       body: JSON.stringify({
         id: p.id,
         nombre: p.nombre,
@@ -727,7 +803,7 @@ async function toggleActivoProveedor(p) {
       })
     })
     if (res.ok) {
-      await fetchProveedores()
+      await fetchProveedores(); await fetchHistorial()
     }
   } catch(e) { console.error('Error al desactivar proveedor', e) }
 }
@@ -747,7 +823,7 @@ async function saveEditProveedor() {
   try {
     const res = await fetch(`${API}/proveedores`, {
       method: 'PUT',
-      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getToken()}` },
+      headers: { 'Content-Type': 'application/json', Accept: 'application/json', Authorization: `Bearer ${getToken()}` },
       body: JSON.stringify({
         id: editingProveedor.value.id,
         nombre: editingProveedor.value.nombre,
@@ -758,7 +834,7 @@ async function saveEditProveedor() {
     const data = await res.json()
     if (!res.ok) return editProveedorError.value = data.message ?? 'Error al guardar cambios'
     
-    await fetchProveedores()
+    await fetchProveedores(); await fetchHistorial()
     showEditProveedorModal.value = false
   } catch(e) { 
     editProveedorError.value = 'Error de conexión' 
@@ -773,8 +849,13 @@ const loadingBodegas     = ref(false)
 const filterBodega       = ref('')
 const showEditBodegaModal   = ref(false)
 const showDeleteBodegaModal = ref(false)
+const showBodegaModal       = ref(false)
+const newBodega             = ref({ nombre: '', correo: '', telefono: '', password: '' })
+const bodegaError           = ref('')
+const savingBodega          = ref(false)
 const editingBodega      = ref({})
 const deletingBodega     = ref(null)
+const deleteBodegaError  = ref('')
 const editBodegaError    = ref('')
 const savingEditBodega   = ref(false)
 const savingDeleteBodega = ref(false)
@@ -788,7 +869,7 @@ const filteredBodegas = computed(() => {
 async function fetchBodegas() {
   loadingBodegas.value = true
   try {
-    const res = await fetch(`${API}/bodegas/`, { headers: { Authorization: `Bearer ${getToken()}` } })
+    const res = await fetch(`${API}/bodegas`, { headers: { Authorization: `Bearer ${getToken()}` } })
     const data = await res.json()
     if (res.ok) bodegas.value = data.bodegas
   } catch(e) { console.error(e) } finally { loadingBodegas.value = false }
@@ -801,38 +882,71 @@ async function saveEditBodega() {
   if (!editingBodega.value.nombre) return editBodegaError.value = 'El nombre es requerido'
   savingEditBodega.value = true
   try {
-    const res = await fetch(`${API}/bodegas/`, {
+    const res = await fetch(`${API}/bodegas`, {
       method: 'PUT',
-      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getToken()}` },
+      headers: { 'Content-Type': 'application/json', Accept: 'application/json', Authorization: `Bearer ${getToken()}` },
       body: JSON.stringify({ id: editingBodega.value.id, nombre: editingBodega.value.nombre, telefono: editingBodega.value.telefono, activa: editingBodega.value.activa, proveedor_id: editingBodega.value.proveedor_id })
     })
     const data = await res.json()
-    if (!res.ok) return editBodegaError.value = data.error ?? 'Error'
-    await fetchBodegas()
+    if (!res.ok) return editBodegaError.value = data.message ?? 'Error'
+    await fetchBodegas(); await fetchHistorial()
     showEditBodegaModal.value = false
   } catch(e) { editBodegaError.value = 'Error de conexión' } finally { savingEditBodega.value = false }
 }
 
 async function toggleBodega(b) {
-  await fetch(`${API}/bodegas/`, {
+  await fetch(`${API}/bodegas`, {
     method: 'PUT',
-    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getToken()}` },
+    headers: { 'Content-Type': 'application/json', Accept: 'application/json', Authorization: `Bearer ${getToken()}` },
     body: JSON.stringify({ id: b.id, nombre: b.nombre, telefono: b.telefono, activa: b.activa == 1 ? 0 : 1, proveedor_id: b.proveedor_id })
   })
-  await fetchBodegas()
+  await fetchBodegas(); await fetchHistorial()
 }
 
-function openDeleteBodega(b) { deletingBodega.value = b; showDeleteBodegaModal.value = true }
+function openDeleteBodega(b) {
+  deletingBodega.value = b;
+  deleteBodegaError.value = '';
+  showDeleteBodegaModal.value = true
+}
 
 async function confirmDeleteBodega() {
+  deleteBodegaError.value = ''
   savingDeleteBodega.value = true
   try {
-    await fetch(`${API}/bodegas/?id=${deletingBodega.value.id}`, {
-      method: 'DELETE', headers: { Authorization: `Bearer ${getToken()}` }
+    const res = await fetch(`${API}/bodegas?id=${deletingBodega.value.id}`, {
+      method: 'DELETE', headers: { Accept: 'application/json', Authorization: `Bearer ${getToken()}` }
     })
-    await fetchBodegas()
+    const data = await res.json()
+    if (!res.ok) {
+        deleteBodegaError.value = data.message ?? 'Error al eliminar'
+        return
+    }
+    await fetchBodegas(); await fetchHistorial()
     showDeleteBodegaModal.value = false
-  } catch(e) { console.error(e) } finally { savingDeleteBodega.value = false }
+  } catch(e) { console.error(e); deleteBodegaError.value = 'Error de conexión' } finally { savingDeleteBodega.value = false }
+}
+
+function closeBodegaModal() {
+  showBodegaModal.value = false
+  bodegaError.value = ''
+}
+
+async function saveNewBodega() {
+  bodegaError.value = ''
+  if (!newBodega.value.nombre || !newBodega.value.correo || !newBodega.value.password)
+    return bodegaError.value = 'Nombre, correo y contraseña son requeridos'
+  savingBodega.value = true
+  try {
+    const res = await fetch(`${API}/bodegas`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Accept: 'application/json', Authorization: `Bearer ${getToken()}` },
+      body: JSON.stringify(newBodega.value)
+    })
+    const data = await res.json()
+    if (!res.ok) return bodegaError.value = data.message ?? 'Error al crear'
+    await fetchBodegas(); await fetchHistorial()
+    closeBodegaModal()
+  } catch(e) { bodegaError.value = 'Error de conexión' } finally { savingBodega.value = false }
 }
 
 // ── Componentes ───────────────────────────────────────────
@@ -849,7 +963,7 @@ const filteredComponentes = computed(() => {
 async function fetchComponentes() {
   loadingComponentes.value = true
   try {
-    const res = await fetch(`${API}/componentes/admin/`, { headers: { Authorization: `Bearer ${getToken()}` } })
+    const res = await fetch(`${API}/componentes/admin`, { headers: { Authorization: `Bearer ${getToken()}` } })
     const data = await res.json()
     if (res.ok) componentes.value = data.componentes
   } catch(e) { console.error(e) } finally { loadingComponentes.value = false }
@@ -862,7 +976,7 @@ const loadingCotizaciones = ref(false)
 async function fetchCotizaciones() {
   loadingCotizaciones.value = true
   try {
-    const res = await fetch(`${API}/cotizaciones/`, { headers: { Authorization: `Bearer ${getToken()}` } })
+    const res = await fetch(`${API}/cotizaciones`, { headers: { Authorization: `Bearer ${getToken()}` } })
     const data = await res.json()
     if (res.ok) cotizaciones.value = data.cotizaciones
   } catch(e) { console.error(e) } finally { loadingCotizaciones.value = false }
@@ -893,7 +1007,7 @@ const filteredUsuarios = computed(() => {
 async function fetchUsuarios() {
   loadingUsuarios.value = true
   try {
-    const res = await fetch(`${API}/usuarios/`, { headers: { Authorization: `Bearer ${getToken()}` } })
+    const res = await fetch(`${API}/usuarios`, { headers: { Authorization: `Bearer ${getToken()}` } })
     const data = await res.json()
     if (res.ok) usuarios.value = data.usuarios
   } catch(e) { console.error(e) } finally { loadingUsuarios.value = false }
@@ -910,16 +1024,16 @@ async function saveNewUser() {
     return createUserError.value = 'Nombre, correo y contraseña son requeridos'
   savingUser.value = true
   try {
-    const res = await fetch(`${API}/usuarios/`, {
+    const res = await fetch(`${API}/usuarios`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getToken()}` },
+      headers: { 'Content-Type': 'application/json', Accept: 'application/json', Authorization: `Bearer ${getToken()}` },
       body: JSON.stringify(newUser.value)
     })
     const data = await res.json()
-    if (!res.ok) return createUserError.value = data.error ?? 'Error al crear'
+    if (!res.ok) return createUserError.value = data.message ?? 'Error al crear'
     createUserSuccess.value = 'Usuario creado correctamente'
     resetNewUser()
-    await fetchUsuarios()
+    await fetchUsuarios(); await fetchHistorial()
   } catch(e) { createUserError.value = 'Error de conexión' } finally { savingUser.value = false }
 }
 
@@ -929,14 +1043,14 @@ async function saveEditUsuario() {
   editUsuarioError.value = ''
   savingEditUsuario.value = true
   try {
-    const res = await fetch(`${API}/usuarios/`, {
+    const res = await fetch(`${API}/usuarios`, {
       method: 'PUT',
-      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getToken()}` },
+      headers: { 'Content-Type': 'application/json', Accept: 'application/json', Authorization: `Bearer ${getToken()}` },
       body: JSON.stringify(editingUsuario.value)
     })
     const data = await res.json()
-    if (!res.ok) return editUsuarioError.value = data.error ?? 'Error'
-    await fetchUsuarios()
+    if (!res.ok) return editUsuarioError.value = data.message ?? 'Error'
+    await fetchUsuarios(); await fetchHistorial()
     showEditUsuarioModal.value = false
   } catch(e) { editUsuarioError.value = 'Error de conexión' } finally { savingEditUsuario.value = false }
 }
@@ -946,10 +1060,10 @@ function openDeleteUsuario(u) { deletingUsuario.value = u; showDeleteUsuarioModa
 async function confirmDeleteUsuario() {
   savingDeleteUsuario.value = true
   try {
-    await fetch(`${API}/usuarios/?id=${deletingUsuario.value.id}`, {
+    await fetch(`${API}/usuarios?id=${deletingUsuario.value.id}`, {
       method: 'DELETE', headers: { Authorization: `Bearer ${getToken()}` }
     })
-    await fetchUsuarios()
+    await fetchUsuarios(); await fetchHistorial()
     showDeleteUsuarioModal.value = false
   } catch(e) { console.error(e) } finally { savingDeleteUsuario.value = false }
 }
@@ -957,9 +1071,9 @@ async function confirmDeleteUsuario() {
 async function toggleActivoUsuario(u) {
   const activoNuevo = u.activo == 1 ? 0 : 1
   try {
-    const res = await fetch(`${API}/usuarios/`, {
+    const res = await fetch(`${API}/usuarios`, {
       method: 'PUT',
-      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getToken()}` },
+      headers: { 'Content-Type': 'application/json', Accept: 'application/json', Authorization: `Bearer ${getToken()}` },
       body: JSON.stringify({
         id: u.id,
         nombre: u.nombre,
@@ -969,12 +1083,25 @@ async function toggleActivoUsuario(u) {
       })
     })
     if (res.ok) {
-      await fetchUsuarios()
+      await fetchUsuarios(); await fetchHistorial()
     }
   } catch(e) { console.error('Error al cambiar de estado', e) }
 }
 
 
+
+// ── Historial ─────────────────────────────────────────────
+const historial = ref([])
+const loadingHistorial = ref(false)
+
+async function fetchHistorial() {
+  loadingHistorial.value = true
+  try {
+    const res = await fetch(`${API}/historial`, { headers: { Authorization: `Bearer ${getToken()}` } })
+    const data = await res.json()
+    if (res.ok) historial.value = data.historial
+  } catch(e) { console.error(e) } finally { loadingHistorial.value = false }
+}
 
 // ── Lifecycle ─────────────────────────────────────────────
 onMounted(() => {
@@ -983,5 +1110,6 @@ onMounted(() => {
   fetchComponentes()
   fetchCotizaciones()
   fetchUsuarios()
+  fetchHistorial()
 })
 </script>

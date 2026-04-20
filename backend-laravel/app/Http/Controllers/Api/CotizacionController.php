@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use App\Helpers\AuditLog;
 
 class CotizacionController extends Controller
 {
@@ -98,7 +99,8 @@ class CotizacionController extends Controller
         }
 
         $total = $request->input('total', 0);
-        $perfil = $request->input('perfil', '');
+        $perfilesValidos = ['gaming', 'oficina', 'diseño', 'estudio'];
+        $perfil = in_array($request->input('perfil'), $perfilesValidos) ? $request->input('perfil') : 'gaming';
 
         // Usamos una trasacción de base de datos para asegurar integridad
         $cotizacionId = null;
@@ -124,6 +126,8 @@ class CotizacionController extends Controller
             }
             DB::table('cotizacion_items')->insert($itemsData);
         });
+
+        AuditLog::log($request, "Creó una nueva cotización (ID: {$cotizacionId}) por {$total}", 'Cotizaciones');
 
         return response()->json(['message' => 'Cotización guardada', 'id' => $cotizacionId], 201);
     }
@@ -160,6 +164,8 @@ class CotizacionController extends Controller
             DB::table('cotizacion_items')->where('cotizacion_id', $id)->delete();
             DB::table('cotizaciones')->where('id', $id)->delete();
         });
+
+        AuditLog::log($request, "Eliminó la cotización (ID: {$id})", 'Cotizaciones');
 
         return response()->json(['message' => 'Cotización eliminada']);
     }
