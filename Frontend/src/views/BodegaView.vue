@@ -188,7 +188,7 @@
       </div>
     </main>
 
-    <!-- ===== MODAL AÑADIR COMPONENTE ===== -->
+    <!-- ==== MODAL AÑADIR COMPONENTE ==== -->
     <div v-if="showAddModal" class="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto py-6 px-4">
       <div class="fixed inset-0 bg-black/60 backdrop-blur-sm" @click="closeAddModal"></div>
       <div class="relative card-dark rounded-2xl p-6 w-full max-w-lg my-auto shadow-2xl">
