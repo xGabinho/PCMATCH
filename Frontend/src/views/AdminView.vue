@@ -235,7 +235,7 @@
         </template>
 
         <!-- ===== GESTIONAR USUARIOS ===== -->
-        <template v-if="activeSection === 'gestionar-usuarios'">
+<template v-if="activeSection === 'gestionar-usuarios'">
           <div class="grid grid-cols-4 gap-4 mb-8">
             <div class="card-dark rounded-xl p-5">
               <p class="text-text-muted text-xs uppercase tracking-wider mb-2">Total usuarios</p>
@@ -251,7 +251,7 @@
             </div>
             <div class="card-dark rounded-xl p-5">
               <p class="text-text-muted text-xs uppercase tracking-wider mb-2">Inactivos</p>
-              <p class="text-3xl font-bold text-red-400 font-mono">{{ usuarios.filter(u => u.estado == 0).length }}</p>
+              <p class="text-3xl font-bold text-red-400 font-mono">{{ usuarios.filter(u => u.activo == 0).length }}</p>
             </div>
           </div>
 
@@ -267,10 +267,10 @@
               </thead>
               <tbody class="divide-y divide-dark-border">
                 <tr v-if="filteredUsuarios.length === 0"><td colspan="7" class="px-6 py-12 text-center text-text-muted text-sm">Sin usuarios</td></tr>
-                <tr v-for="u in filteredUsuarios" :key="u.id" class="hover:bg-dark-bg/50 transition-colors" :class="u.estado == 0 ? 'opacity-50' : ''">
+                <tr v-for="u in filteredUsuarios" :key="u.id" class="hover:bg-dark-bg/50 transition-colors" :class="u.activo == 0 ? 'opacity-50' : ''">
                   <td class="px-6 py-4">
                     <div class="flex items-center gap-3">
-                      <div class="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0" :class="roleStyles[u.rol]?.avatar ?? 'bg-dark-card text-text-muted'">
+                      <div class="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0" :class="roleStyles[u.rol?.toLowerCase()]?.avatar ?? 'bg-dark-card text-text-muted'">
                         {{ u.nombre.charAt(0) }}
                       </div>
                       <span class="text-sm font-medium text-text-primary">{{ u.nombre }} {{ u.apellido }}</span>
@@ -279,22 +279,23 @@
                   <td class="px-6 py-4 text-sm text-text-muted">{{ u.correo }}</td>
                   <td class="px-6 py-4 text-sm text-text-muted">{{ u.telefono || '—' }}</td>
                   <td class="px-6 py-4">
-                    <span class="badge text-xs px-2.5 py-1" :class="roleStyles[u.rol]?.badge ?? ''">{{ roleStyles[u.rol]?.label ?? u.rol }}</span>
+                    <span class="badge text-xs px-2.5 py-1" :class="roleStyles[u.rol?.toLowerCase()]?.badge ?? ''">{{ roleStyles[u.rol?.toLowerCase()]?.label ?? u.rol }}</span>
                   </td>
                   <td class="px-6 py-4">
-                    <span class="badge text-xs px-2.5 py-1" :class="u.estado == 1 ? 'bg-green-500/10 text-green-400 border border-green-500/20' : 'bg-red-500/10 text-red-400 border border-red-500/20'">
-                      {{ u.estado == 1 ? 'Activo' : 'Inactivo' }}
+                    <span class="badge text-xs px-2.5 py-1" :class="u.activo == 1 ? 'bg-green-500/10 text-green-400 border border-green-500/20' : 'bg-red-500/10 text-red-400 border border-red-500/20'">
+                      {{ u.activo == 1 ? 'Activo' : 'Inactivo' }}
                     </span>
                   </td>
                   <td class="px-6 py-4 text-sm text-text-muted">{{ formatDate(u.created_at) }}</td>
                   <td class="px-6 py-4">
                     <div class="flex gap-2">
                       <button @click="openEditModal(u)" class="text-xs text-text-muted hover:text-yellow-400 px-2 py-1 rounded hover:bg-yellow-400/10 transition-colors">Editar</button>
+                      
                       <button @click="openDeleteModal(u)" class="text-xs px-2 py-1 rounded transition-colors"
-                        :class="u.estado == 1
+                        :class="u.activo == 1
                           ? 'text-text-muted hover:text-red-400 hover:bg-red-400/10'
                           : 'text-text-muted hover:text-green-400 hover:bg-green-400/10'">
-                        {{ u.estado == 1 ? 'Desactivar' : 'Reactivar' }}
+                        {{ u.activo == 1 ? 'Desactivar' : 'Reactivar' }}
                       </button>
                     </div>
                   </td>
@@ -365,36 +366,39 @@
       </div>
     </div>
 
-    <!-- ===== MODAL DESACTIVAR / REACTIVAR USUARIO ===== -->
     <div v-if="showDeleteModal" class="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto py-6 px-4">
-      <div class="fixed inset-0 bg-black/60 backdrop-blur-sm" @click="showDeleteModal = false"></div>
-      <div class="relative card-dark rounded-2xl p-6 w-full max-w-sm my-auto shadow-2xl text-center">
-        <div class="w-14 h-14 rounded-full flex items-center justify-center mx-auto mb-4 text-2xl"
-          :class="deletingUser?.estado == 1 ? 'bg-red-500/10 border border-red-500/20' : 'bg-green-500/10 border border-green-500/20'">
-          {{ deletingUser?.estado == 1 ? '🚫' : '✅' }}
-        </div>
-        <h2 class="text-lg font-bold text-text-primary mb-2">
-          {{ deletingUser?.estado == 1 ? 'Desactivar usuario' : 'Reactivar usuario' }}
-        </h2>
-        <p class="text-text-muted text-sm mb-1">
-          {{ deletingUser?.estado == 1 ? '¿Desactivar a' : '¿Reactivar a' }}
-        </p>
-        <p class="text-text-primary font-semibold mb-2">{{ deletingUser?.nombre }} {{ deletingUser?.apellido }}?</p>
-        <p class="text-xs text-text-muted mb-6 px-4">
-          {{ deletingUser?.estado == 1 ? 'El usuario no podrá iniciar sesión mientras esté inactivo.' : 'El usuario podrá volver a iniciar sesión.' }}
-        </p>
-        <div class="flex gap-3">
-          <button @click="confirmDeleteUser" :disabled="savingDeleteUser"
-            class="flex-1 py-3 rounded-lg text-sm font-medium border transition-colors"
-            :class="deletingUser?.estado == 1
-              ? 'bg-red-500/10 text-red-400 border-red-500/20 hover:bg-red-500/20'
-              : 'bg-green-500/10 text-green-400 border-green-500/20 hover:bg-green-500/20'">
-            {{ savingDeleteUser ? 'Procesando...' : (deletingUser?.estado == 1 ? 'Sí, desactivar' : 'Sí, reactivar') }}
-          </button>
-          <button @click="showDeleteModal = false" class="flex-1 btn-secondary text-sm">Cancelar</button>
-        </div>
-      </div>
+  <div class="fixed inset-0 bg-black/60 backdrop-blur-sm" @click="showDeleteModal = false"></div>
+  <div class="relative card-dark rounded-2xl p-6 w-full max-w-sm my-auto shadow-2xl text-center">
+    
+    <div class="w-14 h-14 rounded-full flex items-center justify-center mx-auto mb-4 text-2xl"
+      :class="deletingUser?.activo == 1 ? 'bg-red-500/10 border border-red-500/20' : 'bg-green-500/10 border border-green-500/20'">
+      {{ deletingUser?.activo == 1 ? '🚫' : '✅' }}
     </div>
+    
+    <h2 class="text-lg font-bold text-text-primary mb-2">
+      {{ deletingUser?.activo == 1 ? 'Desactivar usuario' : 'Reactivar usuario' }}
+    </h2>
+    <p class="text-text-muted text-sm mb-1">
+      {{ deletingUser?.activo == 1 ? '¿Desactivar a' : '¿Reactivar a' }}
+    </p>
+    <p class="text-text-primary font-semibold mb-2">{{ deletingUser?.nombre }} {{ deletingUser?.apellido }}?</p>
+    <p class="text-xs text-text-muted mb-6 px-4">
+      {{ deletingUser?.activo == 1 ? 'El usuario no podrá iniciar sesión mientras esté inactivo.' : 'El usuario podrá volver a iniciar sesión.' }}
+    </p>
+    
+    <div class="flex gap-3">
+      <button @click="procesarCambioEstado" :disabled="savingDeleteUser"
+        class="flex-1 py-3 rounded-lg text-sm font-medium border transition-colors"
+        :class="deletingUser?.activo == 1
+          ? 'bg-red-500/10 text-red-400 border-red-500/20 hover:bg-red-500/20'
+          : 'bg-green-500/10 text-green-400 border-green-500/20 hover:bg-green-500/20'">
+        {{ savingDeleteUser ? 'Procesando...' : (deletingUser?.activo == 1 ? 'Sí, desactivar' : 'Sí, reactivar') }}
+      </button>
+      
+      <button @click="showDeleteModal = false" class="flex-1 btn-secondary text-sm">Cancelar</button>
+    </div>
+  </div>
+</div>
 
     <!-- ===== MODAL AGREGAR BODEGA ===== -->
     <div v-if="showBodegaModal" class="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto py-6 px-4">
@@ -416,7 +420,7 @@
             <label class="block text-sm font-medium text-text-primary mb-2">Proveedor asignado (opcional)</label>
             <select v-model="newBodega.proveedor_id" class="w-full bg-dark-bg border border-dark-border rounded-lg px-4 py-3 text-sm text-text-primary focus:outline-none focus:border-accent transition-colors appearance-none">
               <option :value="null">Ninguno</option>
-              <option v-for="p in proveedores" :key="p.id" :value="p.id">{{ p.nombre }}</option>
+              <option v-for="p in proveedores.filter(p => p.activo == 1)" :key="p.id" :value="p.id">{{ p.nombre }}</option>
             </select>
           </div>
           <div class="border-t border-dark-border pt-1">
@@ -470,7 +474,7 @@
             <label class="block text-sm font-medium text-text-primary mb-2">Proveedor asignado</label>
             <select v-model="editingBodega.proveedor_id" class="w-full bg-dark-bg border border-dark-border rounded-lg px-4 py-3 text-sm text-text-primary focus:outline-none focus:border-accent transition-colors appearance-none">
               <option :value="null">Ninguno</option>
-              <option v-for="p in proveedores" :key="p.id" :value="p.id">{{ p.nombre }}</option>
+              <option v-for="p in proveedores.filter(p => p.activo == 1)" :key="p.id" :value="p.id">{{ p.nombre }}</option>
             </select>
           </div>
           <div>
@@ -500,6 +504,7 @@
         <p class="text-text-muted text-sm mb-1">¿Estás seguro de que deseas eliminar</p>
         <p class="text-text-primary font-semibold mb-2">{{ deletingBodega?.nombre }}?</p>
         <p class="text-xs text-text-muted mb-6 px-4">Se eliminarán también todos sus componentes.</p>
+        <p v-if="deleteBodegaError" class="text-xs text-red-400 bg-red-500/10 border border-red-500/20 rounded-lg px-4 py-2.5 mb-4 text-center">{{ deleteBodegaError }}</p>
         <div class="flex gap-3">
           <button @click="confirmDeleteBodega" :disabled="savingDeleteBodega" class="flex-1 py-3 rounded-lg text-sm font-medium bg-red-500/10 text-red-400 border border-red-500/20 hover:bg-red-500/20 transition-colors">
             {{ savingDeleteBodega ? 'Eliminando...' : 'Sí, eliminar' }}
@@ -624,6 +629,7 @@ const showDeleteBodegaModal = ref(false)
 const deletingBodega = ref(null)
 const savingBodega = ref(false)
 const savingDeleteBodega = ref(false)
+const deleteBodegaError  = ref('')
 const bodegaError = ref('')
 const newBodega = ref({ nombre: '', correo: '', telefono: '', password: '', proveedor_id: null })
 const showEditBodegaModal = ref(false)
@@ -664,6 +670,37 @@ function openBodegaModal() {
 function closeBodegaModal() {
   showBodegaModal.value = false
   bodegaError.value = ''
+}
+
+async function procesarCambioEstado() {
+  savingDeleteUser.value = true
+  try {
+    const u = deletingUser.value
+    const nuevoEstado = u.activo == 1 ? 0 : 1
+    const res = await fetch(`${API}/usuarios`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getToken()}` },
+      body: JSON.stringify({
+        id: u.id,
+        nombre: u.nombre,
+        apellido: u.apellido,
+        correo: u.correo,
+        telefono: u.telefono,
+        rol: u.rol,
+        activo: nuevoEstado
+      })
+    })
+    if (!res.ok) {
+      const data = await res.json()
+      console.error('Error al cambiar estado:', data.message)
+    }
+    await fetchUsuarios()
+    showDeleteModal.value = false
+  } catch (e) {
+    console.error('Error de conexión:', e)
+  } finally {
+    savingDeleteUser.value = false
+  }
 }
 
 async function saveNewBodega() {
@@ -719,19 +756,31 @@ async function toggleBodega(b) {
 
 function openDeleteBodega(b) {
   deletingBodega.value = b
+  deleteBodegaError.value = ''
   showDeleteBodegaModal.value = true
 }
 
 async function confirmDeleteBodega() {
+  deleteBodegaError.value = ''
   savingDeleteBodega.value = true
   try {
-    await fetch(`${API}/bodegas?id=${deletingBodega.value.id}`, {
+    const res = await fetch(`${API}/bodegas?id=${deletingBodega.value.id}`, {
       method: 'DELETE',
-      headers: { Authorization: `Bearer ${getToken()}` }
+      headers: { Accept: 'application/json', Authorization: `Bearer ${getToken()}` }
     })
+    const data = await res.json()
+    if (!res.ok) {
+        deleteBodegaError.value = data.message ?? 'Error al eliminar'
+        return
+    }
     await fetchBodegas()
     showDeleteBodegaModal.value = false
-  } catch(e) { console.error(e) } finally { savingDeleteBodega.value = false }
+  } catch(e) { 
+    console.error(e)
+    deleteBodegaError.value = 'Error de conexión'
+  } finally { 
+    savingDeleteBodega.value = false 
+  }
 }
 
 // ── Componentes ───────────────────────────────────────────

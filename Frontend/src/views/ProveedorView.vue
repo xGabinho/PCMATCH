@@ -281,6 +281,7 @@
         <h2 class="text-lg font-bold text-text-primary mb-2">Eliminar bodega</h2>
         <p class="text-text-muted text-sm mb-1">¿Eliminar <span class="text-text-primary font-semibold">{{ deletingBodega?.nombre }}</span>?</p>
         <p class="text-xs text-text-muted mb-6 px-4">Se eliminarán también todos sus componentes.</p>
+        <p v-if="deleteBodegaError" class="text-xs text-red-400 bg-red-500/10 border border-red-500/20 rounded-lg px-4 py-2.5 mb-4">{{ deleteBodegaError }}</p>
         <div class="flex gap-3">
           <button @click="confirmDeleteBodega" :disabled="savingDeleteBodega" class="flex-1 py-3 rounded-lg text-sm font-medium bg-red-500/10 text-red-400 border border-red-500/20 hover:bg-red-500/20 transition-colors">
             {{ savingDeleteBodega ? 'Eliminando...' : 'Sí, eliminar' }}
@@ -398,6 +399,7 @@ const editBodegaError    = ref('')
 const savingBodega       = ref(false)
 const savingEditBodega   = ref(false)
 const savingDeleteBodega = ref(false)
+const deleteBodegaError  = ref('')
 
 const filteredBodegas = computed(() => {
   if (!filterBodega.value.trim()) return bodegas.value
@@ -451,17 +453,29 @@ async function saveEditBodega() {
   } catch(e) { editBodegaError.value = 'Error de conexión' } finally { savingEditBodega.value = false }
 }
 
-function openDeleteBodega(b) { deletingBodega.value = b; showDeleteBodegaModal.value = true }
+function openDeleteBodega(b) { deletingBodega.value = b; deleteBodegaError.value = ''; showDeleteBodegaModal.value = true }
 
 async function confirmDeleteBodega() {
+  deleteBodegaError.value = ''
   savingDeleteBodega.value = true
   try {
-    await fetch(`${API}/bodegas?id=${deletingBodega.value.id}`, {
-      method: 'DELETE', headers: { Authorization: `Bearer ${getToken()}` }
+    const res = await fetch(`${API}/bodegas?id=${deletingBodega.value.id}`, {
+      method: 'DELETE',
+      headers: { Accept: 'application/json', Authorization: `Bearer ${getToken()}` }
     })
+    const data = await res.json()
+    if (!res.ok) {
+      deleteBodegaError.value = data.message ?? 'Error al eliminar la bodega'
+      return
+    }
     await fetchBodegas()
     showDeleteBodegaModal.value = false
-  } catch(e) { console.error(e) } finally { savingDeleteBodega.value = false }
+  } catch(e) { 
+    console.error(e)
+    deleteBodegaError.value = 'Error de conexión'
+  } finally { 
+    savingDeleteBodega.value = false 
+  }
 }
 
 async function toggleActivoBodega(b) {

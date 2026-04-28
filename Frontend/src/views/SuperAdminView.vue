@@ -74,7 +74,9 @@
             </div>
             <div v-if="loadingProveedores" class="px-6 py-12 text-center text-text-muted text-sm">Cargando proveedores...</div>
             <table v-else class="w-full min-w-[640px]">
+              <thead>
                 <tr><th v-for="h in ['Razón Social','ID Legal','Contacto','Documento','Aprobación','Cuenta','Acciones']" :key="h" class="px-6 py-3 text-left text-xs text-text-muted uppercase tracking-wider font-medium">{{ h }}</th></tr>
+              </thead>
               <tbody class="divide-y divide-dark-border">
                 <tr v-if="filteredProveedores.length === 0"><td colspan="6" class="px-6 py-12 text-center text-text-muted text-sm">Sin proveedores registrados</td></tr>
                 <tr v-for="p in filteredProveedores" :key="p.id" class="hover:bg-dark-bg/50 transition-colors">
@@ -488,7 +490,7 @@
             <label class="block text-sm font-medium text-text-primary mb-2">Proveedor asignado</label>
             <select v-model="editingBodega.proveedor_id" class="w-full bg-dark-bg border border-dark-border rounded-lg px-4 py-3 text-sm text-text-primary focus:outline-none focus:border-accent transition-colors">
               <option :value="null">Sin proveedor</option>
-              <option v-for="p in proveedores" :key="p.id" :value="p.id">{{ p.nombre }}</option>
+              <option v-for="p in proveedores.filter(p => p.activo == 1)" :key="p.id" :value="p.id">{{ p.nombre }}</option>
             </select>
           </div>
           <div>
@@ -984,11 +986,16 @@ async function saveEditBodega() {
     const data = await res.json()
     if (!res.ok) return editBodegaError.value = data.message ?? 'Error'
     
-    // ✅ SOLUCIÓN: Actualización local
+    // ✅ SOLUCIÓN: Actualización local completa (incluyendo proveedor y estado)
     const index = bodegas.value.findIndex(b => b.id === editingBodega.value.id)
     if (index !== -1) {
       bodegas.value[index].nombre = editingBodega.value.nombre
       bodegas.value[index].telefono = editingBodega.value.telefono
+      bodegas.value[index].activa = editingBodega.value.activa
+      bodegas.value[index].proveedor_id = editingBodega.value.proveedor_id
+      // Actualizar el nombre del proveedor para que se refleje en la tabla
+      const prov = proveedores.value.find(p => p.id === editingBodega.value.proveedor_id)
+      bodegas.value[index].proveedor_nombre = prov ? prov.nombre : null
     }
 
     await fetchHistorial()

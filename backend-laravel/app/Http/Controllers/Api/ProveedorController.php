@@ -108,7 +108,7 @@ class ProveedorController extends Controller
 
         $proveedor->save();
 
-        AuditLog::log($request, "Creó el proveedor: {$proveedor->nombre}", 'Proveedores');
+        AuditLog::log($request, "Registró el proveedor «{$proveedor->nombre}» ({$proveedor->razon_social})", 'Proveedores');
 
         return response()->json(['message' => 'Proveedor creado', 'id' => $proveedor->id], 201);
     }
@@ -165,16 +165,10 @@ class ProveedorController extends Controller
         }
 
         $dirty = $proveedor->getDirty();
-        $cambios = [];
-        foreach ($dirty as $campo => $nuevo) {
-            if ($campo === 'updated_at') continue;
-            $viejo = $proveedor->getOriginal($campo);
-            $cambios[] = "{$campo}: '{$viejo}' -> '{$nuevo}'";
-        }
+        $detalles = AuditLog::formatChanges($dirty, $proveedor);
         $proveedor->save();
 
-        $detalles = empty($cambios) ? 'Sin cambios aparentes' : implode(', ', $cambios);
-        AuditLog::log($request, "Modificó el proveedor: {$proveedor->nombre}. Cambios: {$detalles}", 'Proveedores');
+        AuditLog::log($request, "Editó el proveedor «{$proveedor->nombre}» — {$detalles}", 'Proveedores');
 
         return response()->json(['message' => 'Proveedor actualizado']);
     }
@@ -203,7 +197,7 @@ class ProveedorController extends Controller
 
         $proveedor->delete();
 
-        AuditLog::log($request, "Eliminó el proveedor: {$proveedor->nombre}", 'Proveedores');
+        AuditLog::log($request, "Eliminó el proveedor «{$proveedor->nombre}»", 'Proveedores');
 
         return response()->json(['message' => 'Proveedor eliminado']);
     }

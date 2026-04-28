@@ -77,7 +77,7 @@ class UsuarioController extends Controller
             return response()->json(['success' => false, 'message' => 'Error al crear el usuario'], 500);
         }
 
-        AuditLog::log($request, "Creó el usuario con correo: {$usuario->correo}", 'Usuarios');
+        AuditLog::log($request, "Creó el usuario «{$usuario->nombre} {$usuario->apellido}» con rol " . ucfirst($usuario->rol), 'Usuarios');
 
         return response()->json([
             'message' => 'Usuario creado',
@@ -136,16 +136,10 @@ class UsuarioController extends Controller
             $usuario->activo = $request->input('activo');
         }
         $dirty = $usuario->getDirty();
-        $cambios = [];
-        foreach ($dirty as $campo => $nuevo) {
-            if ($campo === 'updated_at') continue;
-            $viejo = $usuario->getOriginal($campo);
-            $cambios[] = "{$campo}: '{$viejo}' -> '{$nuevo}'";
-        }
+        $detalles = AuditLog::formatChanges($dirty, $usuario);
         $usuario->save();
 
-        $detalles = empty($cambios) ? 'Sin cambios aparentes' : implode(', ', $cambios);
-        AuditLog::log($request, "Modificó el usuario con correo: {$usuario->correo}. Cambios: {$detalles}", 'Usuarios');
+        AuditLog::log($request, "Editó el usuario «{$usuario->nombre} {$usuario->apellido}» — {$detalles}", 'Usuarios');
 
         return response()->json([
             'message' => 'Usuario actualizado'
@@ -175,7 +169,7 @@ class UsuarioController extends Controller
 
         $usuario->delete();
 
-        AuditLog::log($request, "Eliminó el usuario con correo: {$usuario->correo}", 'Usuarios');
+        AuditLog::log($request, "Eliminó el usuario «{$usuario->nombre} {$usuario->apellido}»", 'Usuarios');
 
         return response()->json([
             'message' => 'Usuario eliminado'

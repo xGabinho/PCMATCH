@@ -99,6 +99,14 @@ class BodegaController extends Controller
             $proveedor_id = $user->id; // El proveedor auto-asigna su ID
         }
 
+        // Validar que el proveedor asignado esté activo
+        if ($proveedor_id) {
+            $proveedor = \App\Models\Proveedor::find($proveedor_id);
+            if (!$proveedor || $proveedor->activo != 1) {
+                return response()->json(['success' => false, 'message' => 'No se puede asignar un proveedor inactivo'], 400);
+            }
+        }
+
         $bodega = new \App\Models\Bodega();
         $bodega->nombre = $request->input('nombre');
         $bodega->telefono = $request->input('telefono', '');
@@ -108,7 +116,7 @@ class BodegaController extends Controller
         $bodega->proveedor_id = $proveedor_id;
         $bodega->save();
 
-        AuditLog::log($request, "Creó la bodega: {$bodega->nombre}", 'Bodegas');
+        AuditLog::log($request, "Creó la bodega «{$bodega->nombre}»", 'Bodegas');
 
         return response()->json(['message' => 'Bodega creada', 'id' => $bodega->id], 201);
     }
@@ -146,20 +154,36 @@ class BodegaController extends Controller
         // Superadmin puede reasignar proveedor
         if ($rol === 'superadmin' && $request->has('proveedor_id')) {
             $prov = $request->input('proveedor_id');
-            $bodega->proveedor_id = ($prov === '' || $prov === null) ? null : (int) $prov;
+            if ($prov !== '' && $prov !== null) {
+                $proveedorModel = \App\Models\Proveedor::find((int) $prov);
+                if (!$proveedorModel || $proveedorModel->activo != 1) {
+                    return response()->json(['success' => false, 'message' => 'No se puede asignar un proveedor inactivo'], 400);
+                }
+                $bodega->proveedor_id = (int) $prov;
+            } else {
+                $bodega->proveedor_id = null;
+            }
+        }
+
+        // Admin puede reasignar proveedor
+        if ($rol === 'admin' && $request->has('proveedor_id')) {
+            $prov = $request->input('proveedor_id');
+            if ($prov !== '' && $prov !== null) {
+                $proveedorModel = \App\Models\Proveedor::find((int) $prov);
+                if (!$proveedorModel || $proveedorModel->activo != 1) {
+                    return response()->json(['success' => false, 'message' => 'No se puede asignar un proveedor inactivo'], 400);
+                }
+                $bodega->proveedor_id = (int) $prov;
+            } else {
+                $bodega->proveedor_id = null;
+            }
         }
 
         $dirty = $bodega->getDirty();
-        $cambios = [];
-        foreach ($dirty as $campo => $nuevo) {
-            if ($campo === 'updated_at') continue;
-            $viejo = $bodega->getOriginal($campo);
-            $cambios[] = "{$campo}: '{$viejo}' -> '{$nuevo}'";
-        }
+        $detalles = AuditLog::formatChanges($dirty, $bodega);
         $bodega->save();
 
-        $detalles = empty($cambios) ? 'Sin cambios aparentes' : implode(', ', $cambios);
-        AuditLog::log($request, "Modificó la bodega: {$bodega->nombre}. Cambios: {$detalles}", 'Bodegas');
+        AuditLog::log($request, "Editó la bodega «{$bodega->nombre}» — {$detalles}", 'Bodegas');
 
         return response()->json(['message' => 'Bodega actualizada']);
     }
@@ -187,17 +211,30 @@ class BodegaController extends Controller
             return response()->json(['success' => false, 'message' => 'Bodega no encontrada'], 404);
         }
 
-        if (!is_null($bodega->proveedor_id)) {
-            return response()->json(['success' => false, 'message' => 'No se puede eliminar una bodega si tiene un proveedor asignado'], 400);
+        if ($rol === 'superadmin' || $rol === 'admin') {
+            // Si es admin/superadmin, solo bloqueamos si tiene un proveedor Y NO es el proveedor quien lo borra
+            // Pero en realidad, el admin debería poder borrarla si quiere, 
+            // aunque el requerimiento previo decía que no si tenía proveedor.
+            // Vamos a mantener la restricción para admins pero permitirla para proveedores sobre sus propias bodegas.
+            if (!is_null($bodega->proveedor_id)) {
+                return response()->json(['success' => false, 'message' => 'No se puede eliminar una bodega si tiene un proveedor asignado'], 400);
+            }
         }
 
         if ($rol === 'proveedor' && $bodega->proveedor_id !== $user->id) {
             return response()->json(['success' => false, 'message' => 'No tienes permiso para eliminar esta bodega'], 403);
         }
 
+        // Limpiar componentes e ítems de cotización antes de borrar la bodega
+        $componenteIds = DB::table('componentes')->where('bodega_id', $id)->pluck('id');
+        if ($componenteIds->isNotEmpty()) {
+            DB::table('cotizacion_items')->whereIn('componente_id', $componenteIds)->delete();
+            DB::table('componentes')->where('bodega_id', $id)->delete();
+        }
+
         $bodega->delete();
 
-        AuditLog::log($request, "Eliminó la bodega: {$bodega->nombre}", 'Bodegas');
+        AuditLog::log($request, "Eliminó la bodega «{$bodega->nombre}»", 'Bodegas');
 
         return response()->json(['message' => 'Bodega eliminada']);
     }

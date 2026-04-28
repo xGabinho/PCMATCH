@@ -382,6 +382,7 @@
         <p class="text-text-muted text-sm mb-1">¿Estás seguro de que deseas eliminar</p>
         <p class="text-text-primary font-semibold mb-2">{{ deletingComp?.nombre }}?</p>
         <p class="text-xs text-text-muted mb-6 px-4">Este componente dejará de aparecer en el catálogo de cotizaciones.</p>
+        <p v-if="deleteError" class="text-xs text-red-400 bg-red-500/10 border border-red-500/20 rounded-lg px-4 py-2.5 mb-4">{{ deleteError }}</p>
         <div class="flex gap-3">
           <button @click="confirmDelete" :disabled="savingDelete" class="flex-1 py-3 rounded-lg text-sm font-medium bg-red-500/10 text-red-400 border border-red-500/20 hover:bg-red-500/20 transition-colors">
             {{ savingDelete ? 'Eliminando...' : 'Sí, eliminar' }}
@@ -604,25 +605,32 @@ async function saveEditComp() {
 const showDeleteModal = ref(false)
 const deletingComp = ref(null)
 const savingDelete = ref(false)
+const deleteError = ref('')
 
 function openDeleteComp(comp) {
   deletingComp.value = comp
+  deleteError.value = ''
   showDeleteModal.value = true
 }
 
 async function confirmDelete() {
+  deleteError.value = ''
   savingDelete.value = true
   try {
     const res = await fetch(`${API}/componentes?id=${deletingComp.value.id}`, {
       method: 'DELETE',
-      headers: { Authorization: `Bearer ${getToken()}` }
+      headers: { Accept: 'application/json', Authorization: `Bearer ${getToken()}` }
     })
-    if (res.ok) {
-      await fetchComponents()
-      showDeleteModal.value = false
+    const data = await res.json()
+    if (!res.ok) {
+      deleteError.value = data.message ?? 'Error al eliminar el componente'
+      return
     }
+    await fetchComponents()
+    showDeleteModal.value = false
   } catch (e) {
     console.error(e)
+    deleteError.value = 'Error de conexión'
   } finally {
     savingDelete.value = false
   }

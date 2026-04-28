@@ -157,7 +157,7 @@ class ComponenteController extends Controller
         $nombreProducto = $producto ? $producto->nombre : "ID {$request->input('producto_id')}";
         $bodegaNombre = DB::table('bodegas')->where('id', $bodega_id)->value('nombre') ?? "ID {$bodega_id}";
 
-        AuditLog::log($request, "Agregó el componente: {$nombreProducto} ({$request->input('especificacion')}, {$request->input('gama')}) a la bodega {$bodegaNombre}", 'Componentes');
+        AuditLog::log($request, "Agregó el componente «{$nombreProducto}» (Gama: {$request->input('gama')}) a la bodega «{$bodegaNombre}»", 'Componentes');
 
         return response()->json(['message' => 'Componente registrado en Bodega correctamente', 'id' => $componenteId], 201);
     }
@@ -242,7 +242,13 @@ class ComponenteController extends Controller
 
                 if ((string) $viejo !== (string) $nuevo) {
                     $label = $labels[$campo];
-                    $cambios[] = "{$label}: '{$viejo}' → '{$nuevo}'";
+                    if ($campo === 'precio') {
+                        $cambios[] = "{$label}: \$" . number_format((float)$viejo, 0, ',', '.') . " → \$" . number_format((float)$nuevo, 0, ',', '.');
+                    } elseif ($campo === 'gama') {
+                        $cambios[] = "{$label}: " . ucfirst($viejo) . " → " . ucfirst($nuevo);
+                    } else {
+                        $cambios[] = "{$label}: {$viejo} → {$nuevo}";
+                    }
                 }
             }
         }
@@ -261,8 +267,8 @@ class ComponenteController extends Controller
             ->first();
         $nombreProducto = $producto ? $producto->nombre : "ID {$id}";
 
-        $detalles = empty($cambios) ? 'Sin cambios detectados' : implode(', ', $cambios);
-        AuditLog::log($request, "Modificó el componente: {$nombreProducto} (ID {$id}). Cambios: {$detalles}", 'Componentes');
+        $detalles = empty($cambios) ? 'Sin cambios' : implode(' · ', $cambios);
+        AuditLog::log($request, "Editó el componente «{$nombreProducto}» — {$detalles}", 'Componentes');
 
         return response()->json(['message' => 'Componente actualizado correctamente']);
     }
@@ -293,8 +299,18 @@ class ComponenteController extends Controller
             return response()->json(['success' => false, 'message' => 'No puedes eliminar componentes de otra bodega'], 403);
         }
 
+        $producto = DB::table('productos_catalogo')
+            ->join('componentes', 'componentes.producto_id', '=', 'productos_catalogo.id')
+            ->where('componentes.id', $id)
+            ->select('productos_catalogo.nombre')
+            ->first();
+        $nombreProducto = $producto ? $producto->nombre : "componente #{$id}";
+
+        // Eliminar referencias en cotizaciones antes de borrar el componente
+        DB::table('cotizacion_items')->where('componente_id', $id)->delete();
+
         DB::table('componentes')->where('id', $id)->delete();
-        AuditLog::log($request, "Eliminó el componente ID {$id}", 'Componentes');
+        AuditLog::log($request, "Eliminó el componente «{$nombreProducto}»", 'Componentes');
 
         return response()->json(['message' => 'Componente eliminado']);
     }
