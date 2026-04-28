@@ -203,7 +203,7 @@ const items = Object.values(selectedComponents.value).map(item => ({
 }))
 
   try {
-    const res = await fetch(`${API}/cotizaciones/`, {
+    const res = await fetch(`${API}/cotizaciones`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getToken()}` },
       body: JSON.stringify({ items, total: totalPrice.value, perfil: perfil.value })

@@ -407,6 +407,8 @@ async function handleRegister() {
 function redirectByRole(rol) {
   if (rol === 'admin')  return router.push('/admin')
   if (rol === 'bodega') return router.push('/bodega')
+  if (rol === 'proveedor') return router.push('/proveedor')
+  if (rol === 'superadmin') return router.push('/superadmin')
   router.push('/inicio')
 }
 </script>

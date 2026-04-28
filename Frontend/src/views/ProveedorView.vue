@@ -408,7 +408,7 @@ const filteredBodegas = computed(() => {
 async function fetchBodegas() {
   loadingBodegas.value = true
   try {
-    const res = await fetch(`${API}/bodegas/`, { headers: { Authorization: `Bearer ${getToken()}` } })
+    const res = await fetch(`${API}/bodegas`, { headers: { Authorization: `Bearer ${getToken()}` } })
     const data = await res.json()
     if (res.ok) bodegas.value = data.bodegas
   } catch(e) { console.error(e) } finally { loadingBodegas.value = false }
@@ -420,7 +420,7 @@ async function saveNewBodega() {
     return bodegaError.value = 'Nombre, correo y contraseña son requeridos'
   savingBodega.value = true
   try {
-    const res = await fetch(`${API}/bodegas/`, {
+    const res = await fetch(`${API}/bodegas`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', Accept: 'application/json', Authorization: `Bearer ${getToken()}` },
       body: JSON.stringify(newBodega.value)
@@ -439,7 +439,7 @@ async function saveEditBodega() {
   if (!editingBodega.value.nombre) return editBodegaError.value = 'El nombre es requerido'
   savingEditBodega.value = true
   try {
-    const res = await fetch(`${API}/bodegas/`, {
+    const res = await fetch(`${API}/bodegas`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json', Accept: 'application/json', Authorization: `Bearer ${getToken()}` },
       body: JSON.stringify({ id: editingBodega.value.id, nombre: editingBodega.value.nombre, telefono: editingBodega.value.telefono, activa: editingBodega.value.activa })
@@ -456,7 +456,7 @@ function openDeleteBodega(b) { deletingBodega.value = b; showDeleteBodegaModal.v
 async function confirmDeleteBodega() {
   savingDeleteBodega.value = true
   try {
-    await fetch(`${API}/bodegas/?id=${deletingBodega.value.id}`, {
+    await fetch(`${API}/bodegas?id=${deletingBodega.value.id}`, {
       method: 'DELETE', headers: { Authorization: `Bearer ${getToken()}` }
     })
     await fetchBodegas()
@@ -467,7 +467,7 @@ async function confirmDeleteBodega() {
 async function toggleActivoBodega(b) {
   const activaNuevo = b.activa == 1 ? 0 : 1
   try {
-    const res = await fetch(`${API}/bodegas/`, {
+    const res = await fetch(`${API}/bodegas`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json', Accept: 'application/json', Authorization: `Bearer ${getToken()}` },
       body: JSON.stringify({
@@ -489,7 +489,7 @@ const loadingCotizaciones = ref(false)
 async function fetchCotizaciones() {
   loadingCotizaciones.value = true
   try {
-    const res = await fetch(`${API}/cotizaciones/`, { headers: { Authorization: `Bearer ${getToken()}` } })
+    const res = await fetch(`${API}/cotizaciones`, { headers: { Authorization: `Bearer ${getToken()}` } })
     const data = await res.json()
     if (res.ok) cotizaciones.value = data.cotizaciones
   } catch(e) { console.error(e) } finally { loadingCotizaciones.value = false }
@@ -513,7 +513,7 @@ const filteredComponentes = computed(() => {
 async function fetchComponentes() {
   loadingComponentes.value = true
   try {
-    const res = await fetch(`${API}/componentes/`, { headers: { Authorization: `Bearer ${getToken()}` } })
+    const res = await fetch(`${API}/componentes`, { headers: { Authorization: `Bearer ${getToken()}` } })
     const data = await res.json()
     if (res.ok) componentes.value = data.componentes
   } catch(e) { console.error(e) } finally { loadingComponentes.value = false }
@@ -537,7 +537,7 @@ async function saveEditComp() {
 
   savingEditComp.value = true
   try {
-    const res = await fetch(`${API}/componentes/`, {
+    const res = await fetch(`${API}/componentes`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getToken()}` },
       body: JSON.stringify({

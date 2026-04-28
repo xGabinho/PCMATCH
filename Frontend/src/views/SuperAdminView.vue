@@ -817,12 +817,13 @@ async function saveNewProveedor() {
   try {
     const res = await fetch(`${API}/proveedores`, {
       method: 'POST',
-      headers: { Authorization: `Bearer ${getToken()}` }, // Do NOT set Content-Type with FormData
+      headers: { Authorization: `Bearer ${getToken()}` },
       body: formData
     })
     const data = await res.json()
     if (!res.ok) return proveedorError.value = data.message ?? 'Error al crear'
-    await fetchProveedores(); await fetchHistorial()
+    await fetchProveedores() // Como es uno nuevo, dejamos que traiga todo para obtener el ID real
+    await fetchHistorial()
     closeProveedorModal()
   } catch(e) { proveedorError.value = 'Error de conexión' } finally { savingProveedor.value = false }
 }
@@ -834,18 +835,34 @@ async function cambiarEstadoProveedor(p, estadoNuevo) {
       headers: { 'Content-Type': 'application/json', Accept: 'application/json', Authorization: `Bearer ${getToken()}` },
       body: JSON.stringify({
         id: p.id,
-        nombre: p.nombre, // Requerido por la validación
+        nombre: p.nombre,
         estado_aprobacion: estadoNuevo
       })
-    })
+    });
+
     if (res.ok) {
-      await fetchProveedores(); await fetchHistorial()
+      // ✅ FORZAMOS LA REACTIVIDAD: Creamos un array nuevo reemplazando solo el modificado
+      proveedores.value = proveedores.value.map(prov => 
+        prov.id === p.id ? { ...prov, estado_aprobacion: estadoNuevo } : prov
+      );
+      
+      // Actualizamos historial (le agregamos un timestamp para evitar caché)
+      fetch(`${API}/historial?t=${Date.now()}`, { headers: { Authorization: `Bearer ${getToken()}` } })
+        .then(r => r.json())
+        .then(d => historial.value = d.historial);
+
+    } else {
+      const errorData = await res.json();
+      console.error("Laravel rechazó la petición:", errorData);
+      alert("Laravel devolvió un error. Mira la consola para más detalles.");
     }
-  } catch(e) { console.error('Error al cambiar de estado', e) }
+  } catch(e) { 
+    console.error('Error de red al cambiar estado', e);
+  }
 }
 
 async function toggleActivoProveedor(p) {
-  const activaNuevo = p.activo == 1 ? 0 : 1
+  const activaNuevo = p.activo == 1 ? 0 : 1;
   try {
     const res = await fetch(`${API}/proveedores`, {
       method: 'PUT',
@@ -855,11 +872,26 @@ async function toggleActivoProveedor(p) {
         nombre: p.nombre,
         activo: activaNuevo
       })
-    })
+    });
+
     if (res.ok) {
-      await fetchProveedores(); await fetchHistorial()
+      // ✅ FORZAMOS LA REACTIVIDAD
+      proveedores.value = proveedores.value.map(prov => 
+        prov.id === p.id ? { ...prov, activo: activaNuevo } : prov
+      );
+      
+      fetch(`${API}/historial?t=${Date.now()}`, { headers: { Authorization: `Bearer ${getToken()}` } })
+        .then(r => r.json())
+        .then(d => historial.value = d.historial);
+
+    } else {
+      const errorData = await res.json();
+      console.error("Laravel rechazó la petición:", errorData);
+      alert("Laravel devolvió un error. Mira la consola para más detalles.");
     }
-  } catch(e) { console.error('Error al desactivar proveedor', e) }
+  } catch(e) { 
+    console.error('Error de red al desactivar', e);
+  }
 }
 
 function openEditProveedor(p) {
@@ -888,7 +920,15 @@ async function saveEditProveedor() {
     const data = await res.json()
     if (!res.ok) return editProveedorError.value = data.message ?? 'Error al guardar cambios'
     
-    await fetchProveedores(); await fetchHistorial()
+    // ✅ SOLUCIÓN: Actualización local para edición
+    const index = proveedores.value.findIndex(p => p.id === editingProveedor.value.id)
+    if (index !== -1) {
+      proveedores.value[index].nombre = editingProveedor.value.nombre
+      proveedores.value[index].razon_social = editingProveedor.value.razon_social
+      proveedores.value[index].identificacion_legal = editingProveedor.value.identificacion_legal
+    }
+    
+    await fetchHistorial()
     showEditProveedorModal.value = false
   } catch(e) { 
     editProveedorError.value = 'Error de conexión' 
@@ -943,18 +983,35 @@ async function saveEditBodega() {
     })
     const data = await res.json()
     if (!res.ok) return editBodegaError.value = data.message ?? 'Error'
-    await fetchBodegas(); await fetchHistorial()
+    
+    // ✅ SOLUCIÓN: Actualización local
+    const index = bodegas.value.findIndex(b => b.id === editingBodega.value.id)
+    if (index !== -1) {
+      bodegas.value[index].nombre = editingBodega.value.nombre
+      bodegas.value[index].telefono = editingBodega.value.telefono
+    }
+
+    await fetchHistorial()
     showEditBodegaModal.value = false
   } catch(e) { editBodegaError.value = 'Error de conexión' } finally { savingEditBodega.value = false }
 }
 
 async function toggleBodega(b) {
-  await fetch(`${API}/bodegas`, {
-    method: 'PUT',
-    headers: { 'Content-Type': 'application/json', Accept: 'application/json', Authorization: `Bearer ${getToken()}` },
-    body: JSON.stringify({ id: b.id, nombre: b.nombre, telefono: b.telefono, activa: b.activa == 1 ? 0 : 1, proveedor_id: b.proveedor_id })
-  })
-  await fetchBodegas(); await fetchHistorial()
+  const activaNuevo = b.activa == 1 ? 0 : 1
+  try {
+    const res = await fetch(`${API}/bodegas`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json', Accept: 'application/json', Authorization: `Bearer ${getToken()}` },
+      body: JSON.stringify({ id: b.id, nombre: b.nombre, telefono: b.telefono, activa: activaNuevo, proveedor_id: b.proveedor_id })
+    })
+    
+    if (res.ok) {
+      // ✅ SOLUCIÓN: Actualización local
+      const index = bodegas.value.findIndex(bod => bod.id === b.id)
+      if (index !== -1) bodegas.value[index].activa = activaNuevo
+      await fetchHistorial()
+    }
+  } catch(e) { console.error('Error al cambiar estado de bodega', e) }
 }
 
 function openDeleteBodega(b) {
@@ -975,7 +1032,10 @@ async function confirmDeleteBodega() {
         deleteBodegaError.value = data.message ?? 'Error al eliminar'
         return
     }
-    await fetchBodegas(); await fetchHistorial()
+    
+    // ✅ SOLUCIÓN: Eliminar localmente
+    bodegas.value = bodegas.value.filter(b => b.id !== deletingBodega.value.id)
+    await fetchHistorial()
     showDeleteBodegaModal.value = false
   } catch(e) { console.error(e); deleteBodegaError.value = 'Error de conexión' } finally { savingDeleteBodega.value = false }
 }
@@ -998,7 +1058,8 @@ async function saveNewBodega() {
     })
     const data = await res.json()
     if (!res.ok) return bodegaError.value = data.message ?? 'Error al crear'
-    await fetchBodegas(); await fetchHistorial()
+    await fetchBodegas() // Fetch necesario para el nuevo ID
+    await fetchHistorial()
     closeBodegaModal()
   } catch(e) { bodegaError.value = 'Error de conexión' } finally { savingBodega.value = false }
 }
@@ -1045,7 +1106,7 @@ async function saveEditComp() {
 
   savingEditComp.value = true
   try {
-    const res = await fetch(`${API}/componentes/`, {
+    const res = await fetch(`${API}/componentes`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getToken()}` },
       body: JSON.stringify({
@@ -1058,7 +1119,16 @@ async function saveEditComp() {
     })
     const data = await res.json()
     if (!res.ok) return editCompError.value = data.message ?? 'Error al guardar'
-    await fetchComponentes()
+    
+    // ✅ SOLUCIÓN: Actualización local
+    const index = componentes.value.findIndex(c => c.id === editingComp.value.id)
+    if (index !== -1) {
+      componentes.value[index].especificacion = editingComp.value.especificacion
+      componentes.value[index].gama = editingComp.value.gama
+      componentes.value[index].precio = editingComp.value.precio
+      componentes.value[index].stock = editingComp.value.stock
+    }
+
     await fetchHistorial()
     showEditCompModal.value = false
   } catch (e) {
@@ -1132,7 +1202,8 @@ async function saveNewUser() {
     if (!res.ok) return createUserError.value = data.message ?? 'Error al crear'
     createUserSuccess.value = 'Usuario creado correctamente'
     resetNewUser()
-    await fetchUsuarios(); await fetchHistorial()
+    await fetchUsuarios() // Fetch para obtener el nuevo usuario con ID
+    await fetchHistorial()
   } catch(e) { createUserError.value = 'Error de conexión' } finally { savingUser.value = false }
 }
 
@@ -1149,7 +1220,14 @@ async function saveEditUsuario() {
     })
     const data = await res.json()
     if (!res.ok) return editUsuarioError.value = data.message ?? 'Error'
-    await fetchUsuarios(); await fetchHistorial()
+    
+    // ✅ SOLUCIÓN: Actualización local
+    const index = usuarios.value.findIndex(u => u.id === editingUsuario.value.id)
+    if (index !== -1) {
+      Object.assign(usuarios.value[index], editingUsuario.value)
+    }
+
+    await fetchHistorial()
     showEditUsuarioModal.value = false
   } catch(e) { editUsuarioError.value = 'Error de conexión' } finally { savingEditUsuario.value = false }
 }
@@ -1159,10 +1237,15 @@ function openDeleteUsuario(u) { deletingUsuario.value = u; showDeleteUsuarioModa
 async function confirmDeleteUsuario() {
   savingDeleteUsuario.value = true
   try {
-    await fetch(`${API}/usuarios?id=${deletingUsuario.value.id}`, {
+    const res = await fetch(`${API}/usuarios?id=${deletingUsuario.value.id}`, {
       method: 'DELETE', headers: { Authorization: `Bearer ${getToken()}` }
     })
-    await fetchUsuarios(); await fetchHistorial()
+    
+    if (res.ok) {
+      // ✅ SOLUCIÓN: Eliminar localmente
+      usuarios.value = usuarios.value.filter(u => u.id !== deletingUsuario.value.id)
+      await fetchHistorial()
+    }
     showDeleteUsuarioModal.value = false
   } catch(e) { console.error(e) } finally { savingDeleteUsuario.value = false }
 }
@@ -1182,12 +1265,13 @@ async function toggleActivoUsuario(u) {
       })
     })
     if (res.ok) {
-      await fetchUsuarios(); await fetchHistorial()
+      // ✅ SOLUCIÓN: Actualización local
+      const index = usuarios.value.findIndex(usr => usr.id === u.id)
+      if (index !== -1) usuarios.value[index].activo = activoNuevo
+      await fetchHistorial()
     }
   } catch(e) { console.error('Error al cambiar de estado', e) }
 }
-
-
 
 // ── Historial ─────────────────────────────────────────────
 const historial = ref([])

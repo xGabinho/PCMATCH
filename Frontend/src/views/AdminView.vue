@@ -79,7 +79,7 @@
             <div v-if="loadingBodegas" class="px-6 py-12 text-center text-text-muted text-sm">Cargando bodegas...</div>
             <table v-else class="w-full min-w-[640px]">
               <thead class="border-b border-dark-border">
-                <tr><th v-for="h in ['Nombre','Teléfono','Correo','Componentes','Estado','Acciones']" :key="h" class="px-6 py-3 text-left text-xs text-text-muted uppercase tracking-wider font-medium">{{ h }}</th></tr>
+                <tr><th v-for="h in ['Nombre','Teléfono','Correo','Proveedor','Componentes','Estado','Acciones']" :key="h" class="px-6 py-3 text-left text-xs text-text-muted uppercase tracking-wider font-medium">{{ h }}</th></tr>
               </thead>
               <tbody class="divide-y divide-dark-border">
                 <tr v-if="filteredBodegas.length === 0"><td colspan="6" class="px-6 py-12 text-center text-text-muted text-sm">Sin bodegas registradas</td></tr>
@@ -87,6 +87,10 @@
                   <td class="px-6 py-4 text-sm font-medium text-text-primary">{{ b.nombre }}</td>
                   <td class="px-6 py-4 text-sm text-text-muted">{{ b.telefono || '—' }}</td>
                   <td class="px-6 py-4 text-sm text-text-muted">{{ b.correo }}</td>
+                  <td class="px-6 py-4">
+                    <span v-if="b.proveedor_nombre" class="badge text-xs bg-accent/10 text-accent border border-accent/20">{{ b.proveedor_nombre }}</span>
+                    <span v-else class="text-xs text-text-muted">Sin proveedor</span>
+                  </td>
                   <td class="px-6 py-4 text-sm text-text-primary font-mono">{{ b.total_componentes }}</td>
                   <td class="px-6 py-4">
                     <span class="badge text-xs px-2.5 py-1" :class="b.activa == 1 ? 'bg-green-500/10 text-green-400 border border-green-500/20' : 'bg-red-500/10 text-red-400 border border-red-500/20'">
@@ -95,6 +99,7 @@
                   </td>
                   <td class="px-6 py-4">
                     <div class="flex gap-2">
+                      <button @click="openEditBodega(b)" class="text-xs text-text-muted hover:text-accent px-2 py-1 rounded hover:bg-accent/10 transition-colors">Editar</button>
                       <button @click="toggleBodega(b)" class="text-xs text-text-muted hover:text-yellow-400 px-2 py-1 rounded hover:bg-yellow-400/10 transition-colors">
                         {{ b.activa == 1 ? 'Desactivar' : 'Activar' }}
                       </button>
@@ -142,11 +147,25 @@
         <template v-if="activeSection === 'cotizaciones'">
           <div class="card-dark rounded-xl overflow-hidden overflow-x-auto">
             <div class="px-6 py-4 border-b border-dark-border">
-              <h2 class="font-semibold text-text-primary">Listado de cotizaciones</h2>
+              <h2 class="font-semibold text-text-primary">Historial de cotizaciones</h2>
             </div>
-            <div class="px-6 py-12 text-center text-text-muted text-sm">
-              Próximamente — se habilitará cuando el endpoint de cotizaciones esté listo
-            </div>
+            <div v-if="loadingCotizaciones" class="px-6 py-12 text-center text-text-muted text-sm">Cargando...</div>
+            <table v-else class="w-full min-w-[640px]">
+              <thead class="border-b border-dark-border">
+                <tr><th v-for="h in ['#','Cliente','Perfil','Componentes','Total','Fecha']" :key="h" class="px-6 py-3 text-left text-xs text-text-muted uppercase tracking-wider font-medium">{{ h }}</th></tr>
+              </thead>
+              <tbody class="divide-y divide-dark-border">
+                <tr v-if="cotizaciones.length === 0"><td colspan="6" class="px-6 py-12 text-center text-text-muted text-sm">Sin cotizaciones</td></tr>
+                <tr v-for="c in cotizaciones" :key="c.id" class="hover:bg-dark-bg/50 transition-colors">
+                  <td class="px-6 py-4 text-sm font-mono text-text-muted">#{{ c.id }}</td>
+                  <td class="px-6 py-4 text-sm text-text-primary">{{ c.nombre }} {{ c.apellido }}</td>
+                  <td class="px-6 py-4 text-sm text-text-muted">{{ perfilLabel(c.perfil) }}</td>
+                  <td class="px-6 py-4 text-sm font-mono text-text-primary">{{ c.total_items }}</td>
+                  <td class="px-6 py-4 text-sm font-mono text-accent font-medium">${{ Number(c.total).toLocaleString() }}</td>
+                  <td class="px-6 py-4 text-sm text-text-muted">{{ formatDate(c.created_at) }}</td>
+                </tr>
+              </tbody>
+            </table>
           </div>
         </template>
 
@@ -393,6 +412,13 @@
             <label class="block text-sm font-medium text-text-primary mb-2">Nombre de la bodega</label>
             <input v-model="newBodega.nombre" type="text" placeholder="Ej: TecnoStore Santiago" class="w-full bg-dark-bg border border-dark-border rounded-lg px-4 py-3 text-sm text-text-primary placeholder-text-muted focus:outline-none focus:border-accent transition-colors" />
           </div>
+          <div>
+            <label class="block text-sm font-medium text-text-primary mb-2">Proveedor asignado (opcional)</label>
+            <select v-model="newBodega.proveedor_id" class="w-full bg-dark-bg border border-dark-border rounded-lg px-4 py-3 text-sm text-text-primary focus:outline-none focus:border-accent transition-colors appearance-none">
+              <option :value="null">Ninguno</option>
+              <option v-for="p in proveedores" :key="p.id" :value="p.id">{{ p.nombre }}</option>
+            </select>
+          </div>
           <div class="border-t border-dark-border pt-1">
             <p class="text-xs text-text-muted mb-4">Credenciales de acceso para el gestor</p>
           </div>
@@ -419,6 +445,48 @@
             {{ savingBodega ? 'Creando...' : 'Crear bodega' }}
           </button>
           <button @click="closeBodegaModal" class="btn-secondary text-sm px-5">Cancelar</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== MODAL EDITAR BODEGA ===== -->
+    <div v-if="showEditBodegaModal" class="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto py-6 px-4">
+      <div class="fixed inset-0 bg-black/60 backdrop-blur-sm" @click="showEditBodegaModal = false"></div>
+      <div class="relative card-dark rounded-2xl p-6 w-full max-w-md my-auto shadow-2xl">
+        <div class="flex items-center justify-between mb-6">
+          <h2 class="text-lg font-bold text-text-primary">Editar bodega</h2>
+          <button @click="showEditBodegaModal = false" class="text-text-muted hover:text-text-primary text-2xl leading-none w-8 h-8 flex items-center justify-center rounded-lg hover:bg-dark-bg">×</button>
+        </div>
+        <div class="space-y-5">
+          <div>
+            <label class="block text-sm font-medium text-text-primary mb-2">Nombre</label>
+            <input v-model="editingBodega.nombre" type="text" class="w-full bg-dark-bg border border-dark-border rounded-lg px-4 py-3 text-sm text-text-primary focus:outline-none focus:border-accent transition-colors" />
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-text-primary mb-2">Teléfono</label>
+            <input v-model="editingBodega.telefono" type="tel" class="w-full bg-dark-bg border border-dark-border rounded-lg px-4 py-3 text-sm text-text-primary focus:outline-none focus:border-accent transition-colors" />
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-text-primary mb-2">Proveedor asignado</label>
+            <select v-model="editingBodega.proveedor_id" class="w-full bg-dark-bg border border-dark-border rounded-lg px-4 py-3 text-sm text-text-primary focus:outline-none focus:border-accent transition-colors appearance-none">
+              <option :value="null">Ninguno</option>
+              <option v-for="p in proveedores" :key="p.id" :value="p.id">{{ p.nombre }}</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-text-primary mb-2">Estado</label>
+            <div class="flex items-center gap-3">
+              <button @click="editingBodega.activa = 1" class="flex-1 py-2 rounded-lg border text-sm font-medium transition-colors"
+                :class="editingBodega.activa == 1 ? 'border-green-500/40 bg-green-500/10 text-green-400' : 'border-dark-border text-text-muted'">✓ Activa</button>
+              <button @click="editingBodega.activa = 0" class="flex-1 py-2 rounded-lg border text-sm font-medium transition-colors"
+                :class="editingBodega.activa == 0 ? 'border-red-500/40 bg-red-500/10 text-red-400' : 'border-dark-border text-text-muted'">✕ Inactiva</button>
+            </div>
+          </div>
+          <p v-if="editBodegaError" class="text-xs text-red-400 bg-red-500/10 border border-red-500/20 rounded-lg px-4 py-2.5">{{ editBodegaError }}</p>
+        </div>
+        <div class="flex gap-3 mt-8">
+          <button @click="saveEditBodega" :disabled="savingEditBodega" class="btn-primary flex-1 text-sm">{{ savingEditBodega ? 'Guardando...' : 'Guardar cambios' }}</button>
+          <button @click="showEditBodegaModal = false" class="btn-secondary text-sm px-5">Cancelar</button>
         </div>
       </div>
     </div>
@@ -514,6 +582,8 @@ function formatDate(dateStr) {
   return new Date(dateStr).toLocaleDateString('es-CL', { day: '2-digit', month: 'short', year: 'numeric' })
 }
 
+function perfilLabel(p) { return ({ office: '💼 Oficina', gaming: '🎮 Gaming', design: '🎨 Diseño', study: '📚 Estudio' })[p] ?? p ?? '—' }
+
 // ── Secciones ─────────────────────────────────────────────
 const activeSection = ref('bodegas')
 
@@ -555,7 +625,20 @@ const deletingBodega = ref(null)
 const savingBodega = ref(false)
 const savingDeleteBodega = ref(false)
 const bodegaError = ref('')
-const newBodega = ref({ nombre: '', correo: '', telefono: '', password: '' })
+const newBodega = ref({ nombre: '', correo: '', telefono: '', password: '', proveedor_id: null })
+const showEditBodegaModal = ref(false)
+const editingBodega = ref({})
+const editBodegaError = ref('')
+const savingEditBodega = ref(false)
+const proveedores = ref([])
+
+async function fetchProveedores() {
+  try {
+    const res = await fetch(`${API}/proveedores`, { headers: { Authorization: `Bearer ${getToken()}` } })
+    const data = await res.json()
+    if (res.ok) proveedores.value = data.proveedores
+  } catch(e) { console.error(e) }
+}
 
 const filteredBodegas = computed(() => {
   if (!filterBodega.value.trim()) return bodegas.value
@@ -566,14 +649,14 @@ const filteredBodegas = computed(() => {
 async function fetchBodegas() {
   loadingBodegas.value = true
   try {
-    const res = await fetch(`${API}/bodegas/`, { headers: { Authorization: `Bearer ${getToken()}` } })
+    const res = await fetch(`${API}/bodegas`, { headers: { Authorization: `Bearer ${getToken()}` } })
     const data = await res.json()
     if (res.ok) bodegas.value = data.bodegas
   } catch(e) { console.error(e) } finally { loadingBodegas.value = false }
 }
 
 function openBodegaModal() {
-  newBodega.value = { nombre: '', correo: '', telefono: '', password: '' }
+  newBodega.value = { nombre: '', correo: '', telefono: '', password: '', proveedor_id: null }
   bodegaError.value = ''
   showBodegaModal.value = true
 }
@@ -589,7 +672,7 @@ async function saveNewBodega() {
     return bodegaError.value = 'Nombre, correo y contraseña son requeridos'
   savingBodega.value = true
   try {
-    const res = await fetch(`${API}/bodegas/`, {
+    const res = await fetch(`${API}/bodegas`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getToken()}` },
       body: JSON.stringify(newBodega.value)
@@ -601,9 +684,32 @@ async function saveNewBodega() {
   } catch(e) { bodegaError.value = 'Error de conexión' } finally { savingBodega.value = false }
 }
 
+function openEditBodega(b) {
+  editingBodega.value = { ...b }
+  editBodegaError.value = ''
+  showEditBodegaModal.value = true
+}
+
+async function saveEditBodega() {
+  editBodegaError.value = ''
+  if (!editingBodega.value.nombre) return editBodegaError.value = 'El nombre es requerido'
+  savingEditBodega.value = true
+  try {
+    const res = await fetch(`${API}/bodegas`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getToken()}` },
+      body: JSON.stringify({ id: editingBodega.value.id, nombre: editingBodega.value.nombre, telefono: editingBodega.value.telefono, activa: editingBodega.value.activa, proveedor_id: editingBodega.value.proveedor_id })
+    })
+    const data = await res.json()
+    if (!res.ok) return editBodegaError.value = data.message ?? 'Error al guardar'
+    await fetchBodegas()
+    showEditBodegaModal.value = false
+  } catch(e) { editBodegaError.value = 'Error de conexión' } finally { savingEditBodega.value = false }
+}
+
 async function toggleBodega(b) {
   const activa = b.activa == 1 ? 0 : 1
-  await fetch(`${API}/bodegas/`, {
+  await fetch(`${API}/bodegas`, {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getToken()}` },
     body: JSON.stringify({ id: b.id, nombre: b.nombre, telefono: b.telefono, activa })
@@ -619,7 +725,7 @@ function openDeleteBodega(b) {
 async function confirmDeleteBodega() {
   savingDeleteBodega.value = true
   try {
-    await fetch(`${API}/bodegas/?id=${deletingBodega.value.id}`, {
+    await fetch(`${API}/bodegas?id=${deletingBodega.value.id}`, {
       method: 'DELETE',
       headers: { Authorization: `Bearer ${getToken()}` }
     })
@@ -646,7 +752,7 @@ const filteredComponentes = computed(() => {
 async function fetchComponentes() {
   loadingComponentes.value = true
   try {
-    const res = await fetch(`${API}/componentes/admin/`, { headers: { Authorization: `Bearer ${getToken()}` } })
+    const res = await fetch(`${API}/componentes/admin`, { headers: { Authorization: `Bearer ${getToken()}` } })
     const data = await res.json()
     if (res.ok) componentes.value = data.componentes
   } catch(e) { console.error(e) } finally { loadingComponentes.value = false }
@@ -670,7 +776,7 @@ async function saveEditComp() {
 
   savingEditComp.value = true
   try {
-    const res = await fetch(`${API}/componentes/`, {
+    const res = await fetch(`${API}/componentes`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getToken()}` },
       body: JSON.stringify({
@@ -721,7 +827,7 @@ const filteredUsuarios = computed(() => {
 async function fetchUsuarios() {
   loadingUsuarios.value = true
   try {
-    const res = await fetch(`${API}/usuarios/`, { headers: { Authorization: `Bearer ${getToken()}` } })
+    const res = await fetch(`${API}/usuarios`, { headers: { Authorization: `Bearer ${getToken()}` } })
     const data = await res.json()
     if (res.ok) usuarios.value = data.usuarios
   } catch(e) { console.error(e) } finally { loadingUsuarios.value = false }
@@ -740,7 +846,7 @@ async function saveNewUser() {
     return createUserError.value = 'Nombre, correo y contraseña son requeridos'
   savingUser.value = true
   try {
-    const res = await fetch(`${API}/usuarios/`, {
+    const res = await fetch(`${API}/usuarios`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getToken()}` },
       body: JSON.stringify(newUser.value)
@@ -763,7 +869,7 @@ async function saveEditUser() {
   editUserError.value = ''
   savingEditUser.value = true
   try {
-    const res = await fetch(`${API}/usuarios/`, {
+    const res = await fetch(`${API}/usuarios`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getToken()}` },
       body: JSON.stringify(editingUser.value)
@@ -784,7 +890,7 @@ async function confirmDeleteUser() {
   savingDeleteUser.value = true
   try {
     const nuevoEstado = deletingUser.value.estado == 1 ? 0 : 1
-    await fetch(`${API}/usuarios/?id=${deletingUser.value.id}&estado=${nuevoEstado}`, {
+    await fetch(`${API}/usuarios?id=${deletingUser.value.id}&estado=${nuevoEstado}`, {
       method: 'DELETE',
       headers: { Authorization: `Bearer ${getToken()}` }
     })
@@ -793,10 +899,26 @@ async function confirmDeleteUser() {
   } catch(e) { console.error(e) } finally { savingDeleteUser.value = false }
 }
 
+// ── Cotizaciones ──────────────────────────────────────────
+const cotizaciones = ref([])
+const loadingCotizaciones = ref(false)
+
+async function fetchCotizaciones() {
+  loadingCotizaciones.value = true
+  try {
+    const res = await fetch(`${API}/cotizaciones`, { headers: { Authorization: `Bearer ${getToken()}` } })
+    const data = await res.json()
+    if (res.ok) cotizaciones.value = data.cotizaciones
+  } catch(e) { console.error(e) } finally { loadingCotizaciones.value = false }
+}
+
+
 // ── Lifecycle ─────────────────────────────────────────────
 onMounted(() => {
   fetchBodegas()
   fetchUsuarios()
   fetchComponentes()
+  fetchCotizaciones()
+  fetchProveedores()
 })
 </script>

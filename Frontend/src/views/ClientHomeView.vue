@@ -253,7 +253,7 @@ const filteredComponents = computed(() => {
 async function fetchComponentes() {
   loading.value = true
   try {
-    const res = await fetch(`${API}/componentes/publico/`)
+    const res = await fetch(`${API}/componentes/publico`)
     const data = await res.json()
     if (res.ok) allComponents.value = data.componentes
   } catch(e) {

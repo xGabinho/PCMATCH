@@ -402,7 +402,7 @@ import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
 const API = 'http://127.0.0.1:8000/api'
 
 const router = useRouter()
-const { logout } = useAuth()
+const { logout, getToken, user } = useAuth()
 
 function handleLogout() {
   logout()
@@ -410,10 +410,8 @@ function handleLogout() {
 }
 
 // Datos de sesión — luego vendrán de useAuth
-const token = localStorage.getItem('token') ?? ''
-const usuario = JSON.parse(localStorage.getItem('usuario') ?? '{}')
-const bodegaNombre = usuario.nombre ?? 'Bodega'
-const bodegaCorreo = usuario.correo ?? ''
+const bodegaNombre = user.value?.nombre ?? 'Bodega'
+const bodegaCorreo = user.value?.correo ?? ''
 
 // Secciones
 const activeSection = ref('dashboard')
@@ -459,8 +457,8 @@ const stockAlerts = computed(() => myComponents.value.filter(c => c.stock <= 3))
 async function fetchComponents() {
   loadingComponents.value = true
   try {
-    const res = await fetch(`${API}/componentes/`, {
-      headers: { Authorization: `Bearer ${token}` }
+    const res = await fetch(`${API}/componentes`, {
+      headers: { Authorization: `Bearer ${getToken()}` }
     })
     const data = await res.json()
     if (res.ok) myComponents.value = data.componentes
@@ -487,7 +485,7 @@ const productosFiltrados = computed(() => {
 
 async function fetchCatalogo() {
   try {
-    const res = await fetch(`${API}/catalogo/`)
+    const res = await fetch(`${API}/catalogo`)
     const data = await res.json()
     if (res.ok) catalogo.value = data.productos
   } catch (e) {
@@ -534,9 +532,9 @@ async function saveNewComp() {
 
   savingAdd.value = true
   try {
-    const res = await fetch(`${API}/componentes/`, {
+    const res = await fetch(`${API}/componentes`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getToken()}` },
       body: JSON.stringify({
         producto_id:    newComp.value.producto_id,
         especificacion: newComp.value.especificacion,
@@ -580,9 +578,9 @@ async function saveEditComp() {
 
   savingEdit.value = true
   try {
-    const res = await fetch(`${API}/componentes/`, {
+    const res = await fetch(`${API}/componentes`, {
       method: 'PUT',
-      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getToken()}` },
       body: JSON.stringify({
         id:             editingComp.value.id,
         especificacion: editingComp.value.especificacion,
@@ -615,9 +613,9 @@ function openDeleteComp(comp) {
 async function confirmDelete() {
   savingDelete.value = true
   try {
-    const res = await fetch(`${API}/componentes/?id=${deletingComp.value.id}`, {
+    const res = await fetch(`${API}/componentes?id=${deletingComp.value.id}`, {
       method: 'DELETE',
-      headers: { Authorization: `Bearer ${token}` }
+      headers: { Authorization: `Bearer ${getToken()}` }
     })
     if (res.ok) {
       await fetchComponents()
