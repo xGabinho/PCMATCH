@@ -1,6 +1,6 @@
 <?php
 function getDB() {
-    $conn = new mysqli('localhost', 'root', '', 'pcmatch');
+    $conn = new mysqli('localhost', 'root', '', 'prupcmatch');
     if ($conn->connect_error) {
         http_response_code(500);
         echo json_encode(['error' => 'Error de conexión a la base de datos']);
