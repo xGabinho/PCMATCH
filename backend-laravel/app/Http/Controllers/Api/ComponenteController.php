@@ -164,9 +164,15 @@ class ComponenteController extends Controller
 
     /**
      * PUT /api/componentes - Editar componente (bodega propia, admin, superadmin, proveedor)
+     * 
+     * RF-17 – Gestión de Componentes – Modificar componente
+     * RN01: Solo admin, superadmin, bodega o proveedor pueden modificar
+     * RN02: Validación estricta (precio > 0, stock >= 0, gama válida)
+     * RN03: Registro detallado de cambios en historial de auditoría
      */
     public function update(Request $request)
     {
+        // ── RN01: Verificar permiso de modificación ──────────────────
         $user = $request->user();
         $clase = get_class($user);
         $rol = 'cliente';
@@ -175,7 +181,10 @@ class ComponenteController extends Controller
         if ($clase === \App\Models\Bodega::class) $rol = 'bodega';
 
         if (!in_array($rol, ['admin', 'superadmin', 'proveedor', 'bodega'])) {
-            return response()->json(['success' => false, 'message' => 'No autorizado'], 403);
+            return response()->json([
+                'success' => false,
+                'message' => 'No autorizado. Solo administradores, proveedores y bodegas pueden modificar componentes.'
+            ], 403);
         }
 
         $id = $request->input('id');
@@ -184,20 +193,78 @@ class ComponenteController extends Controller
         $comp = DB::table('componentes')->where('id', $id)->first();
         if (!$comp) return response()->json(['success' => false, 'message' => 'Componente no encontrado'], 404);
 
+        // Verificar que la bodega pertenezca al usuario (si es bodega)
         if ($rol === 'bodega' && $comp->bodega_id != $user->id) {
             return response()->json(['success' => false, 'message' => 'No puedes editar componentes de otra bodega'], 403);
         }
 
+        // Verificar que la bodega pertenezca al proveedor (si es proveedor)
+        if ($rol === 'proveedor') {
+            $bodega = DB::table('bodegas')->where('id', $comp->bodega_id)->where('proveedor_id', $user->id)->first();
+            if (!$bodega) {
+                return response()->json(['success' => false, 'message' => 'No puedes editar componentes de bodegas que no te pertenecen'], 403);
+            }
+        }
+
+        // ── RN02: Validación estricta de datos actualizados ──────────
+        $validator = \Illuminate\Support\Facades\Validator::make($request->all(), [
+            'especificacion' => 'nullable|string|max:255',
+            'gama'           => 'nullable|in:alta,media,baja',
+            'precio'         => 'nullable|numeric|gt:0',
+            'stock'          => 'nullable|integer|min:0',
+        ], [
+            'gama.in'      => 'La gama debe ser alta, media o baja',
+            'precio.gt'    => 'El precio debe ser mayor a cero',
+            'precio.numeric' => 'El precio debe ser un valor numérico',
+            'stock.min'    => 'La cantidad en stock no puede ser negativa',
+            'stock.integer' => 'La cantidad en stock debe ser un número entero',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json(['success' => false, 'message' => $validator->errors()->first()], 400);
+        }
+
+        // ── RN03: Registrar cambios con detalle (auditoría) ──────────
         $data = [];
-        if ($request->has('especificacion')) $data['especificacion'] = $request->input('especificacion');
-        if ($request->has('gama'))           $data['gama']           = $request->input('gama');
-        if ($request->has('precio'))         $data['precio']         = $request->input('precio');
-        if ($request->has('stock'))          $data['stock']          = $request->input('stock');
+        $cambios = [];
+        $labels = [
+            'especificacion' => 'Especificación',
+            'gama'           => 'Gama',
+            'precio'         => 'Precio',
+            'stock'          => 'Stock',
+        ];
+
+        foreach (['especificacion', 'gama', 'precio', 'stock'] as $campo) {
+            if ($request->has($campo)) {
+                $nuevo = $request->input($campo);
+                $viejo = $comp->$campo;
+                $data[$campo] = $nuevo;
+
+                if ((string) $viejo !== (string) $nuevo) {
+                    $label = $labels[$campo];
+                    $cambios[] = "{$label}: '{$viejo}' → '{$nuevo}'";
+                }
+            }
+        }
+
+        if (empty($data)) {
+            return response()->json(['success' => false, 'message' => 'No se enviaron campos para actualizar'], 400);
+        }
 
         DB::table('componentes')->where('id', $id)->update($data);
-        AuditLog::log($request, "Modificó el componente ID {$id}", 'Componentes');
 
-        return response()->json(['message' => 'Componente actualizado']);
+        // Obtener el nombre del producto para el log de auditoría
+        $producto = DB::table('productos_catalogo')
+            ->join('componentes', 'componentes.producto_id', '=', 'productos_catalogo.id')
+            ->where('componentes.id', $id)
+            ->select('productos_catalogo.nombre')
+            ->first();
+        $nombreProducto = $producto ? $producto->nombre : "ID {$id}";
+
+        $detalles = empty($cambios) ? 'Sin cambios detectados' : implode(', ', $cambios);
+        AuditLog::log($request, "Modificó el componente: {$nombreProducto} (ID {$id}). Cambios: {$detalles}", 'Componentes');
+
+        return response()->json(['message' => 'Componente actualizado correctamente']);
     }
 
     /**
