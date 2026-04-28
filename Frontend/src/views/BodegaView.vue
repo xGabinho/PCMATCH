@@ -399,7 +399,7 @@ import { useRouter } from 'vue-router'
 import { useAuth } from '../composables/useAuth'
 import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
 
-const API = 'http://localhost/pcmatch/backend/api'
+const API = 'http://127.0.0.1:8000/api'
 
 const router = useRouter()
 const { logout } = useAuth()
@@ -529,7 +529,8 @@ async function saveNewComp() {
   addError.value = ''
   if (!newComp.value.producto_id) return addError.value = 'Selecciona un producto del catálogo'
   if (!newComp.value.gama)        return addError.value = 'Selecciona una gama'
-  if (!newComp.value.precio)      return addError.value = 'Ingresa un precio'
+  if (!newComp.value.precio || Number(newComp.value.precio) <= 0) return addError.value = 'El precio debe ser mayor a 0'
+  if (newComp.value.stock !== '' && Number(newComp.value.stock) < 0) return addError.value = 'El stock no puede ser negativo'
 
   savingAdd.value = true
   try {
@@ -569,6 +570,14 @@ function openEditComp(comp) {
 
 async function saveEditComp() {
   editError.value = ''
+  
+  if (editingComp.value.precio !== undefined && Number(editingComp.value.precio) <= 0) {
+    return editError.value = 'El precio debe ser mayor a 0'
+  }
+  if (editingComp.value.stock !== undefined && Number(editingComp.value.stock) < 0) {
+    return editError.value = 'El stock no puede ser negativo'
+  }
+
   savingEdit.value = true
   try {
     const res = await fetch(`${API}/componentes/`, {

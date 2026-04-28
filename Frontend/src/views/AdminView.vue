@@ -117,10 +117,10 @@
             <div v-if="loadingComponentes" class="px-6 py-12 text-center text-text-muted text-sm">Cargando componentes...</div>
             <table v-else class="w-full min-w-[640px]">
               <thead class="border-b border-dark-border">
-                <tr><th v-for="h in ['Componente','Categoría','Especificación','Gama','Precio','Bodega','Stock']" :key="h" class="px-6 py-3 text-left text-xs text-text-muted uppercase tracking-wider font-medium">{{ h }}</th></tr>
+                <tr><th v-for="h in ['Componente','Categoría','Especificación','Gama','Precio','Bodega','Stock','Acciones']" :key="h" class="px-6 py-3 text-left text-xs text-text-muted uppercase tracking-wider font-medium">{{ h }}</th></tr>
               </thead>
               <tbody class="divide-y divide-dark-border">
-                <tr v-if="filteredComponentes.length === 0"><td colspan="7" class="px-6 py-12 text-center text-text-muted text-sm">Sin componentes</td></tr>
+                <tr v-if="filteredComponentes.length === 0"><td colspan="8" class="px-6 py-12 text-center text-text-muted text-sm">Sin componentes</td></tr>
                 <tr v-for="c in filteredComponentes" :key="c.id" class="hover:bg-dark-bg/50 transition-colors">
                   <td class="px-6 py-4 text-sm font-medium text-text-primary">{{ c.nombre }}</td>
                   <td class="px-6 py-4"><span class="badge text-xs bg-accent/10 text-accent border border-accent/20">{{ c.categoria }}</span></td>
@@ -129,6 +129,9 @@
                   <td class="px-6 py-4 text-sm text-accent font-mono font-medium">${{ Number(c.precio).toLocaleString() }}</td>
                   <td class="px-6 py-4 text-sm text-text-muted">{{ c.bodega_nombre }}</td>
                   <td class="px-6 py-4 text-sm font-mono" :class="c.stock <= 3 ? 'text-yellow-400' : 'text-text-primary'">{{ c.stock }}</td>
+                  <td class="px-6 py-4">
+                    <button @click="openEditComp(c)" class="text-xs text-text-muted hover:text-accent px-2 py-1 rounded hover:bg-accent/10 transition-colors">Editar</button>
+                  </td>
                 </tr>
               </tbody>
             </table>
@@ -438,6 +441,57 @@
       </div>
     </div>
 
+    <!-- ===== MODAL EDITAR COMPONENTE ===== -->
+    <div v-if="showEditCompModal" class="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto py-6 px-4">
+      <div class="fixed inset-0 bg-black/60 backdrop-blur-sm" @click="showEditCompModal = false"></div>
+      <div class="relative card-dark rounded-2xl p-6 w-full max-w-lg my-auto shadow-2xl">
+        <div class="flex items-center justify-between mb-6">
+          <div>
+            <h2 class="text-lg font-bold text-text-primary">Editar componente</h2>
+            <p class="text-xs text-text-muted mt-0.5">{{ editingComp.nombre }}</p>
+          </div>
+          <button @click="showEditCompModal = false" class="text-text-muted hover:text-text-primary transition-colors text-2xl leading-none w-8 h-8 flex items-center justify-center rounded-lg hover:bg-dark-bg">×</button>
+        </div>
+
+        <div class="space-y-5">
+          <div>
+            <label class="block text-sm font-medium text-text-primary mb-2">Especificación técnica</label>
+            <input v-model="editingComp.especificacion" type="text" class="w-full bg-dark-bg border border-dark-border rounded-lg px-4 py-3 text-sm text-text-primary focus:outline-none focus:border-accent transition-colors" />
+          </div>
+
+          <div class="grid grid-cols-2 gap-4">
+            <div>
+              <label class="block text-sm font-medium text-text-primary mb-2">Precio ($)</label>
+              <input v-model="editingComp.precio" type="number" class="w-full bg-dark-bg border border-dark-border rounded-lg px-4 py-3 text-sm text-text-primary focus:outline-none focus:border-accent transition-colors" />
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-text-primary mb-2">Stock</label>
+              <input v-model="editingComp.stock" type="number" min="0" class="w-full bg-dark-bg border border-dark-border rounded-lg px-4 py-3 text-sm text-text-primary focus:outline-none focus:border-accent transition-colors" />
+            </div>
+          </div>
+
+          <div>
+            <label class="block text-sm font-medium text-text-primary mb-3">Gama del componente</label>
+            <div class="grid grid-cols-3 gap-3">
+              <button v-for="tier in ['alta', 'media', 'baja']" :key="tier" @click="editingComp.gama = tier"
+                class="py-2.5 rounded-lg border text-sm font-medium transition-all"
+                :class="editingComp.gama === tier ? 'border-accent bg-accent/10 text-accent' : 'border-dark-border text-text-muted hover:border-accent/40'">
+                {{ tier.charAt(0).toUpperCase() + tier.slice(1) }}
+              </button>
+            </div>
+          </div>
+
+          <p v-if="editCompError" class="text-xs text-red-400 bg-red-500/10 border border-red-500/20 rounded-lg px-4 py-2.5">{{ editCompError }}</p>
+        </div>
+
+        <div class="flex gap-3 mt-8">
+          <button @click="saveEditComp" :disabled="savingEditComp" class="btn-primary flex-1 text-sm">
+            {{ savingEditComp ? 'Guardando...' : 'Guardar cambios' }}
+          </button>
+          <button @click="showEditCompModal = false" class="btn-secondary text-sm px-5">Cancelar</button>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -446,7 +500,7 @@ import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuth } from '../composables/useAuth'
 
-const API = 'http://localhost/pcmatch/backend/api'
+const API = 'http://127.0.0.1:8000/api'
 const { getToken, logout } = useAuth()
 const router = useRouter()
 
@@ -578,6 +632,10 @@ async function confirmDeleteBodega() {
 const componentes = ref([])
 const loadingComponentes = ref(false)
 const filterComponente = ref('')
+const showEditCompModal = ref(false)
+const editingComp = ref({})
+const editCompError = ref('')
+const savingEditComp = ref(false)
 
 const filteredComponentes = computed(() => {
   if (!filterComponente.value.trim()) return componentes.value
@@ -592,6 +650,46 @@ async function fetchComponentes() {
     const data = await res.json()
     if (res.ok) componentes.value = data.componentes
   } catch(e) { console.error(e) } finally { loadingComponentes.value = false }
+}
+
+function openEditComp(comp) {
+  editingComp.value = { ...comp }
+  editCompError.value = ''
+  showEditCompModal.value = true
+}
+
+async function saveEditComp() {
+  editCompError.value = ''
+  
+  if (editingComp.value.precio !== undefined && Number(editingComp.value.precio) <= 0) {
+    return editCompError.value = 'El precio debe ser mayor a 0'
+  }
+  if (editingComp.value.stock !== undefined && Number(editingComp.value.stock) < 0) {
+    return editCompError.value = 'El stock no puede ser negativo'
+  }
+
+  savingEditComp.value = true
+  try {
+    const res = await fetch(`${API}/componentes/`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getToken()}` },
+      body: JSON.stringify({
+        id:             editingComp.value.id,
+        especificacion: editingComp.value.especificacion,
+        gama:           editingComp.value.gama,
+        precio:         editingComp.value.precio,
+        stock:          editingComp.value.stock,
+      })
+    })
+    const data = await res.json()
+    if (!res.ok) return editCompError.value = data.message ?? 'Error al guardar'
+    await fetchComponentes()
+    showEditCompModal.value = false
+  } catch (e) {
+    editCompError.value = 'Error de conexión'
+  } finally {
+    savingEditComp.value = false
+  }
 }
 
 // ── Usuarios ──────────────────────────────────────────────
