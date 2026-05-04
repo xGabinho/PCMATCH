@@ -2,16 +2,19 @@
 require_once __DIR__ . '/../../config/helpers.php';
 require_once __DIR__ . '/../../config/database.php';
 require_once __DIR__ . '/../../middleware/auth.php';
- 
+
 setCORS();
- 
+
 $method = $_SERVER['REQUEST_METHOD'];
- 
-if ($method === 'OPTIONS') { http_response_code(200); exit(); }
- 
+
+if ($method === 'OPTIONS') {
+    http_response_code(200);
+    exit();
+}
+
 // Todos los métodos requieren ser admin (RN03)
 $payload = requireAuth(['admin', 'bodega']);
- 
+
 $db = getDB();
 if ($method === 'GET') {
     $result  = $db->query("
@@ -46,7 +49,10 @@ if ($method === 'POST') {
     $stmt->bind_param("s", $correo);
     $stmt->execute();
     $stmt->store_result();
-    if ($stmt->num_rows > 0) { $stmt->close(); error('Ya existe una bodega con ese correo', 409); }
+    if ($stmt->num_rows > 0) {
+        $stmt->close();
+        error('Ya existe una bodega con ese correo', 409);
+    }
     $stmt->close();
 
     $hash = password_hash($password, PASSWORD_BCRYPT);
@@ -76,14 +82,20 @@ if ($method === 'PUT') {
     $stmt->bind_param("i", $id);
     $stmt->execute();
     $stmt->store_result();
-    if ($stmt->num_rows === 0) { $stmt->close(); error('Bodega no encontrada', 404); }
+    if ($stmt->num_rows === 0) {
+        $stmt->close();
+        error('Bodega no encontrada', 404);
+    }
     $stmt->close();
 
     $stmt = $db->prepare("SELECT id FROM bodegas WHERE correo = ? AND id != ?");
     $stmt->bind_param("si", $correo, $id);
     $stmt->execute();
     $stmt->store_result();
-    if ($stmt->num_rows > 0) { $stmt->close(); error('Ya existe otra bodega con ese correo', 409); }
+    if ($stmt->num_rows > 0) {
+        $stmt->close();
+        error('Ya existe otra bodega con ese correo', 409);
+    }
     $stmt->close();
 
     $stmt = $db->prepare("UPDATE bodegas SET nombre = ?, correo = ?, telefono = ? WHERE id = ?");
@@ -125,7 +137,7 @@ if ($method === 'DELETE') {
     if ($stock['total'] > 0) {
         error(
             'No se puede desactivar: la bodega tiene ' . $stock['total'] .
-            ' componente(s) con inventario disponible. Primero traslada o cierra el inventario.',
+                ' componente(s) con inventario disponible. Primero traslada o cierra el inventario.',
             409
         );
     }
