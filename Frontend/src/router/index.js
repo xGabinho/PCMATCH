@@ -7,6 +7,7 @@ import ClientHomeView from '../views/ClientHomeView.vue'
 import BuilderView    from '../views/BuilderView.vue'
 import QuoteView      from '../views/QuoteView.vue'
 import AdminView      from '../views/AdminView.vue'
+import SuperAdminView from '../views/SuperAdminView.vue'
 import BodegaView     from '../views/BodegaView.vue'
 import ProfileView    from '../views/ProfileView.vue'
 
@@ -23,6 +24,9 @@ const routes = [
 
   // Admin
   { path: '/admin',  component: AdminView,  meta: { requiresAuth: true, roles: ['admin']  } },
+
+  // Super Admin
+  { path: '/superadmin', component: SuperAdminView, meta: { requiresAuth: true, roles: ['superadmin'] } },
 
   // Bodega
   { path: '/bodega', component: BodegaView, meta: { requiresAuth: true, roles: ['bodega'] } },
@@ -44,6 +48,7 @@ router.beforeEach((to) => {
     // Verificar rol
     if (to.meta.roles && !to.meta.roles.includes(user.value?.rol)) {
       // Redirigir a su home según rol
+      if (user.value?.rol === 'superadmin') return { path: '/superadmin' }
       if (user.value?.rol === 'admin')  return { path: '/admin'  }
       if (user.value?.rol === 'bodega') return { path: '/bodega' }
       return { path: '/inicio' }
@@ -52,6 +57,7 @@ router.beforeEach((to) => {
 
   // Si ya está logueado y va al login, redirigir a su home
   if (to.path === '/login' && isLoggedIn.value) {
+    if (user.value?.rol === 'superadmin') return { path: '/superadmin' }
     if (user.value?.rol === 'admin')  return { path: '/admin'  }
     if (user.value?.rol === 'bodega') return { path: '/bodega' }
     return { path: '/inicio' }

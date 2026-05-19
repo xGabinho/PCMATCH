@@ -232,7 +232,7 @@
             </div>
             <div class="card-dark rounded-xl p-5">
               <p class="text-text-muted text-xs uppercase tracking-wider mb-2">Inactivos</p>
-              <p class="text-3xl font-bold text-red-400 font-mono">{{ usuarios.filter(u => u.estado == 0).length }}</p>
+              <p class="text-3xl font-bold text-red-400 font-mono">{{ usuarios.filter(u => u.activo == 0).length }}</p>
             </div>
           </div>
 
@@ -248,7 +248,7 @@
               </thead>
               <tbody class="divide-y divide-dark-border">
                 <tr v-if="filteredUsuarios.length === 0"><td colspan="7" class="px-6 py-12 text-center text-text-muted text-sm">Sin usuarios</td></tr>
-                <tr v-for="u in filteredUsuarios" :key="u.id" class="hover:bg-dark-bg/50 transition-colors" :class="u.estado == 0 ? 'opacity-50' : ''">
+                <tr v-for="u in filteredUsuarios" :key="u.id" class="hover:bg-dark-bg/50 transition-colors" :class="u.activo == 0 ? 'opacity-50' : ''">
                   <td class="px-6 py-4">
                     <div class="flex items-center gap-3">
                       <div class="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0" :class="roleStyles[u.rol]?.avatar ?? 'bg-dark-card text-text-muted'">
@@ -263,8 +263,8 @@
                     <span class="badge text-xs px-2.5 py-1" :class="roleStyles[u.rol]?.badge ?? ''">{{ roleStyles[u.rol]?.label ?? u.rol }}</span>
                   </td>
                   <td class="px-6 py-4">
-                    <span class="badge text-xs px-2.5 py-1" :class="u.estado == 1 ? 'bg-green-500/10 text-green-400 border border-green-500/20' : 'bg-red-500/10 text-red-400 border border-red-500/20'">
-                      {{ u.estado == 1 ? 'Activo' : 'Inactivo' }}
+                    <span class="badge text-xs px-2.5 py-1" :class="u.activo == 1 ? 'bg-green-500/10 text-green-400 border border-green-500/20' : 'bg-red-500/10 text-red-400 border border-red-500/20'">
+                      {{ u.activo == 1 ? 'Activo' : 'Inactivo' }}
                     </span>
                   </td>
                   <td class="px-6 py-4 text-sm text-text-muted">{{ formatDate(u.created_at) }}</td>
@@ -272,10 +272,10 @@
                     <div class="flex gap-2">
                       <button @click="openEditModal(u)" class="text-xs text-text-muted hover:text-yellow-400 px-2 py-1 rounded hover:bg-yellow-400/10 transition-colors">Editar</button>
                       <button @click="openDeleteModal(u)" class="text-xs px-2 py-1 rounded transition-colors"
-                        :class="u.estado == 1
+                        :class="u.activo == 1
                           ? 'text-text-muted hover:text-red-400 hover:bg-red-400/10'
                           : 'text-text-muted hover:text-green-400 hover:bg-green-400/10'">
-                        {{ u.estado == 1 ? 'Desactivar' : 'Reactivar' }}
+                        {{ u.activo == 1 ? 'Desactivar' : 'Reactivar' }}
                       </button>
                     </div>
                   </td>
@@ -351,26 +351,26 @@
       <div class="fixed inset-0 bg-black/60 backdrop-blur-sm" @click="showDeleteModal = false"></div>
       <div class="relative card-dark rounded-2xl p-6 w-full max-w-sm my-auto shadow-2xl text-center">
         <div class="w-14 h-14 rounded-full flex items-center justify-center mx-auto mb-4 text-2xl"
-          :class="deletingUser?.estado == 1 ? 'bg-red-500/10 border border-red-500/20' : 'bg-green-500/10 border border-green-500/20'">
-          {{ deletingUser?.estado == 1 ? '🚫' : '✅' }}
+          :class="deletingUser?.activo == 1 ? 'bg-red-500/10 border border-red-500/20' : 'bg-green-500/10 border border-green-500/20'">
+          {{ deletingUser?.activo == 1 ? '🚫' : '✅' }}
         </div>
         <h2 class="text-lg font-bold text-text-primary mb-2">
-          {{ deletingUser?.estado == 1 ? 'Desactivar usuario' : 'Reactivar usuario' }}
+          {{ deletingUser?.activo == 1 ? 'Desactivar usuario' : 'Reactivar usuario' }}
         </h2>
         <p class="text-text-muted text-sm mb-1">
-          {{ deletingUser?.estado == 1 ? '¿Desactivar a' : '¿Reactivar a' }}
+          {{ deletingUser?.activo == 1 ? '¿Desactivar a' : '¿Reactivar a' }}
         </p>
         <p class="text-text-primary font-semibold mb-2">{{ deletingUser?.nombre }} {{ deletingUser?.apellido }}?</p>
         <p class="text-xs text-text-muted mb-6 px-4">
-          {{ deletingUser?.estado == 1 ? 'El usuario no podrá iniciar sesión mientras esté inactivo.' : 'El usuario podrá volver a iniciar sesión.' }}
+          {{ deletingUser?.activo == 1 ? 'El usuario no podrá iniciar sesión mientras esté inactivo.' : 'El usuario podrá volver a iniciar sesión.' }}
         </p>
         <div class="flex gap-3">
           <button @click="confirmDeleteUser" :disabled="savingDeleteUser"
             class="flex-1 py-3 rounded-lg text-sm font-medium border transition-colors"
-            :class="deletingUser?.estado == 1
+            :class="deletingUser?.activo == 1
               ? 'bg-red-500/10 text-red-400 border-red-500/20 hover:bg-red-500/20'
               : 'bg-green-500/10 text-green-400 border-green-500/20 hover:bg-green-500/20'">
-            {{ savingDeleteUser ? 'Procesando...' : (deletingUser?.estado == 1 ? 'Sí, desactivar' : 'Sí, reactivar') }}
+            {{ savingDeleteUser ? 'Procesando...' : (deletingUser?.activo == 1 ? 'Sí, desactivar' : 'Sí, reactivar') }}
           </button>
           <button @click="showDeleteModal = false" class="flex-1 btn-secondary text-sm">Cancelar</button>
         </div>
@@ -783,10 +783,17 @@ function openDeleteModal(u) {
 async function confirmDeleteUser() {
   savingDeleteUser.value = true
   try {
-    const nuevoEstado = deletingUser.value.estado == 1 ? 0 : 1
-    await fetch(`${API}/usuarios/?id=${deletingUser.value.id}&estado=${nuevoEstado}`, {
-      method: 'DELETE',
-      headers: { Authorization: `Bearer ${getToken()}` }
+    const activoNuevo = deletingUser.value.activo == 1 ? 0 : 1
+    await fetch(`${API}/usuarios/`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json', Accept: 'application/json', Authorization: `Bearer ${getToken()}` },
+      body: JSON.stringify({
+        id: deletingUser.value.id,
+        nombre: deletingUser.value.nombre,
+        correo: deletingUser.value.correo,
+        rol: deletingUser.value.rol,
+        activo: activoNuevo
+      })
     })
     await fetchUsuarios()
     showDeleteModal.value = false
