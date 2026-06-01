@@ -74,7 +74,7 @@
             </div>
             <div v-if="loadingProveedores" class="px-6 py-12 text-center text-text-muted text-sm">Cargando proveedores...</div>
             <table v-else class="w-full min-w-[640px]">
-                <tr><th v-for="h in ['Razón Social','ID Legal','Contacto','Documento','Aprobación','Cuenta','Acciones']" :key="h" class="px-6 py-3 text-left text-xs text-text-muted uppercase tracking-wider font-medium">{{ h }}</th></tr>
+                <tr><th v-for="h in ['Nombre de Proveedor','ID Legal','Contacto','Documento','Aprobación','Cuenta','Acciones']" :key="h" class="px-6 py-3 text-left text-xs text-text-muted uppercase tracking-wider font-medium">{{ h }}</th></tr>
               <tbody class="divide-y divide-dark-border">
                 <tr v-if="filteredProveedores.length === 0"><td colspan="6" class="px-6 py-12 text-center text-text-muted text-sm">Sin proveedores registrados</td></tr>
                 <tr v-for="p in filteredProveedores" :key="p.id" class="hover:bg-dark-bg/50 transition-colors">
@@ -186,7 +186,7 @@
             <div v-if="loadingComponentes" class="px-6 py-12 text-center text-text-muted text-sm">Cargando componentes...</div>
             <table v-else class="w-full min-w-[640px]">
               <thead class="border-b border-dark-border">
-                <tr><th v-for="h in ['Componente','Categoría','Gama','Precio','Bodega','Stock','Acciones']" :key="h" class="px-6 py-3 text-left text-xs text-text-muted uppercase tracking-wider font-medium">{{ h }}</th></tr>
+                <tr><th v-for="h in ['Componente','Categoría','Gama','Precio','Bodega','Stock','Estado','Acciones']" :key="h" class="px-6 py-3 text-left text-xs text-text-muted uppercase tracking-wider font-medium">{{ h }}</th></tr>
               </thead>
               <tbody class="divide-y divide-dark-border">
                 <tr v-if="filteredComponentes.length === 0"><td colspan="7" class="px-6 py-12 text-center text-text-muted text-sm">Sin componentes</td></tr>
@@ -198,7 +198,18 @@
                   <td class="px-6 py-4 text-sm text-text-muted">{{ c.bodega_nombre }}</td>
                   <td class="px-6 py-4 text-sm font-mono" :class="c.stock <= 3 ? 'text-yellow-400' : 'text-text-primary'">{{ c.stock }}</td>
                   <td class="px-6 py-4">
-                    <button @click="openEditComp(c)" class="text-xs text-text-muted hover:text-accent px-2 py-1 rounded hover:bg-accent/10 transition-colors">Editar</button>
+                    <span class="badge text-xs px-2.5 py-1" :class="c.activo == 1 ? 'bg-green-500/10 text-green-400 border border-green-500/20' : 'bg-red-500/10 text-red-400 border border-red-500/20'">
+                      {{ c.activo == 1 ? 'Activo' : 'Inactivo' }}
+                    </span>
+                  </td>
+                  <td class="px-6 py-4">
+                    <div class="flex gap-2">
+                      <button @click="toggleComponente(c)" class="text-xs text-text-muted hover:text-green-400 px-2 py-1 rounded hover:bg-green-400/10 transition-colors">
+                        {{ c.activo == 1 ? 'Desactivar' : 'Activar' }}
+                      </button>
+                      <button @click="openEditComp(c)" class="text-xs text-text-muted hover:text-accent px-2 py-1 rounded hover:bg-accent/10 transition-colors">Editar</button>
+                      <button @click="openDeleteComp(c)" class="text-xs text-text-muted hover:text-red-400 px-2 py-1 rounded hover:bg-red-400/10 transition-colors">Eliminar</button>
+                    </div>
                   </td>
                 </tr>
               </tbody>
@@ -391,8 +402,8 @@
         </div>
         <div class="space-y-4 max-h-[60vh] overflow-y-auto pr-2">
           <div>
-            <label class="block text-sm font-medium text-text-primary mb-1">Razón Social</label>
-            <input v-model="newProveedor.razon_social" type="text" placeholder="Empresa S.A." class="w-full bg-dark-bg border border-dark-border rounded-lg px-4 py-3 text-sm text-text-primary placeholder-text-muted focus:outline-none focus:border-accent transition-colors" />
+            <label class="block text-sm font-medium text-text-primary mb-1">Nombre de proveedor</label>
+            <input v-model="newProveedor.razon_social" type="text" placeholder="Ej: Intel S.A." class="w-full bg-dark-bg border border-dark-border rounded-lg px-4 py-3 text-sm text-text-primary placeholder-text-muted focus:outline-none focus:border-accent transition-colors" />
           </div>
           <div>
             <label class="block text-sm font-medium text-text-primary mb-1">Identificación Legal (RUT/NIT)</label>
@@ -445,7 +456,7 @@
         </div>
         <div class="space-y-4 max-h-[60vh] overflow-y-auto pr-2">
           <div>
-            <label class="block text-sm font-medium text-text-primary mb-1">Razón Social</label>
+            <label class="block text-sm font-medium text-text-primary mb-1">Nombre de proveedor</label>
             <input v-model="editingProveedor.razon_social" type="text" class="w-full bg-dark-bg border border-dark-border rounded-lg px-4 py-3 text-sm text-text-primary focus:outline-none focus:border-accent transition-colors" />
           </div>
           <div>
@@ -488,7 +499,7 @@
             <label class="block text-sm font-medium text-text-primary mb-2">Proveedor asignado</label>
             <select v-model="editingBodega.proveedor_id" class="w-full bg-dark-bg border border-dark-border rounded-lg px-4 py-3 text-sm text-text-primary focus:outline-none focus:border-accent transition-colors">
               <option :value="null">Sin proveedor</option>
-              <option v-for="p in proveedores" :key="p.id" :value="p.id">{{ p.nombre }}</option>
+              <option v-for="p in proveedores" :key="p.id" :value="p.id">{{ p.razon_social || p.nombre }}</option>
             </select>
           </div>
           <div>
@@ -651,7 +662,7 @@
         <div class="space-y-5">
           <div>
             <label class="block text-sm font-medium text-text-primary mb-2">Especificación técnica</label>
-            <input v-model="editingComp.especificacion" type="text" class="w-full bg-dark-bg border border-dark-border rounded-lg px-4 py-3 text-sm text-text-primary focus:outline-none focus:border-accent transition-colors" />
+            <input v-model="editingComp.especificacion" type="text" class="allow-special w-full bg-dark-bg border border-dark-border rounded-lg px-4 py-3 text-sm text-text-primary focus:outline-none focus:border-accent transition-colors" />
           </div>
 
           <div class="grid grid-cols-2 gap-4">
@@ -687,6 +698,24 @@
         </div>
       </div>
     </div>
+
+    <!-- ===== MODAL ELIMINAR COMPONENTE ===== -->
+    <div v-if="showDeleteCompModal" class="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto py-6 px-4">
+      <div class="fixed inset-0 bg-black/60 backdrop-blur-sm" @click="showDeleteCompModal = false"></div>
+      <div class="relative card-dark rounded-2xl p-6 w-full max-w-sm my-auto shadow-2xl text-center">
+        <div class="w-14 h-14 rounded-full bg-red-500/10 border border-red-500/20 flex items-center justify-center mx-auto mb-4 text-2xl">🗑️</div>
+        <h2 class="text-lg font-bold text-text-primary mb-2">Eliminar componente</h2>
+        <p class="text-text-muted text-sm mb-1">¿Estás seguro de que deseas eliminar</p>
+        <p class="text-text-primary font-semibold mb-2">{{ deletingComp?.nombre }}?</p>
+        <p class="text-xs text-text-muted mb-6 px-4">Esta acción no se puede deshacer.</p>
+        <div class="flex gap-3">
+          <button @click="confirmDeleteComp" :disabled="savingDeleteComp" class="flex-1 py-3 rounded-lg text-sm font-medium bg-red-500/10 text-red-400 border border-red-500/20 hover:bg-red-500/20 transition-colors">
+            {{ savingDeleteComp ? 'Eliminando...' : 'Sí, eliminar' }}
+          </button>
+          <button @click="showDeleteCompModal = false" class="flex-1 btn-secondary text-sm">Cancelar</button>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -694,10 +723,12 @@
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuth } from '../composables/useAuth'
+import { useToast } from '../composables/useToast'
 
 const API = 'http://127.0.0.1:8000/api'
 const { getToken, logout, user } = useAuth()
 const router = useRouter()
+const toast = useToast()
 
 function handleLogout() { logout(); router.push('/login') }
 function formatDate(d) { return d ? new Date(d).toLocaleDateString('es-CL', { day: '2-digit', month: 'short', year: 'numeric' }) : '—' }
@@ -821,10 +852,17 @@ async function saveNewProveedor() {
       body: formData
     })
     const data = await res.json()
-    if (!res.ok) return proveedorError.value = data.message ?? 'Error al crear'
+    if (!res.ok) {
+      toast.error(data.message ?? 'Error al crear')
+      return proveedorError.value = data.message ?? 'Error al crear'
+    }
     await fetchProveedores(); await fetchHistorial()
     closeProveedorModal()
-  } catch(e) { proveedorError.value = 'Error de conexión' } finally { savingProveedor.value = false }
+    toast.success('Proveedor agregado exitosamente')
+  } catch(e) { 
+    proveedorError.value = 'Error de conexión'
+    toast.error('Error de conexión')
+  } finally { savingProveedor.value = false }
 }
 
 async function cambiarEstadoProveedor(p, estadoNuevo) {
@@ -840,8 +878,14 @@ async function cambiarEstadoProveedor(p, estadoNuevo) {
     })
     if (res.ok) {
       await fetchProveedores(); await fetchHistorial()
+      toast.success('Estado del proveedor actualizado')
+    } else {
+      toast.error('Error al actualizar estado')
     }
-  } catch(e) { console.error('Error al cambiar de estado', e) }
+  } catch(e) { 
+    console.error('Error al cambiar de estado', e)
+    toast.error('Error de conexión')
+  }
 }
 
 async function toggleActivoProveedor(p) {
@@ -858,8 +902,14 @@ async function toggleActivoProveedor(p) {
     })
     if (res.ok) {
       await fetchProveedores(); await fetchHistorial()
+      toast.success(activaNuevo === 1 ? 'Proveedor activado' : 'Proveedor desactivado')
+    } else {
+      toast.error('Error al cambiar estado')
     }
-  } catch(e) { console.error('Error al desactivar proveedor', e) }
+  } catch(e) { 
+    console.error('Error al desactivar proveedor', e)
+    toast.error('Error de conexión')
+  }
 }
 
 function openEditProveedor(p) {
@@ -871,7 +921,7 @@ function openEditProveedor(p) {
 async function saveEditProveedor() {
   editProveedorError.value = ''
   if (!editingProveedor.value.nombre || !editingProveedor.value.razon_social || !editingProveedor.value.identificacion_legal)
-    return editProveedorError.value = 'Nombre, Razón Social e Identificación son requeridos'
+    return editProveedorError.value = 'Nombre de proveedor, Representante e Identificación son requeridos'
     
   savingEditProveedor.value = true
   try {
@@ -886,12 +936,17 @@ async function saveEditProveedor() {
       })
     })
     const data = await res.json()
-    if (!res.ok) return editProveedorError.value = data.message ?? 'Error al guardar cambios'
+    if (!res.ok) {
+      toast.error(data.message ?? 'Error al guardar cambios')
+      return editProveedorError.value = data.message ?? 'Error al guardar cambios'
+    }
     
     await fetchProveedores(); await fetchHistorial()
     showEditProveedorModal.value = false
+    toast.success('Proveedor actualizado exitosamente')
   } catch(e) { 
     editProveedorError.value = 'Error de conexión' 
+    toast.error('Error de conexión')
   } finally { 
     savingEditProveedor.value = false 
   }
@@ -942,19 +997,35 @@ async function saveEditBodega() {
       body: JSON.stringify({ id: editingBodega.value.id, nombre: editingBodega.value.nombre, telefono: editingBodega.value.telefono, activa: editingBodega.value.activa, proveedor_id: editingBodega.value.proveedor_id })
     })
     const data = await res.json()
-    if (!res.ok) return editBodegaError.value = data.message ?? 'Error'
+    if (!res.ok) {
+      toast.error(data.message ?? 'Error')
+      return editBodegaError.value = data.message ?? 'Error'
+    }
     await fetchBodegas(); await fetchHistorial()
     showEditBodegaModal.value = false
-  } catch(e) { editBodegaError.value = 'Error de conexión' } finally { savingEditBodega.value = false }
+    toast.success('Bodega actualizada exitosamente')
+  } catch(e) { 
+    editBodegaError.value = 'Error de conexión'
+    toast.error('Error de conexión')
+  } finally { savingEditBodega.value = false }
 }
 
 async function toggleBodega(b) {
-  await fetch(`${API}/bodegas`, {
-    method: 'PUT',
-    headers: { 'Content-Type': 'application/json', Accept: 'application/json', Authorization: `Bearer ${getToken()}` },
-    body: JSON.stringify({ id: b.id, nombre: b.nombre, telefono: b.telefono, activa: b.activa == 1 ? 0 : 1, proveedor_id: b.proveedor_id })
-  })
-  await fetchBodegas(); await fetchHistorial()
+  try {
+    const res = await fetch(`${API}/bodegas`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json', Accept: 'application/json', Authorization: `Bearer ${getToken()}` },
+      body: JSON.stringify({ id: b.id, nombre: b.nombre, telefono: b.telefono, activa: b.activa == 1 ? 0 : 1, proveedor_id: b.proveedor_id })
+    })
+    if (res.ok) {
+      await fetchBodegas(); await fetchHistorial()
+      toast.success(b.activa == 1 ? 'Bodega desactivada' : 'Bodega activada')
+    } else {
+      toast.error('Error al cambiar estado')
+    }
+  } catch(e) {
+    toast.error('Error de conexión')
+  }
 }
 
 function openDeleteBodega(b) {
@@ -972,12 +1043,18 @@ async function confirmDeleteBodega() {
     })
     const data = await res.json()
     if (!res.ok) {
+        toast.error(data.message ?? 'Error al eliminar')
         deleteBodegaError.value = data.message ?? 'Error al eliminar'
         return
     }
     await fetchBodegas(); await fetchHistorial()
     showDeleteBodegaModal.value = false
-  } catch(e) { console.error(e); deleteBodegaError.value = 'Error de conexión' } finally { savingDeleteBodega.value = false }
+    toast.success('Bodega eliminada exitosamente')
+  } catch(e) { 
+    console.error(e); 
+    deleteBodegaError.value = 'Error de conexión'
+    toast.error('Error de conexión')
+  } finally { savingDeleteBodega.value = false }
 }
 
 function closeBodegaModal() {
@@ -997,17 +1074,27 @@ async function saveNewBodega() {
       body: JSON.stringify(newBodega.value)
     })
     const data = await res.json()
-    if (!res.ok) return bodegaError.value = data.message ?? 'Error al crear'
+    if (!res.ok) {
+      toast.error(data.message ?? 'Error al crear')
+      return bodegaError.value = data.message ?? 'Error al crear'
+    }
     await fetchBodegas(); await fetchHistorial()
     closeBodegaModal()
-  } catch(e) { bodegaError.value = 'Error de conexión' } finally { savingBodega.value = false }
+    toast.success('Bodega agregada exitosamente')
+  } catch(e) { 
+    bodegaError.value = 'Error de conexión'
+    toast.error('Error de conexión')
+  } finally { savingBodega.value = false }
 }
 
 // ── Componentes ───────────────────────────────────────────
 const componentes       = ref([])
 const loadingComponentes = ref(false)
-const filterComponente  = ref('')
+const filterComponente = ref('')
 const showEditCompModal = ref(false)
+const showDeleteCompModal = ref(false)
+const deletingComp = ref(null)
+const savingDeleteComp = ref(false)
 const editingComp = ref({})
 const editCompError = ref('')
 const savingEditComp = ref(false)
@@ -1057,15 +1144,56 @@ async function saveEditComp() {
       })
     })
     const data = await res.json()
-    if (!res.ok) return editCompError.value = data.message ?? 'Error al guardar'
+    if (!res.ok) {
+      toast.error(data.message ?? 'Error al guardar')
+      return editCompError.value = data.message ?? 'Error al guardar'
+    }
     await fetchComponentes()
     await fetchHistorial()
     showEditCompModal.value = false
+    toast.success('Componente actualizado exitosamente')
   } catch (e) {
     editCompError.value = 'Error de conexión'
+    toast.error('Error de conexión')
   } finally {
     savingEditComp.value = false
   }
+}
+
+async function toggleComponente(c) {
+  const activo = c.activo == 1 ? 0 : 1
+  try {
+    await fetch(`${API}/componentes/`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getToken()}` },
+      body: JSON.stringify({ id: c.id, activo })
+    })
+    await fetchComponentes()
+    toast.success(activo === 1 ? 'Componente activado' : 'Componente desactivado')
+  } catch (e) {
+    toast.error('Error al cambiar estado del componente')
+  }
+}
+
+function openDeleteComp(c) {
+  deletingComp.value = c
+  showDeleteCompModal.value = true
+}
+
+async function confirmDeleteComp() {
+  savingDeleteComp.value = true
+  try {
+    await fetch(`${API}/componentes/?id=${deletingComp.value.id}`, {
+      method: 'DELETE',
+      headers: { Authorization: `Bearer ${getToken()}` }
+    })
+    await fetchComponentes()
+    showDeleteCompModal.value = false
+    toast.success('Componente eliminado exitosamente')
+  } catch(e) {
+    console.error(e)
+    toast.error('Error al eliminar componente')
+  } finally { savingDeleteComp.value = false }
 }
 
 // ── Cotizaciones ──────────────────────────────────────────
@@ -1129,11 +1257,18 @@ async function saveNewUser() {
       body: JSON.stringify(newUser.value)
     })
     const data = await res.json()
-    if (!res.ok) return createUserError.value = data.message ?? 'Error al crear'
+    if (!res.ok) {
+      toast.error(data.message ?? 'Error al crear')
+      return createUserError.value = data.message ?? 'Error al crear'
+    }
     createUserSuccess.value = 'Usuario creado correctamente'
+    toast.success('Usuario creado correctamente')
     resetNewUser()
     await fetchUsuarios(); await fetchHistorial()
-  } catch(e) { createUserError.value = 'Error de conexión' } finally { savingUser.value = false }
+  } catch(e) { 
+    createUserError.value = 'Error de conexión'
+    toast.error('Error de conexión')
+  } finally { savingUser.value = false }
 }
 
 function openEditUsuario(u) { editingUsuario.value = { ...u }; editUsuarioError.value = ''; showEditUsuarioModal.value = true }
@@ -1148,10 +1283,17 @@ async function saveEditUsuario() {
       body: JSON.stringify(editingUsuario.value)
     })
     const data = await res.json()
-    if (!res.ok) return editUsuarioError.value = data.message ?? 'Error'
+    if (!res.ok) {
+      toast.error(data.message ?? 'Error')
+      return editUsuarioError.value = data.message ?? 'Error'
+    }
     await fetchUsuarios(); await fetchHistorial()
     showEditUsuarioModal.value = false
-  } catch(e) { editUsuarioError.value = 'Error de conexión' } finally { savingEditUsuario.value = false }
+    toast.success('Usuario actualizado exitosamente')
+  } catch(e) { 
+    editUsuarioError.value = 'Error de conexión'
+    toast.error('Error de conexión')
+  } finally { savingEditUsuario.value = false }
 }
 
 function openDeleteUsuario(u) { deletingUsuario.value = u; showDeleteUsuarioModal.value = true }
@@ -1159,12 +1301,20 @@ function openDeleteUsuario(u) { deletingUsuario.value = u; showDeleteUsuarioModa
 async function confirmDeleteUsuario() {
   savingDeleteUsuario.value = true
   try {
-    await fetch(`${API}/usuarios?id=${deletingUsuario.value.id}`, {
+    const res = await fetch(`${API}/usuarios?id=${deletingUsuario.value.id}`, {
       method: 'DELETE', headers: { Authorization: `Bearer ${getToken()}` }
     })
-    await fetchUsuarios(); await fetchHistorial()
-    showDeleteUsuarioModal.value = false
-  } catch(e) { console.error(e) } finally { savingDeleteUsuario.value = false }
+    if (res.ok) {
+      await fetchUsuarios(); await fetchHistorial()
+      showDeleteUsuarioModal.value = false
+      toast.success('Usuario eliminado exitosamente')
+    } else {
+      toast.error('Error al eliminar usuario')
+    }
+  } catch(e) { 
+    console.error(e)
+    toast.error('Error de conexión')
+  } finally { savingDeleteUsuario.value = false }
 }
 
 async function toggleActivoUsuario(u) {
@@ -1183,8 +1333,14 @@ async function toggleActivoUsuario(u) {
     })
     if (res.ok) {
       await fetchUsuarios(); await fetchHistorial()
+      toast.success(activoNuevo === 1 ? 'Usuario activado' : 'Usuario desactivado')
+    } else {
+      toast.error('Error al cambiar estado')
     }
-  } catch(e) { console.error('Error al cambiar de estado', e) }
+  } catch(e) { 
+    console.error('Error al cambiar de estado', e)
+    toast.error('Error de conexión')
+  }
 }
 
 

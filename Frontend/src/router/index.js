@@ -9,6 +9,7 @@ import QuoteView      from '../views/QuoteView.vue'
 import AdminView      from '../views/AdminView.vue'
 import SuperAdminView from '../views/SuperAdminView.vue'
 import BodegaView     from '../views/BodegaView.vue'
+import ProveedorView  from '../views/ProveedorView.vue'
 import ProfileView    from '../views/ProfileView.vue'
 
 const routes = [
@@ -28,8 +29,9 @@ const routes = [
   // Super Admin
   { path: '/superadmin', component: SuperAdminView, meta: { requiresAuth: true, roles: ['superadmin'] } },
 
-  // Bodega
+  // Bodega / Proveedor
   { path: '/bodega', component: BodegaView, meta: { requiresAuth: true, roles: ['bodega'] } },
+  { path: '/proveedor', component: ProveedorView, meta: { requiresAuth: true, roles: ['proveedor'] } },
 ]
 
 const router = createRouter({
@@ -51,6 +53,7 @@ router.beforeEach((to) => {
       if (user.value?.rol === 'superadmin') return { path: '/superadmin' }
       if (user.value?.rol === 'admin')  return { path: '/admin'  }
       if (user.value?.rol === 'bodega') return { path: '/bodega' }
+      if (user.value?.rol === 'proveedor') return { path: '/proveedor' }
       return { path: '/inicio' }
     }
   }
@@ -60,6 +63,7 @@ router.beforeEach((to) => {
     if (user.value?.rol === 'superadmin') return { path: '/superadmin' }
     if (user.value?.rol === 'admin')  return { path: '/admin'  }
     if (user.value?.rol === 'bodega') return { path: '/bodega' }
+    if (user.value?.rol === 'proveedor') return { path: '/proveedor' }
     return { path: '/inicio' }
   }
 })

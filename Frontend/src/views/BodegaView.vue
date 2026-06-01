@@ -253,7 +253,7 @@
               v-model="newComp.especificacion"
               type="text"
               placeholder="Ej: 6 núcleos / 12 hilos · 3.7GHz · AM4"
-              class="w-full bg-dark-bg border border-dark-border rounded-lg px-4 py-3 text-sm text-text-primary placeholder-text-muted focus:outline-none focus:border-accent transition-colors"
+              class="allow-special w-full bg-dark-bg border border-dark-border rounded-lg px-4 py-3 text-sm text-text-primary placeholder-text-muted focus:outline-none focus:border-accent transition-colors"
             />
           </div>
 
@@ -280,21 +280,26 @@
           <!-- Precio y Stock -->
           <div class="grid grid-cols-2 gap-4">
             <div>
-              <label class="block text-sm font-medium text-text-primary mb-2">Precio ($)</label>
+              <label class="block text-sm font-medium text-text-primary mb-2">Precio ($) <span class="text-red-400">*</span></label>
               <input
                 v-model="newComp.precio"
                 type="number"
                 placeholder="189000"
+                min="0"
+                step="1"
+                @keydown="blockInvalidChars($event)"
                 class="w-full bg-dark-bg border border-dark-border rounded-lg px-4 py-3 text-sm text-text-primary placeholder-text-muted focus:outline-none focus:border-accent transition-colors"
               />
             </div>
             <div>
-              <label class="block text-sm font-medium text-text-primary mb-2">Stock inicial</label>
+              <label class="block text-sm font-medium text-text-primary mb-2">Stock inicial <span class="text-red-400">*</span></label>
               <input
                 v-model="newComp.stock"
                 type="number"
                 placeholder="10"
                 min="0"
+                step="1"
+                @keydown="blockInvalidCharsStock($event)"
                 class="w-full bg-dark-bg border border-dark-border rounded-lg px-4 py-3 text-sm text-text-primary placeholder-text-muted focus:outline-none focus:border-accent transition-colors"
               />
             </div>
@@ -328,7 +333,7 @@
         <div class="space-y-5">
           <div>
             <label class="block text-sm font-medium text-text-primary mb-2">Especificación técnica</label>
-            <input v-model="editingComp.especificacion" type="text" class="w-full bg-dark-bg border border-dark-border rounded-lg px-4 py-3 text-sm text-text-primary focus:outline-none focus:border-accent transition-colors" />
+            <input v-model="editingComp.especificacion" type="text" class="allow-special w-full bg-dark-bg border border-dark-border rounded-lg px-4 py-3 text-sm text-text-primary focus:outline-none focus:border-accent transition-colors" />
           </div>
 
           <div class="grid grid-cols-2 gap-4">
@@ -397,12 +402,14 @@
 <script setup>
 import { useRouter } from 'vue-router'
 import { useAuth } from '../composables/useAuth'
+import { useToast } from '../composables/useToast'
 import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
 
 const API = 'http://127.0.0.1:8000/api'
 
 const router = useRouter()
 const { logout } = useAuth()
+const toast = useToast()
 
 function handleLogout() {
   logout()
@@ -528,9 +535,12 @@ function closeAddModal() {
 async function saveNewComp() {
   addError.value = ''
   if (!newComp.value.producto_id) return addError.value = 'Selecciona un producto del catálogo'
+  if (!newComp.value.especificacion || !newComp.value.especificacion.trim()) return addError.value = 'La especificación técnica es obligatoria'
   if (!newComp.value.gama)        return addError.value = 'Selecciona una gama'
   if (!newComp.value.precio || Number(newComp.value.precio) <= 0) return addError.value = 'El precio debe ser mayor a 0'
-  if (newComp.value.stock !== '' && Number(newComp.value.stock) < 0) return addError.value = 'El stock no puede ser negativo'
+  if (newComp.value.stock === '' || newComp.value.stock === null || newComp.value.stock === undefined) return addError.value = 'El stock inicial es obligatorio'
+  if (!Number.isInteger(Number(newComp.value.stock))) return addError.value = 'El stock debe ser un número entero sin decimales'
+  if (Number(newComp.value.stock) < 0) return addError.value = 'El stock no puede ser negativo'
 
   savingAdd.value = true
   try {
@@ -542,15 +552,21 @@ async function saveNewComp() {
         especificacion: newComp.value.especificacion,
         gama:           newComp.value.gama,
         precio:         newComp.value.precio,
-        stock:          newComp.value.stock || 0,
+        stock:          Number(newComp.value.stock),
       })
     })
     const data = await res.json()
-    if (!res.ok) return addError.value = data.error ?? 'Error al guardar'
+    if (!res.ok) {
+      const msg = data.message ?? 'Error al guardar el componente'
+      toast.error(msg)
+      return addError.value = msg
+    }
     await fetchComponents()
     closeAddModal()
+    toast.success('Componente añadido exitosamente')
   } catch (e) {
-    addError.value = 'Error de conexión'
+    toast.error('Error de conexión con el servidor')
+    addError.value = 'Error de conexión con el servidor'
   } finally {
     savingAdd.value = false
   }
@@ -574,6 +590,9 @@ async function saveEditComp() {
   if (editingComp.value.precio !== undefined && Number(editingComp.value.precio) <= 0) {
     return editError.value = 'El precio debe ser mayor a 0'
   }
+  if (editingComp.value.stock !== undefined && editingComp.value.stock !== '' && !Number.isInteger(Number(editingComp.value.stock))) {
+    return editError.value = 'El stock debe ser un número entero sin decimales'
+  }
   if (editingComp.value.stock !== undefined && Number(editingComp.value.stock) < 0) {
     return editError.value = 'El stock no puede ser negativo'
   }
@@ -592,11 +611,17 @@ async function saveEditComp() {
       })
     })
     const data = await res.json()
-    if (!res.ok) return editError.value = data.error ?? 'Error al guardar'
+    if (!res.ok) {
+      const msg = data.message ?? 'Error al guardar los cambios'
+      toast.error(msg)
+      return editError.value = msg
+    }
     await fetchComponents()
     showEditModal.value = false
+    toast.success('Componente actualizado exitosamente')
   } catch (e) {
-    editError.value = 'Error de conexión'
+    toast.error('Error de conexión con el servidor')
+    editError.value = 'Error de conexión con el servidor'
   } finally {
     savingEdit.value = false
   }
@@ -619,12 +644,18 @@ async function confirmDelete() {
       method: 'DELETE',
       headers: { Authorization: `Bearer ${token}` }
     })
+    const data = await res.json()
     if (res.ok) {
       await fetchComponents()
       showDeleteModal.value = false
+      toast.success('Componente eliminado exitosamente')
+    } else {
+      const msg = data.message ?? 'Error al eliminar componente'
+      toast.error(msg)
     }
   } catch (e) {
     console.error(e)
+    toast.error('Error de conexión al eliminar')
   } finally {
     savingDelete.value = false
   }
@@ -640,4 +671,18 @@ onMounted(() => {
 onBeforeUnmount(() => {
   document.removeEventListener('click', handleClickOutside)
 })
+
+// Bloquear caracteres no numéricos en inputs de precio (permite punto decimal)
+function blockInvalidChars(e) {
+  if (['e', 'E', '+', '-'].includes(e.key)) {
+    e.preventDefault()
+  }
+}
+
+// Bloquear caracteres no numéricos en inputs de stock (solo enteros)
+function blockInvalidCharsStock(e) {
+  if (['e', 'E', '+', '-', '.', ','].includes(e.key)) {
+    e.preventDefault()
+  }
+}
 </script>

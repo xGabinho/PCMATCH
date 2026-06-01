@@ -198,6 +198,96 @@
           </div>
         </template>
 
+        <!-- ==== MODAL AÑADIR COMPONENTE ==== -->
+        <div v-if="showAddCompModal" class="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto py-6 px-4">
+          <div class="fixed inset-0 bg-black/60 backdrop-blur-sm" @click="closeAddModal"></div>
+          <div class="relative card-dark rounded-2xl p-6 w-full max-w-lg my-auto shadow-2xl">
+            <div class="flex items-center justify-between mb-6">
+              <div>
+                <h2 class="text-lg font-bold text-text-primary">Añadir componente</h2>
+                <p class="text-xs text-text-muted mt-0.5">Agrega un nuevo producto a una de tus bodegas</p>
+              </div>
+              <button @click="closeAddModal" class="text-text-muted hover:text-text-primary transition-colors text-2xl leading-none w-8 h-8 flex items-center justify-center rounded-lg hover:bg-dark-bg">×</button>
+            </div>
+            <div class="space-y-5">
+              
+              <!-- Select de Bodega destino -->
+              <div>
+                <label class="block text-sm font-medium text-text-primary mb-2">Bodega destino <span class="text-red-400">*</span></label>
+                <select v-model="newComp.bodega_id" class="w-full bg-dark-bg border border-dark-border rounded-lg px-4 py-3 text-sm text-text-primary focus:outline-none focus:border-accent transition-colors">
+                  <option value="" disabled>Selecciona una bodega...</option>
+                  <option v-for="b in bodegas.filter(b => b.activa == 1)" :key="b.id" :value="b.id">{{ b.nombre }}</option>
+                </select>
+                <p v-if="bodegas.filter(b => b.activa == 1).length === 0" class="text-xs text-red-400 mt-1">No tienes bodegas activas para asignar componentes.</p>
+              </div>
+
+              <!-- Select buscable de producto -->
+              <div>
+                <label class="block text-sm font-medium text-text-primary mb-2">Producto del catálogo <span class="text-red-400">*</span></label>
+                <div class="relative">
+                  <input
+                    v-model="productoSearch"
+                    @input="showProductoDropdown = true"
+                    @focus="showProductoDropdown = true"
+                    type="text"
+                    placeholder="Buscar producto..."
+                    class="w-full bg-dark-bg border border-dark-border rounded-lg px-4 py-3 text-sm text-text-primary placeholder-text-muted focus:outline-none focus:border-accent transition-colors"
+                    :class="{ 'border-accent': newComp.producto_id }"
+                    autocomplete="off"
+                  />
+                  <div v-if="showProductoDropdown && productosFiltrados.length > 0" class="absolute top-full left-0 right-0 mt-1 bg-dark-card border border-dark-border rounded-lg shadow-xl z-20 max-h-52 overflow-y-auto">
+                    <button v-for="prod in productosFiltrados" :key="prod.id" @click="selectProducto(prod)" class="w-full flex items-center justify-between px-4 py-2.5 text-sm hover:bg-dark-bg transition-colors text-left">
+                      <span class="text-text-primary">{{ prod.nombre }}</span>
+                      <span class="text-xs text-text-muted ml-3 flex-shrink-0">{{ prod.categoria }}</span>
+                    </button>
+                  </div>
+                </div>
+                <p v-if="newComp.categoria" class="text-xs text-accent mt-1.5 flex items-center gap-1">
+                  <span>✓</span> Categoría: {{ newComp.categoria }}
+                </p>
+              </div>
+
+              <!-- Especificación -->
+              <div>
+                <label class="block text-sm font-medium text-text-primary mb-2">Especificación técnica <span class="text-red-400">*</span></label>
+                <input v-model="newComp.especificacion" type="text" placeholder="Ej: 6 núcleos / 12 hilos · 3.7GHz · AM4" class="w-full bg-dark-bg border border-dark-border rounded-lg px-4 py-3 text-sm text-text-primary placeholder-text-muted focus:outline-none focus:border-accent transition-colors" />
+              </div>
+
+              <!-- Gama -->
+              <div>
+                <label class="block text-sm font-medium text-text-primary mb-3">Gama <span class="text-red-400">*</span></label>
+                <div class="grid grid-cols-3 gap-3">
+                  <button v-for="tier in ['alta', 'media', 'baja']" :key="tier" @click="newComp.gama = tier"
+                    class="py-2.5 rounded-lg border text-sm font-medium transition-all"
+                    :class="newComp.gama === tier ? 'border-accent bg-accent/10 text-accent' : 'border-dark-border text-text-muted hover:border-accent/40'">
+                    {{ tier.charAt(0).toUpperCase() + tier.slice(1) }}
+                  </button>
+                </div>
+              </div>
+
+              <!-- Precio y Stock -->
+              <div class="grid grid-cols-2 gap-4">
+                <div>
+                  <label class="block text-sm font-medium text-text-primary mb-2">Precio ($) <span class="text-red-400">*</span></label>
+                  <input v-model="newComp.precio" type="number" min="0" step="1" @keydown="blockInvalidChars($event)" class="w-full bg-dark-bg border border-dark-border rounded-lg px-4 py-3 text-sm text-text-primary focus:outline-none focus:border-accent transition-colors" />
+                </div>
+                <div>
+                  <label class="block text-sm font-medium text-text-primary mb-2">Stock inicial <span class="text-red-400">*</span></label>
+                  <input v-model="newComp.stock" type="number" min="0" step="1" @keydown="blockInvalidCharsStock($event)" class="w-full bg-dark-bg border border-dark-border rounded-lg px-4 py-3 text-sm text-text-primary focus:outline-none focus:border-accent transition-colors" />
+                </div>
+              </div>
+
+              <p v-if="addCompError" class="text-xs text-red-400 bg-red-500/10 border border-red-500/20 rounded-lg px-4 py-2.5">{{ addCompError }}</p>
+            </div>
+            <div class="flex gap-3 mt-8">
+              <button @click="saveNewComp" :disabled="savingAddComp || bodegas.filter(b => b.activa == 1).length === 0" class="btn-primary flex-1 text-sm">
+                {{ savingAddComp ? 'Guardando...' : 'Guardar componente' }}
+              </button>
+              <button @click="closeAddModal" class="btn-secondary text-sm px-5">Cancelar</button>
+            </div>
+          </div>
+        </div>
+
       </div>
     </main>
 
@@ -305,7 +395,7 @@
         <div class="space-y-5">
           <div>
             <label class="block text-sm font-medium text-text-primary mb-2">Especificación técnica</label>
-            <input v-model="editingComp.especificacion" type="text" class="w-full bg-dark-bg border border-dark-border rounded-lg px-4 py-3 text-sm text-text-primary focus:outline-none focus:border-accent transition-colors" />
+            <input v-model="editingComp.especificacion" type="text" class="allow-special w-full bg-dark-bg border border-dark-border rounded-lg px-4 py-3 text-sm text-text-primary focus:outline-none focus:border-accent transition-colors" />
           </div>
 
           <div class="grid grid-cols-2 gap-4">
@@ -348,10 +438,12 @@
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuth } from '../composables/useAuth'
+import { useToast } from '../composables/useToast'
 
 const API = 'http://127.0.0.1:8000/api'
 const { getToken, logout, user } = useAuth()
 const router = useRouter()
+const toast = useToast()
 
 function handleLogout() { logout(); router.push('/login') }
 function formatDate(d) { return d ? new Date(d).toLocaleDateString('es-CL', { day: '2-digit', month: 'short', year: 'numeric' }) : '—' }
@@ -363,7 +455,7 @@ const activeSection = ref('dashboard')
 const sections = computed(() => [
   { id: 'dashboard',    icon: '📊', label: 'Dashboard',    description: 'Resumen general de tus bodegas',           cta: null,            count: null                  },
   { id: 'bodegas',      icon: '🏪', label: 'Mis bodegas',  description: `${bodegas.value.length} bodegas asignadas`, cta: '+ Nueva bodega', count: bodegas.value.length  },
-  { id: 'componentes',  icon: '🔧', label: 'Componentes',  description: `Componentes de tus bodegas`,               cta: null,            count: componentes.value.length },
+  { id: 'componentes',  icon: '🔧', label: 'Componentes',  description: `Componentes de tus bodegas`,               cta: '+ Nuevo componente', count: componentes.value.length },
   { id: 'cotizaciones', icon: '📄', label: 'Cotizaciones', description: 'Cotizaciones de tus bodegas',              cta: null,            count: cotizaciones.value.length },
 ])
 
@@ -380,6 +472,8 @@ function handleCta() {
     newBodega.value = { nombre: '', correo: '', telefono: '', password: '' }
     bodegaError.value = ''
     showBodegaModal.value = true
+  } else if (activeSection.value === 'componentes') {
+    openAddModal()
   }
 }
 
@@ -426,10 +520,17 @@ async function saveNewBodega() {
       body: JSON.stringify(newBodega.value)
     })
     const data = await res.json()
-    if (!res.ok) return bodegaError.value = data.message ?? 'Error al crear'
+    if (!res.ok) {
+      toast.error(data.message ?? 'Error al crear')
+      return bodegaError.value = data.message ?? 'Error al crear'
+    }
     await fetchBodegas()
     showBodegaModal.value = false
-  } catch(e) { bodegaError.value = 'Error de conexión' } finally { savingBodega.value = false }
+    toast.success('Bodega agregada exitosamente')
+  } catch(e) { 
+    bodegaError.value = 'Error de conexión'
+    toast.error('Error de conexión')
+  } finally { savingBodega.value = false }
 }
 
 function openEditBodega(b) { editingBodega.value = { ...b }; editBodegaError.value = ''; showEditBodegaModal.value = true }
@@ -445,10 +546,17 @@ async function saveEditBodega() {
       body: JSON.stringify({ id: editingBodega.value.id, nombre: editingBodega.value.nombre, telefono: editingBodega.value.telefono, activa: editingBodega.value.activa })
     })
     const data = await res.json()
-    if (!res.ok) return editBodegaError.value = data.message ?? 'Error'
+    if (!res.ok) {
+      toast.error(data.message ?? 'Error')
+      return editBodegaError.value = data.message ?? 'Error'
+    }
     await fetchBodegas()
     showEditBodegaModal.value = false
-  } catch(e) { editBodegaError.value = 'Error de conexión' } finally { savingEditBodega.value = false }
+    toast.success('Bodega actualizada exitosamente')
+  } catch(e) { 
+    editBodegaError.value = 'Error de conexión'
+    toast.error('Error de conexión')
+  } finally { savingEditBodega.value = false }
 }
 
 function openDeleteBodega(b) { deletingBodega.value = b; showDeleteBodegaModal.value = true }
@@ -456,12 +564,20 @@ function openDeleteBodega(b) { deletingBodega.value = b; showDeleteBodegaModal.v
 async function confirmDeleteBodega() {
   savingDeleteBodega.value = true
   try {
-    await fetch(`${API}/bodegas/?id=${deletingBodega.value.id}`, {
+    const res = await fetch(`${API}/bodegas/?id=${deletingBodega.value.id}`, {
       method: 'DELETE', headers: { Authorization: `Bearer ${getToken()}` }
     })
-    await fetchBodegas()
-    showDeleteBodegaModal.value = false
-  } catch(e) { console.error(e) } finally { savingDeleteBodega.value = false }
+    if (res.ok) {
+      await fetchBodegas()
+      showDeleteBodegaModal.value = false
+      toast.success('Bodega eliminada exitosamente')
+    } else {
+      toast.error('Error al eliminar bodega')
+    }
+  } catch(e) { 
+    console.error(e)
+    toast.error('Error de conexión')
+  } finally { savingDeleteBodega.value = false }
 }
 
 async function toggleActivoBodega(b) {
@@ -478,8 +594,14 @@ async function toggleActivoBodega(b) {
     })
     if (res.ok) {
       await fetchBodegas()
+      toast.success(activaNuevo === 1 ? 'Bodega activada' : 'Bodega desactivada')
+    } else {
+      toast.error('Error al cambiar estado')
     }
-  } catch(e) { console.error('Error al cambiar de estado', e) }
+  } catch(e) { 
+    console.error('Error al cambiar de estado', e)
+    toast.error('Error de conexión')
+  }
 }
 
 // ── Cotizaciones ──────────────────────────────────────────
@@ -509,6 +631,91 @@ const filteredComponentes = computed(() => {
   const q = filterComponente.value.toLowerCase()
   return componentes.value.filter(c => c.nombre.toLowerCase().includes(q) || c.categoria.toLowerCase().includes(q))
 })
+
+// Variables para Add Component
+const showAddCompModal = ref(false)
+const newComp = ref({ producto_id: '', nombre: '', categoria: '', bodega_id: '', especificacion: '', gama: 'media', precio: '', stock: '' })
+const addCompError = ref('')
+const savingAddComp = ref(false)
+const productoSearch = ref('')
+const showProductoDropdown = ref(false)
+const productosCatalogo = ref([])
+
+const productosFiltrados = computed(() => {
+  if (!productoSearch.value) return productosCatalogo.value
+  const q = productoSearch.value.toLowerCase()
+  return productosCatalogo.value.filter(p => p.nombre.toLowerCase().includes(q) || p.categoria.toLowerCase().includes(q))
+})
+
+async function fetchProductosCatalogo() {
+  try {
+    const res = await fetch(`${API}/productos-catalogo/`, { headers: { Authorization: `Bearer ${getToken()}` } })
+    const data = await res.json()
+    if (res.ok) productosCatalogo.value = data.productos
+  } catch(e) { console.error(e) }
+}
+
+function openAddModal() {
+  newComp.value = { producto_id: '', nombre: '', categoria: '', bodega_id: '', especificacion: '', gama: 'media', precio: '', stock: '' }
+  addCompError.value = ''
+  productoSearch.value = ''
+  showProductoDropdown.value = false
+  if (productosCatalogo.value.length === 0) fetchProductosCatalogo()
+  showAddCompModal.value = true
+}
+
+function closeAddModal() {
+  showAddCompModal.value = false
+  addCompError.value = ''
+}
+
+function selectProducto(prod) {
+  newComp.value.producto_id = prod.id
+  newComp.value.nombre = prod.nombre
+  newComp.value.categoria = prod.categoria
+  productoSearch.value = prod.nombre
+  showProductoDropdown.value = false
+}
+
+function blockInvalidChars(e) { if (['e', 'E', '+', '-'].includes(e.key)) e.preventDefault() }
+function blockInvalidCharsStock(e) { if (['e', 'E', '+', '-', '.'].includes(e.key)) e.preventDefault() }
+
+async function saveNewComp() {
+  addCompError.value = ''
+  const c = newComp.value
+  if (!c.producto_id || !c.bodega_id || !c.especificacion || !c.precio || c.stock === '' || !c.gama) {
+    return addCompError.value = 'Todos los campos son requeridos, incluyendo la bodega destino'
+  }
+  savingAddComp.value = true
+  try {
+    const res = await fetch(`${API}/componentes/`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getToken()}` },
+      body: JSON.stringify({
+        producto_id: c.producto_id,
+        bodega_id: c.bodega_id,
+        especificacion: c.especificacion,
+        gama: c.gama,
+        precio: c.precio,
+        stock: c.stock
+      })
+    })
+    const data = await res.json()
+    if (!res.ok) {
+      toast.error(data.message ?? 'Error al guardar')
+      return addCompError.value = data.message ?? 'Error al guardar'
+    }
+    await fetchComponentes()
+    await fetchBodegas() // Para actualizar el total_componentes en las bodegas
+    closeAddModal()
+    toast.success('Componente agregado exitosamente')
+  } catch(e) {
+    addCompError.value = 'Error de conexión'
+    toast.error('Error de conexión')
+  } finally {
+    savingAddComp.value = false
+  }
+}
 
 async function fetchComponentes() {
   loadingComponentes.value = true
@@ -549,11 +756,16 @@ async function saveEditComp() {
       })
     })
     const data = await res.json()
-    if (!res.ok) return editCompError.value = data.message ?? 'Error al guardar'
+    if (!res.ok) {
+      toast.error(data.message ?? 'Error al guardar')
+      return editCompError.value = data.message ?? 'Error al guardar'
+    }
     await fetchComponentes()
     showEditCompModal.value = false
+    toast.success('Componente actualizado exitosamente')
   } catch (e) {
     editCompError.value = 'Error de conexión'
+    toast.error('Error de conexión')
   } finally {
     savingEditComp.value = false
   }

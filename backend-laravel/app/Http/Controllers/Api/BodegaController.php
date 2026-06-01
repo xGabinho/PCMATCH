@@ -47,10 +47,10 @@ class BodegaController extends Controller
         } else {
             // Admin y Superadmin ven todas, además cruzamos el nombre del proveedor
             $query->leftJoin('proveedores as p', 'p.id', '=', 'b.proveedor_id')
-                  ->groupBy('p.nombre')
+                  ->groupBy('p.razon_social')
                   ->select(
                       'b.id', 'b.nombre', 'b.telefono', 'b.correo', 'b.activa', 'b.proveedor_id',
-                      'p.nombre AS proveedor_nombre',
+                      'p.razon_social AS proveedor_nombre',
                       DB::raw('COUNT(c.id) AS total_componentes')
                   );
         }

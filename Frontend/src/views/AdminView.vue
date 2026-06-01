@@ -117,7 +117,7 @@
             <div v-if="loadingComponentes" class="px-6 py-12 text-center text-text-muted text-sm">Cargando componentes...</div>
             <table v-else class="w-full min-w-[640px]">
               <thead class="border-b border-dark-border">
-                <tr><th v-for="h in ['Componente','Categoría','Especificación','Gama','Precio','Bodega','Stock','Acciones']" :key="h" class="px-6 py-3 text-left text-xs text-text-muted uppercase tracking-wider font-medium">{{ h }}</th></tr>
+                <tr><th v-for="h in ['Componente','Categoría','Especificación','Gama','Precio','Bodega','Stock','Estado','Acciones']" :key="h" class="px-6 py-3 text-left text-xs text-text-muted uppercase tracking-wider font-medium">{{ h }}</th></tr>
               </thead>
               <tbody class="divide-y divide-dark-border">
                 <tr v-if="filteredComponentes.length === 0"><td colspan="8" class="px-6 py-12 text-center text-text-muted text-sm">Sin componentes</td></tr>
@@ -130,7 +130,18 @@
                   <td class="px-6 py-4 text-sm text-text-muted">{{ c.bodega_nombre }}</td>
                   <td class="px-6 py-4 text-sm font-mono" :class="c.stock <= 3 ? 'text-yellow-400' : 'text-text-primary'">{{ c.stock }}</td>
                   <td class="px-6 py-4">
-                    <button @click="openEditComp(c)" class="text-xs text-text-muted hover:text-accent px-2 py-1 rounded hover:bg-accent/10 transition-colors">Editar</button>
+                    <span class="badge text-xs px-2.5 py-1" :class="c.activo == 1 ? 'bg-green-500/10 text-green-400 border border-green-500/20' : 'bg-red-500/10 text-red-400 border border-red-500/20'">
+                      {{ c.activo == 1 ? 'Activo' : 'Inactivo' }}
+                    </span>
+                  </td>
+                  <td class="px-6 py-4">
+                    <div class="flex gap-2">
+                      <button @click="toggleComponente(c)" class="text-xs text-text-muted hover:text-green-400 px-2 py-1 rounded hover:bg-green-400/10 transition-colors">
+                        {{ c.activo == 1 ? 'Desactivar' : 'Activar' }}
+                      </button>
+                      <button @click="openEditComp(c)" class="text-xs text-text-muted hover:text-accent px-2 py-1 rounded hover:bg-accent/10 transition-colors">Editar</button>
+                      <button @click="openDeleteComp(c)" class="text-xs text-text-muted hover:text-red-400 px-2 py-1 rounded hover:bg-red-400/10 transition-colors">Eliminar</button>
+                    </div>
                   </td>
                 </tr>
               </tbody>
@@ -456,7 +467,7 @@
         <div class="space-y-5">
           <div>
             <label class="block text-sm font-medium text-text-primary mb-2">Especificación técnica</label>
-            <input v-model="editingComp.especificacion" type="text" class="w-full bg-dark-bg border border-dark-border rounded-lg px-4 py-3 text-sm text-text-primary focus:outline-none focus:border-accent transition-colors" />
+            <input v-model="editingComp.especificacion" type="text" class="allow-special w-full bg-dark-bg border border-dark-border rounded-lg px-4 py-3 text-sm text-text-primary focus:outline-none focus:border-accent transition-colors" />
           </div>
 
           <div class="grid grid-cols-2 gap-4">
@@ -492,6 +503,24 @@
         </div>
       </div>
     </div>
+
+    <!-- ===== MODAL ELIMINAR COMPONENTE ===== -->
+    <div v-if="showDeleteCompModal" class="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto py-6 px-4">
+      <div class="fixed inset-0 bg-black/60 backdrop-blur-sm" @click="showDeleteCompModal = false"></div>
+      <div class="relative card-dark rounded-2xl p-6 w-full max-w-sm my-auto shadow-2xl text-center">
+        <div class="w-14 h-14 rounded-full bg-red-500/10 border border-red-500/20 flex items-center justify-center mx-auto mb-4 text-2xl">🗑️</div>
+        <h2 class="text-lg font-bold text-text-primary mb-2">Eliminar componente</h2>
+        <p class="text-text-muted text-sm mb-1">¿Estás seguro de que deseas eliminar</p>
+        <p class="text-text-primary font-semibold mb-2">{{ deletingComp?.nombre }}?</p>
+        <p class="text-xs text-text-muted mb-6 px-4">Esta acción no se puede deshacer.</p>
+        <div class="flex gap-3">
+          <button @click="confirmDeleteComp" :disabled="savingDeleteComp" class="flex-1 py-3 rounded-lg text-sm font-medium bg-red-500/10 text-red-400 border border-red-500/20 hover:bg-red-500/20 transition-colors">
+            {{ savingDeleteComp ? 'Eliminando...' : 'Sí, eliminar' }}
+          </button>
+          <button @click="showDeleteCompModal = false" class="flex-1 btn-secondary text-sm">Cancelar</button>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -499,10 +528,12 @@
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuth } from '../composables/useAuth'
+import { useToast } from '../composables/useToast'
 
 const API = 'http://127.0.0.1:8000/api'
 const { getToken, logout } = useAuth()
 const router = useRouter()
+const toast = useToast()
 
 function handleLogout() {
   logout()
@@ -595,20 +626,32 @@ async function saveNewBodega() {
       body: JSON.stringify(newBodega.value)
     })
     const data = await res.json()
-    if (!res.ok) return bodegaError.value = data.error ?? 'Error al crear'
+    if (!res.ok) {
+      toast.error(data.error ?? 'Error al crear bodega')
+      return bodegaError.value = data.error ?? 'Error al crear'
+    }
     await fetchBodegas()
     closeBodegaModal()
-  } catch(e) { bodegaError.value = 'Error de conexión' } finally { savingBodega.value = false }
+    toast.success('Bodega agregada exitosamente')
+  } catch(e) {
+    toast.error('Error de conexión')
+    bodegaError.value = 'Error de conexión'
+  } finally { savingBodega.value = false }
 }
 
 async function toggleBodega(b) {
   const activa = b.activa == 1 ? 0 : 1
-  await fetch(`${API}/bodegas/`, {
-    method: 'PUT',
-    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getToken()}` },
-    body: JSON.stringify({ id: b.id, nombre: b.nombre, telefono: b.telefono, activa })
-  })
-  await fetchBodegas()
+  try {
+    await fetch(`${API}/bodegas/`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getToken()}` },
+      body: JSON.stringify({ id: b.id, nombre: b.nombre, telefono: b.telefono, activa })
+    })
+    await fetchBodegas()
+    toast.success(activa === 1 ? 'Bodega activada' : 'Bodega desactivada')
+  } catch (e) {
+    toast.error('Error al cambiar estado de la bodega')
+  }
 }
 
 function openDeleteBodega(b) {
@@ -625,7 +668,11 @@ async function confirmDeleteBodega() {
     })
     await fetchBodegas()
     showDeleteBodegaModal.value = false
-  } catch(e) { console.error(e) } finally { savingDeleteBodega.value = false }
+    toast.success('Bodega eliminada exitosamente')
+  } catch(e) {
+    console.error(e)
+    toast.error('Error al eliminar bodega')
+  } finally { savingDeleteBodega.value = false }
 }
 
 // ── Componentes ───────────────────────────────────────────
@@ -633,6 +680,9 @@ const componentes = ref([])
 const loadingComponentes = ref(false)
 const filterComponente = ref('')
 const showEditCompModal = ref(false)
+const showDeleteCompModal = ref(false)
+const deletingComp = ref(null)
+const savingDeleteComp = ref(false)
 const editingComp = ref({})
 const editCompError = ref('')
 const savingEditComp = ref(false)
@@ -682,14 +732,55 @@ async function saveEditComp() {
       })
     })
     const data = await res.json()
-    if (!res.ok) return editCompError.value = data.message ?? 'Error al guardar'
+    if (!res.ok) {
+      toast.error(data.message ?? 'Error al guardar')
+      return editCompError.value = data.message ?? 'Error al guardar'
+    }
     await fetchComponentes()
     showEditCompModal.value = false
+    toast.success('Componente actualizado exitosamente')
   } catch (e) {
+    toast.error('Error de conexión')
     editCompError.value = 'Error de conexión'
   } finally {
     savingEditComp.value = false
   }
+}
+
+async function toggleComponente(c) {
+  const activo = c.activo == 1 ? 0 : 1
+  try {
+    await fetch(`${API}/componentes/`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getToken()}` },
+      body: JSON.stringify({ id: c.id, activo })
+    })
+    await fetchComponentes()
+    toast.success(activo === 1 ? 'Componente activado' : 'Componente desactivado')
+  } catch (e) {
+    toast.error('Error al cambiar estado del componente')
+  }
+}
+
+function openDeleteComp(c) {
+  deletingComp.value = c
+  showDeleteCompModal.value = true
+}
+
+async function confirmDeleteComp() {
+  savingDeleteComp.value = true
+  try {
+    await fetch(`${API}/componentes/?id=${deletingComp.value.id}`, {
+      method: 'DELETE',
+      headers: { Authorization: `Bearer ${getToken()}` }
+    })
+    await fetchComponentes()
+    showDeleteCompModal.value = false
+    toast.success('Componente eliminado exitosamente')
+  } catch(e) {
+    console.error(e)
+    toast.error('Error al eliminar componente')
+  } finally { savingDeleteComp.value = false }
 }
 
 // ── Usuarios ──────────────────────────────────────────────
@@ -746,11 +837,18 @@ async function saveNewUser() {
       body: JSON.stringify(newUser.value)
     })
     const data = await res.json()
-    if (!res.ok) return createUserError.value = data.error ?? 'Error al crear'
+    if (!res.ok) {
+      toast.error(data.error ?? 'Error al crear usuario')
+      return createUserError.value = data.error ?? 'Error al crear'
+    }
     createUserSuccess.value = 'Usuario creado correctamente'
+    toast.success('Usuario creado correctamente')
     resetNewUser()
     await fetchUsuarios()
-  } catch(e) { createUserError.value = 'Error de conexión' } finally { savingUser.value = false }
+  } catch(e) {
+    toast.error('Error de conexión')
+    createUserError.value = 'Error de conexión'
+  } finally { savingUser.value = false }
 }
 
 function openEditModal(u) {
@@ -769,10 +867,17 @@ async function saveEditUser() {
       body: JSON.stringify(editingUser.value)
     })
     const data = await res.json()
-    if (!res.ok) return editUserError.value = data.error ?? 'Error al guardar'
+    if (!res.ok) {
+      toast.error(data.error ?? 'Error al guardar usuario')
+      return editUserError.value = data.error ?? 'Error al guardar'
+    }
     await fetchUsuarios()
     showEditModal.value = false
-  } catch(e) { editUserError.value = 'Error de conexión' } finally { savingEditUser.value = false }
+    toast.success('Usuario actualizado exitosamente')
+  } catch(e) {
+    toast.error('Error de conexión')
+    editUserError.value = 'Error de conexión'
+  } finally { savingEditUser.value = false }
 }
 
 function openDeleteModal(u) {
@@ -797,7 +902,11 @@ async function confirmDeleteUser() {
     })
     await fetchUsuarios()
     showDeleteModal.value = false
-  } catch(e) { console.error(e) } finally { savingDeleteUser.value = false }
+    toast.success(activoNuevo === 1 ? 'Usuario reactivado' : 'Usuario desactivado')
+  } catch(e) {
+    console.error(e)
+    toast.error('Error al cambiar el estado del usuario')
+  } finally { savingDeleteUser.value = false }
 }
 
 // ── Lifecycle ─────────────────────────────────────────────
