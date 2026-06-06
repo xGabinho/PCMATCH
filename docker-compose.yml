@@ -1,0 +1,88 @@
+services:
+  db:
+    image: mysql:8.0
+    container_name: pcmatch_db
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: ${DB_DATABASE}
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD}
+      MYSQL_PASSWORD: ${DB_PASSWORD}
+      MYSQL_USER: ${DB_USERNAME}
+    ports:
+      - "3307:3306"
+    volumes:
+      - db_data:/var/lib/mysql
+      - ./pcmatch.sql:/docker-entrypoint-initdb.d/01-init.sql
+    networks:
+      - pcmatch_network
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p${DB_ROOT_PASSWORD}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+
+  phpmyadmin:
+    image: phpmyadmin/phpmyadmin
+    container_name: pcmatch_phpmyadmin
+    restart: unless-stopped
+    environment:
+      PMA_HOST: db
+      PMA_PORT: 3306
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD}
+    ports:
+      - "8081:80"
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - pcmatch_network
+
+  app:
+    build:
+      context: ./docker/php
+    container_name: pcmatch_app
+    restart: unless-stopped
+    volumes:
+      - ./backend-laravel:/var/www/html
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - pcmatch_network
+
+  webserver:
+    build:
+      context: ./docker/nginx
+    container_name: pcmatch_webserver
+    restart: unless-stopped
+    ports:
+      - "8000:80"
+    volumes:
+      - ./backend-laravel:/var/www/html
+    depends_on:
+      - app
+    networks:
+      - pcmatch_network
+
+  frontend:
+    build:
+      context: ./Frontend
+      target: dev
+    container_name: pcmatch_frontend
+    restart: unless-stopped
+    ports:
+      - "5173:5173"
+    volumes:
+      - ./Frontend:/app
+      - /app/node_modules
+    depends_on:
+      - webserver
+    networks:
+      - pcmatch_network
+
+volumes:
+  db_data:
+
+networks:
+  pcmatch_network:
