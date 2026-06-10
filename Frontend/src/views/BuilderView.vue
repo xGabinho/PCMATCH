@@ -50,31 +50,71 @@
           </span>
         </div>
 
-        <!-- Search + Sort -->
-        <div class="flex items-center gap-3 mb-6">
-          <div class="relative flex-1">
-            <span class="absolute left-3.5 top-1/2 -translate-y-1/2 text-text-muted text-sm">🔍</span>
-            <input
-              v-model="stepSearch"
-              type="text"
-              :placeholder="`Buscar ${steps[activeStep].label.toLowerCase()}...`"
-              class="w-full bg-dark-card border border-dark-border rounded-xl pl-10 pr-4 py-2.5 text-sm text-text-primary placeholder-text-muted focus:outline-none focus:border-accent transition-colors"
-            />
-            <button
-              v-if="stepSearch"
-              @click="stepSearch = ''"
-              class="absolute right-3.5 top-1/2 -translate-y-1/2 text-text-muted hover:text-text-primary text-lg leading-none"
-            >×</button>
+        <!-- Search + Sort + Filters -->
+        <div class="flex flex-col gap-3 mb-6">
+          <div class="flex items-center gap-3">
+            <div class="relative flex-1">
+              <span class="absolute left-3.5 top-1/2 -translate-y-1/2 text-text-muted text-sm">🔍</span>
+              <input
+                v-model="stepSearch"
+                type="text"
+                :placeholder="`Buscar ${steps[activeStep].label.toLowerCase()}...`"
+                class="w-full bg-dark-card border border-dark-border rounded-xl pl-10 pr-4 py-2.5 text-sm text-text-primary placeholder-text-muted focus:outline-none focus:border-accent transition-colors"
+              />
+              <button
+                v-if="stepSearch"
+                @click="stepSearch = ''"
+                class="absolute right-3.5 top-1/2 -translate-y-1/2 text-text-muted hover:text-text-primary text-lg leading-none"
+              >×</button>
+            </div>
+            <select
+              v-model="stepSort"
+              class="bg-dark-card border border-dark-border rounded-xl px-4 py-2.5 text-sm text-text-primary focus:outline-none focus:border-accent transition-colors flex-shrink-0"
+            >
+              <option value="default" class="bg-dark-bg">Relevancia</option>
+              <option value="price-asc" class="bg-dark-bg">Precio: menor a mayor</option>
+              <option value="price-desc" class="bg-dark-bg">Precio: mayor a menor</option>
+              <option value="name" class="bg-dark-bg">Nombre A-Z</option>
+            </select>
           </div>
-          <select
-            v-model="stepSort"
-            class="bg-dark-card border border-dark-border rounded-xl px-4 py-2.5 text-sm text-text-primary focus:outline-none focus:border-accent transition-colors flex-shrink-0"
-          >
-            <option value="default" class="bg-dark-bg">Relevancia</option>
-            <option value="price-asc" class="bg-dark-bg">Precio: menor a mayor</option>
-            <option value="price-desc" class="bg-dark-bg">Precio: mayor a menor</option>
-            <option value="name" class="bg-dark-bg">Nombre A-Z</option>
-          </select>
+          
+          <div class="flex items-center gap-3 flex-wrap">
+            <select v-model="filterGama" class="bg-dark-card border border-dark-border rounded-xl px-4 py-2.5 text-sm text-text-primary focus:outline-none focus:border-accent transition-colors">
+              <option value="">Cualquier Gama</option>
+              <option value="alta">Gama Alta</option>
+              <option value="media">Gama Media</option>
+              <option value="baja">Gama Baja</option>
+            </select>
+            <select v-model="filterEnfoque" class="bg-dark-card border border-dark-border rounded-xl px-4 py-2.5 text-sm text-text-primary focus:outline-none focus:border-accent transition-colors">
+              <option value="">Cualquier Enfoque</option>
+              <option value="gaming">Gaming</option>
+              <option value="diseño">Diseño</option>
+              <option value="oficina">Oficina</option>
+              <option value="estudio">Estudio</option>
+            </select>
+            <button @click="showAdvancedFilters = !showAdvancedFilters" class="btn-secondary text-sm px-4 py-2.5 flex items-center gap-2">
+              <span>⚙️</span> Más filtros
+            </button>
+            <button v-if="filterGama || filterEnfoque || filterNucleos || filterHilos || filterFrecuenciaMin" @click="clearFilters" class="text-sm text-text-muted hover:text-accent transition-colors">
+              Limpiar filtros
+            </button>
+          </div>
+
+          <!-- Advanced Filters Panel -->
+          <div v-if="showAdvancedFilters" class="p-4 bg-dark-card border border-dark-border rounded-xl grid grid-cols-1 md:grid-cols-3 gap-4 animate-fade-in mt-2">
+            <div>
+              <label class="block text-xs font-medium text-text-muted mb-1.5">Mínimo de Núcleos</label>
+              <input v-model="filterNucleos" type="number" min="1" placeholder="Ej: 6" class="w-full bg-dark-bg border border-dark-border rounded-lg px-3 py-2 text-sm text-text-primary focus:outline-none focus:border-accent transition-colors" />
+            </div>
+            <div>
+              <label class="block text-xs font-medium text-text-muted mb-1.5">Mínimo de Hilos</label>
+              <input v-model="filterHilos" type="number" min="1" placeholder="Ej: 12" class="w-full bg-dark-bg border border-dark-border rounded-lg px-3 py-2 text-sm text-text-primary focus:outline-none focus:border-accent transition-colors" />
+            </div>
+            <div>
+              <label class="block text-xs font-medium text-text-muted mb-1.5">Frecuencia Mín. (GHz)</label>
+              <input v-model="filterFrecuenciaMin" type="number" step="0.1" min="0" placeholder="Ej: 3.5" class="w-full bg-dark-bg border border-dark-border rounded-lg px-3 py-2 text-sm text-text-primary focus:outline-none focus:border-accent transition-colors" />
+            </div>
+          </div>
         </div>
 
         <!-- Results count -->
@@ -196,7 +236,20 @@
                 class="text-text-muted hover:text-red-400 transition-colors opacity-0 group-hover:opacity-100 text-xs leading-none"
                 title="Quitar componente"
               >✕</button>
-              <p class="text-accent text-sm font-semibold font-mono">${{ Number(selectedComponents[step.id].precio).toLocaleString() }}</p>
+              <div class="flex items-center gap-1">
+                <button
+                  @click="updateQuantity(step.id, (selectedComponents[step.id].cantidad || 1) - 1)"
+                  :disabled="(selectedComponents[step.id].cantidad || 1) <= 1"
+                  class="w-5 h-5 rounded border border-dark-border text-text-muted hover:text-red-400 hover:border-red-500/40 transition-colors flex items-center justify-center text-[10px] font-bold disabled:opacity-30 disabled:cursor-not-allowed"
+                >−</button>
+                <span class="text-xs font-mono text-text-primary w-4 text-center">{{ selectedComponents[step.id].cantidad || 1 }}</span>
+                <button
+                  @click="updateQuantity(step.id, (selectedComponents[step.id].cantidad || 1) + 1)"
+                  :disabled="(selectedComponents[step.id].cantidad || 1) >= (selectedComponents[step.id].stock || 999)"
+                  class="w-5 h-5 rounded border border-dark-border text-text-muted hover:text-green-400 hover:border-green-500/40 transition-colors flex items-center justify-center text-[10px] font-bold disabled:opacity-30 disabled:cursor-not-allowed"
+                >+</button>
+              </div>
+              <p class="text-accent text-sm font-semibold font-mono">${{ (Number(selectedComponents[step.id].precio) * (selectedComponents[step.id].cantidad || 1)).toLocaleString() }}</p>
             </div>
           </div>
           <div
@@ -232,13 +285,27 @@ import { useBuilder } from '../composables/useBuilder'
 
 const API = '/api'
 const router = useRouter()
-const { steps, selectedItems, selectedComponents, totalPrice, selectItem, removeItem } = useBuilder()
+const { steps, selectedItems, selectedComponents, totalPrice, selectItem, removeItem, updateQuantity } = useBuilder()
 
 const activeStep    = ref(0)
 const stepSearch    = ref('')
 const stepSort      = ref('default')
+const filterGama    = ref('')
+const filterEnfoque = ref('')
+const showAdvancedFilters = ref(false)
+const filterNucleos = ref('')
+const filterHilos = ref('')
+const filterFrecuenciaMin = ref('')
 const loading       = ref(false)
 const componentesPorCategoria = ref({})
+
+function clearFilters() {
+  filterGama.value = ''
+  filterEnfoque.value = ''
+  filterNucleos.value = ''
+  filterHilos.value = ''
+  filterFrecuenciaMin.value = ''
+}
 
 const currentItems = computed(() => {
   const cat = steps[activeStep.value].categoria
@@ -255,6 +322,16 @@ const filteredItems = computed(() => {
       i.bodega?.toLowerCase().includes(q)
     )
   }
+  if (filterGama.value) {
+    items = items.filter(i => i.gama === filterGama.value)
+  }
+  if (filterEnfoque.value) {
+    items = items.filter(i => i.enfoque_uso === filterEnfoque.value)
+  }
+  if (filterNucleos.value) items = items.filter(i => i.nucleos >= Number(filterNucleos.value))
+  if (filterHilos.value) items = items.filter(i => i.hilos >= Number(filterHilos.value))
+  if (filterFrecuenciaMin.value) items = items.filter(i => i.frecuencia_hz >= Number(filterFrecuenciaMin.value))
+
   if (stepSort.value === 'price-asc')  items.sort((a, b) => a.precio - b.precio)
   if (stepSort.value === 'price-desc') items.sort((a, b) => b.precio - a.precio)
   if (stepSort.value === 'name')       items.sort((a, b) => a.nombre.localeCompare(b.nombre))
@@ -264,7 +341,7 @@ const filteredItems = computed(() => {
 async function fetchTodos() {
   loading.value = true
   try {
-    const res = await fetch(`${API}/componentes/publico/`)
+    const res = await fetch(`${API}/componentespublico/`)
     const data = await res.json()
     if (res.ok) {
       const agrupado = {}

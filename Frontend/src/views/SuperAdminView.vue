@@ -176,12 +176,53 @@
           </div>
         </template>
 
+        <!-- ===== CATÁLOGO BASE ===== -->
+        <template v-if="activeSection === 'catalogo'">
+          <div class="card-dark rounded-xl overflow-hidden overflow-x-auto">
+            <div class="px-6 py-4 border-b border-dark-border flex items-center justify-between">
+              <h2 class="font-semibold text-text-primary">Productos Predefinidos</h2>
+              <input v-model="filterCatalogo" type="text" placeholder="Buscar producto..." class="bg-dark-bg border border-dark-border rounded-lg px-4 py-2 text-sm text-text-primary placeholder-text-muted focus:outline-none focus:border-accent transition-colors w-48" />
+            </div>
+            <div v-if="loadingCatalogo" class="px-6 py-12 text-center text-text-muted text-sm">Cargando catálogo...</div>
+            <table v-else class="w-full min-w-[640px]">
+              <thead class="border-b border-dark-border">
+                <tr><th v-for="h in ['ID', 'Nombre de Producto', 'Categoría']" :key="h" class="px-6 py-3 text-left text-xs text-text-muted uppercase tracking-wider font-medium">{{ h }}</th></tr>
+              </thead>
+              <tbody class="divide-y divide-dark-border">
+                <tr v-if="filteredCatalogoList.length === 0"><td colspan="3" class="px-6 py-12 text-center text-text-muted text-sm">Sin productos en el catálogo</td></tr>
+                <tr v-for="p in filteredCatalogoList" :key="p.id" class="hover:bg-dark-bg/50 transition-colors">
+                  <td class="px-6 py-4 text-sm text-text-muted font-mono">#{{ p.id }}</td>
+                  <td class="px-6 py-4 text-sm font-medium text-text-primary">{{ p.nombre }}</td>
+                  <td class="px-6 py-4"><span class="badge text-xs bg-accent/10 text-accent border border-accent/20">{{ p.categoria }}</span></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </template>
+
         <!-- ===== COMPONENTES ===== -->
         <template v-if="activeSection === 'componentes'">
           <div class="card-dark rounded-xl overflow-hidden overflow-x-auto">
-            <div class="px-6 py-4 border-b border-dark-border flex items-center justify-between">
-              <h2 class="font-semibold text-text-primary">Listado de componentes</h2>
-              <input v-model="filterComponente" type="text" placeholder="Buscar..." class="bg-dark-bg border border-dark-border rounded-lg px-4 py-2 text-sm text-text-primary placeholder-text-muted focus:outline-none focus:border-accent transition-colors w-48" />
+            <div class="px-6 py-4 border-b border-dark-border flex flex-col lg:flex-row items-center justify-between gap-4">
+              <h2 class="font-semibold text-text-primary whitespace-nowrap">Listado de componentes</h2>
+              <div class="flex flex-wrap items-center gap-3">
+                <select v-model="filterGama" class="bg-dark-bg border border-dark-border rounded-lg px-3 py-2 text-sm text-text-primary focus:outline-none focus:border-accent transition-colors">
+                  <option value="">Gama (Todas)</option>
+                  <option value="alta">Alta</option>
+                  <option value="media">Media</option>
+                  <option value="baja">Baja</option>
+                </select>
+                <select v-model="filterEnfoque" class="bg-dark-bg border border-dark-border rounded-lg px-3 py-2 text-sm text-text-primary focus:outline-none focus:border-accent transition-colors">
+                  <option value="">Enfoque (Todos)</option>
+                  <option value="gaming">Gaming</option>
+                  <option value="diseño">Diseño</option>
+                  <option value="oficina">Oficina</option>
+                  <option value="estudio">Estudio</option>
+                </select>
+                <input v-model="filterNucleos" type="number" placeholder="Núcleos" class="bg-dark-bg border border-dark-border rounded-lg px-3 py-2 text-sm text-text-primary focus:outline-none focus:border-accent transition-colors w-24" />
+                <input v-model="filterFrecuenciaMin" type="number" step="0.1" placeholder="GHz Min" class="bg-dark-bg border border-dark-border rounded-lg px-3 py-2 text-sm text-text-primary focus:outline-none focus:border-accent transition-colors w-28" />
+                <input v-model="filterComponente" type="text" placeholder="Buscar..." class="bg-dark-bg border border-dark-border rounded-lg px-4 py-2 text-sm text-text-primary placeholder-text-muted focus:outline-none focus:border-accent transition-colors w-48" />
+              </div>
             </div>
             <div v-if="loadingComponentes" class="px-6 py-12 text-center text-text-muted text-sm">Cargando componentes...</div>
             <table v-else class="w-full min-w-[640px]">
@@ -196,7 +237,24 @@
                   <td class="px-6 py-4"><span class="text-xs px-2 py-0.5 rounded-full font-medium border" :class="tierStyles[c.gama]">{{ c.gama }}</span></td>
                   <td class="px-6 py-4 text-sm text-accent font-mono">${{ Number(c.precio).toLocaleString() }}</td>
                   <td class="px-6 py-4 text-sm text-text-muted">{{ c.bodega_nombre }}</td>
-                  <td class="px-6 py-4 text-sm font-mono" :class="c.stock <= 3 ? 'text-yellow-400' : 'text-text-primary'">{{ c.stock }}</td>
+                  <td class="px-6 py-4">
+                    <div class="flex items-center gap-1.5">
+                      <button @click="quickAdjustAdmin(c, 'decrementar', 1)" :disabled="c.stock <= 0 || c._adjusting" class="w-7 h-7 rounded-lg border border-dark-border bg-dark-bg text-text-muted hover:text-red-400 hover:border-red-500/40 transition-colors flex items-center justify-center text-sm font-bold disabled:opacity-30 disabled:cursor-not-allowed">−</button>
+                      <input
+                        type="number"
+                        :value="stockQtyAdmin[c.id] ?? 1"
+                        @input="stockQtyAdmin[c.id] = Math.max(1, parseInt($event.target.value) || 1)"
+                        min="1"
+                        class="w-12 h-7 bg-dark-bg border border-dark-border rounded-lg text-center text-xs font-mono text-text-primary focus:outline-none focus:border-accent transition-colors [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                      />
+                      <button @click="quickAdjustAdmin(c, 'incrementar', 1)" :disabled="c._adjusting" class="w-7 h-7 rounded-lg border border-dark-border bg-dark-bg text-text-muted hover:text-green-400 hover:border-green-500/40 transition-colors flex items-center justify-center text-sm font-bold disabled:opacity-30 disabled:cursor-not-allowed">+</button>
+                      <span class="text-sm font-mono font-semibold ml-1" :class="c.stock <= 3 ? 'text-yellow-400' : 'text-accent'">{{ c.stock }}</span>
+                      <div class="flex gap-0.5 ml-1">
+                        <button @click="quickAdjustAdmin(c, 'incrementar', stockQtyAdmin[c.id] ?? 1)" :disabled="c._adjusting" class="px-1.5 py-0.5 rounded text-[10px] font-medium bg-green-500/10 text-green-400 border border-green-500/20 hover:bg-green-500/20 transition-colors disabled:opacity-30" title="Agregar cantidad">+{{ stockQtyAdmin[c.id] ?? 1 }}</button>
+                        <button @click="quickAdjustAdmin(c, 'decrementar', stockQtyAdmin[c.id] ?? 1)" :disabled="c.stock < (stockQtyAdmin[c.id] ?? 1) || c._adjusting" class="px-1.5 py-0.5 rounded text-[10px] font-medium bg-red-500/10 text-red-400 border border-red-500/20 hover:bg-red-500/20 transition-colors disabled:opacity-30" title="Retirar cantidad">−{{ stockQtyAdmin[c.id] ?? 1 }}</button>
+                      </div>
+                    </div>
+                  </td>
                   <td class="px-6 py-4">
                     <span class="badge text-xs px-2.5 py-1" :class="c.activo == 1 ? 'bg-green-500/10 text-green-400 border border-green-500/20' : 'bg-red-500/10 text-red-400 border border-red-500/20'">
                       {{ c.activo == 1 ? 'Activo' : 'Inactivo' }}
@@ -259,6 +317,15 @@
                   </button>
                 </div>
               </div>
+              
+              <div>
+                <label class="block text-sm font-medium text-text-primary mb-2">Perfil de Permisos (Opcional)</label>
+                <select v-model="newUser.perfil_id" class="w-full bg-dark-bg border border-dark-border rounded-lg px-4 py-3 text-sm text-text-primary focus:outline-none focus:border-accent transition-colors">
+                  <option :value="null">Sin perfil</option>
+                  <option v-for="p in perfiles.filter(p => p.activo == 1)" :key="p.id" :value="p.id">{{ p.nombre }}</option>
+                </select>
+              </div>
+
               <div class="border-t border-dark-border"></div>
               <div class="grid grid-cols-2 gap-4">
                 <div>
@@ -289,6 +356,39 @@
                 <button @click="resetNewUser" class="btn-secondary text-sm px-5">Limpiar</button>
               </div>
             </div>
+          </div>
+        </template>
+
+
+        <!-- ===== PERFILES Y PERMISOS ===== -->
+        <template v-if="activeSection === 'perfiles'">
+          <div class="card-dark rounded-xl overflow-hidden overflow-x-auto">
+            <div class="px-6 py-4 border-b border-dark-border flex items-center justify-between">
+              <h2 class="font-semibold text-text-primary">Perfiles de Permisos</h2>
+            </div>
+            <div v-if="loadingPerfiles" class="px-6 py-12 text-center text-text-muted text-sm">Cargando perfiles...</div>
+            <table v-else class="w-full min-w-[640px]">
+              <thead class="border-b border-dark-border">
+                <tr><th v-for="h in ['Nombre','Descripción','Permisos','Estado','Acciones']" :key="h" class="px-6 py-3 text-left text-xs text-text-muted uppercase tracking-wider font-medium">{{ h }}</th></tr>
+              </thead>
+              <tbody class="divide-y divide-dark-border">
+                <tr v-if="perfiles.length === 0"><td colspan="5" class="px-6 py-12 text-center text-text-muted text-sm">Sin perfiles</td></tr>
+                <tr v-for="p in perfiles" :key="p.id" class="hover:bg-dark-bg/50 transition-colors">
+                  <td class="px-6 py-4 text-sm font-medium text-text-primary">{{ p.nombre }}</td>
+                  <td class="px-6 py-4 text-sm text-text-muted max-w-48 truncate">{{ p.descripcion || '—' }}</td>
+                  <td class="px-6 py-4 text-sm text-text-primary font-mono">{{ p.permisos?.length || 0 }}</td>
+                  <td class="px-6 py-4">
+                    <span class="badge text-xs px-2.5 py-1" :class="p.activo == 1 ? 'bg-green-500/10 text-green-400 border border-green-500/20' : 'bg-red-500/10 text-red-400 border border-red-500/20'">
+                      {{ p.activo == 1 ? 'Activo' : 'Inactivo' }}
+                    </span>
+                  </td>
+                  <td class="px-6 py-4 text-right space-x-2">
+                    <button @click="openEditPerfil(p)" class="p-2 bg-dark-bg border border-dark-border rounded-lg text-text-muted hover:text-accent hover:border-accent/40 transition-colors">✏️</button>
+                    <button @click="confirmDeletePerfilAction(p)" class="p-2 bg-dark-bg border border-dark-border rounded-lg text-text-muted hover:text-red-400 hover:border-red-500/40 transition-colors">🗑️</button>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
           </div>
         </template>
 
@@ -478,6 +578,47 @@
       </div>
     </div>
 
+    <!-- ===== MODAL ASIGNAR CATALOGO ===== -->
+    <div v-if="showCatalogoModal" class="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto py-6 px-4">
+      <div class="fixed inset-0 bg-black/60 backdrop-blur-sm" @click="showCatalogoModal = false"></div>
+      <div class="relative card-dark rounded-2xl p-6 w-full max-w-lg my-auto shadow-2xl">
+        <div class="flex items-center justify-between mb-6">
+          <div>
+            <h2 class="text-lg font-bold text-text-primary">Catálogo del Proveedor</h2>
+            <p class="text-xs text-text-muted mt-0.5">{{ selectedProveedor?.nombre }}</p>
+          </div>
+          <button @click="showCatalogoModal = false" class="text-text-muted hover:text-text-primary transition-colors text-2xl leading-none w-8 h-8 flex items-center justify-center rounded-lg hover:bg-dark-bg">×</button>
+        </div>
+        
+        <div class="mb-4">
+          <input v-model="catalogoSearch" type="text" placeholder="Buscar producto..." class="w-full bg-dark-bg border border-dark-border rounded-lg px-4 py-2.5 text-sm text-text-primary placeholder-text-muted focus:outline-none focus:border-accent transition-colors" />
+        </div>
+        
+        <div class="space-y-2 max-h-[50vh] overflow-y-auto pr-2">
+          <div v-for="prod in catalogoFiltrado" :key="prod.id" 
+               @click="toggleProductoCatalogo(prod.id)"
+               class="flex items-center justify-between p-3 rounded-xl border cursor-pointer transition-colors"
+               :class="selectedCatalogoIds.includes(prod.id) ? 'border-accent bg-accent/10' : 'border-dark-border hover:border-dark-border/80 bg-dark-bg'">
+            <div>
+              <p class="text-sm font-medium text-text-primary">{{ prod.nombre }}</p>
+              <p class="text-xs text-text-muted">{{ prod.categoria }}</p>
+            </div>
+            <div class="w-5 h-5 rounded border flex items-center justify-center" :class="selectedCatalogoIds.includes(prod.id) ? 'bg-accent border-accent text-dark-card' : 'border-dark-border'">
+              <span v-if="selectedCatalogoIds.includes(prod.id)" class="text-xs">✓</span>
+            </div>
+          </div>
+          <div v-if="catalogoFiltrado.length === 0" class="text-center py-4 text-text-muted text-sm">No hay productos.</div>
+        </div>
+        
+        <div class="flex gap-3 mt-6 pt-4 border-t border-dark-border">
+          <button @click="saveCatalogo" :disabled="savingCatalogo" class="btn-primary flex-1 text-sm pt-2 pb-2">
+            {{ savingCatalogo ? 'Guardando...' : 'Guardar Catálogo' }}
+          </button>
+          <button @click="showCatalogoModal = false" class="btn-secondary text-sm px-5 pt-2 pb-2">Cancelar</button>
+        </div>
+      </div>
+    </div>
+
     <!-- ===== MODAL EDITAR BODEGA ===== -->
     <div v-if="showEditBodegaModal" class="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto py-6 px-4">
       <div class="fixed inset-0 bg-black/60 backdrop-blur-sm" @click="showEditBodegaModal = false"></div>
@@ -621,6 +762,15 @@
               </button>
             </div>
           </div>
+          
+          <div>
+            <label class="block text-sm font-medium text-text-primary mb-2">Perfil de Permisos (Opcional)</label>
+            <select v-model="editingUsuario.perfil_id" class="w-full bg-dark-bg border border-dark-border rounded-lg px-4 py-3 text-sm text-text-primary focus:outline-none focus:border-accent transition-colors">
+              <option :value="null">Sin perfil</option>
+              <option v-for="p in perfiles.filter(p => p.activo == 1)" :key="p.id" :value="p.id">{{ p.nombre }}</option>
+            </select>
+          </div>
+
           <p v-if="editUsuarioError" class="text-xs text-red-400 bg-red-500/10 border border-red-500/20 rounded-lg px-4 py-2.5">{{ editUsuarioError }}</p>
         </div>
         <div class="flex gap-3 mt-8">
@@ -643,6 +793,105 @@
             {{ savingDeleteUsuario ? 'Eliminando...' : 'Sí, eliminar' }}
           </button>
           <button @click="showDeleteUsuarioModal = false" class="flex-1 btn-secondary text-sm">Cancelar</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== MODAL AGREGAR COMPONENTE ===== -->
+    <div v-if="showAddCompModal" class="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto py-6 px-4">
+      <div class="fixed inset-0 bg-black/60 backdrop-blur-sm" @click="closeAddModal"></div>
+      <div class="relative card-dark rounded-2xl p-6 w-full max-w-lg my-auto shadow-2xl">
+        <div class="flex items-center justify-between mb-6">
+          <div>
+            <h2 class="text-lg font-bold text-text-primary">Crear Componente Maestro</h2>
+            <p class="text-xs text-text-muted mt-0.5">Agrega especificaciones técnicas para que proveedores lo usen</p>
+          </div>
+          <button @click="closeAddModal" class="text-text-muted hover:text-text-primary transition-colors text-2xl leading-none w-8 h-8 flex items-center justify-center rounded-lg hover:bg-dark-bg">×</button>
+        </div>
+
+        <div class="space-y-5 max-h-[60vh] overflow-y-auto pr-2">
+
+          <!-- Select buscable de producto -->
+          <div>
+            <label class="block text-sm font-medium text-text-primary mb-2">Producto Base <span class="text-red-400">*</span></label>
+            <div class="relative">
+              <input
+                v-model="productoSearch"
+                @input="showProductoDropdown = true"
+                @focus="showProductoDropdown = true"
+                type="text"
+                placeholder="Buscar producto..."
+                class="w-full bg-dark-bg border border-dark-border rounded-lg px-4 py-3 text-sm text-text-primary placeholder-text-muted focus:outline-none focus:border-accent transition-colors"
+                :class="{ 'border-accent': newComp.producto_id }"
+                autocomplete="off"
+              />
+              <div v-if="showProductoDropdown && productosFiltrados.length > 0" class="absolute top-full left-0 right-0 mt-1 bg-dark-card border border-dark-border rounded-lg shadow-xl z-20 max-h-52 overflow-y-auto">
+                <button v-for="prod in productosFiltrados" :key="prod.id" @click="selectProducto(prod)" class="w-full flex items-center justify-between px-4 py-2.5 text-sm hover:bg-dark-bg transition-colors text-left">
+                  <span class="text-text-primary">{{ prod.nombre }}</span>
+                  <span class="text-xs text-text-muted ml-3 flex-shrink-0">{{ prod.categoria }}</span>
+                </button>
+              </div>
+            </div>
+            <p v-if="newComp.categoria" class="text-xs text-accent mt-1.5 flex items-center gap-1">
+              <span>✓</span> Categoría: {{ newComp.categoria }}
+            </p>
+          </div>
+
+          <!-- Especificación -->
+          <div>
+            <label class="block text-sm font-medium text-text-primary mb-2">Especificación técnica <span class="text-red-400">*</span></label>
+            <input v-model="newComp.especificacion" type="text" placeholder="Ej: 6 núcleos / 12 hilos · 3.7GHz · AM4" class="w-full bg-dark-bg border border-dark-border rounded-lg px-4 py-3 text-sm text-text-primary placeholder-text-muted focus:outline-none focus:border-accent transition-colors" />
+          </div>
+
+          <!-- Gama -->
+          <div>
+            <label class="block text-sm font-medium text-text-primary mb-3">Gama <span class="text-red-400">*</span></label>
+            <div class="grid grid-cols-3 gap-3">
+              <button v-for="tier in ['alta', 'media', 'baja']" :key="tier" @click="newComp.gama = tier"
+                class="py-2.5 rounded-lg border text-sm font-medium transition-all"
+                :class="newComp.gama === tier ? 'border-accent bg-accent/10 text-accent' : 'border-dark-border text-text-muted hover:border-accent/40'">
+                {{ tier.charAt(0).toUpperCase() + tier.slice(1) }}
+              </button>
+            </div>
+          </div>
+
+          <!-- Especificaciones Avanzadas -->
+          <div class="grid grid-cols-2 gap-4">
+            <div>
+              <label class="block text-sm font-medium text-text-primary mb-2">Núcleos (Opcional)</label>
+              <input v-model="newComp.nucleos" type="number" min="1" placeholder="Ej: 8" class="w-full bg-dark-bg border border-dark-border rounded-lg px-4 py-3 text-sm text-text-primary focus:outline-none focus:border-accent transition-colors" />
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-text-primary mb-2">Hilos (Opcional)</label>
+              <input v-model="newComp.hilos" type="number" min="1" placeholder="Ej: 16" class="w-full bg-dark-bg border border-dark-border rounded-lg px-4 py-3 text-sm text-text-primary focus:outline-none focus:border-accent transition-colors" />
+            </div>
+          </div>
+
+          <div class="grid grid-cols-2 gap-4">
+            <div>
+              <label class="block text-sm font-medium text-text-primary mb-2">Frecuencia GHz (Opcional)</label>
+              <input v-model="newComp.frecuencia_hz" type="number" step="0.1" min="0" placeholder="Ej: 3.5" class="w-full bg-dark-bg border border-dark-border rounded-lg px-4 py-3 text-sm text-text-primary focus:outline-none focus:border-accent transition-colors" />
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-text-primary mb-2">Enfoque de uso</label>
+              <select v-model="newComp.enfoque_uso" class="w-full bg-dark-bg border border-dark-border rounded-lg px-4 py-3 text-sm text-text-primary focus:outline-none focus:border-accent transition-colors">
+                <option :value="null">Ninguno</option>
+                <option value="estudio">Estudio</option>
+                <option value="oficina">Oficina</option>
+                <option value="gaming">Gaming</option>
+                <option value="diseño">Diseño</option>
+              </select>
+            </div>
+          </div>
+
+          <p v-if="addCompError" class="text-xs text-red-400 bg-red-500/10 border border-red-500/20 rounded-lg px-4 py-2.5">{{ addCompError }}</p>
+        </div>
+
+        <div class="flex gap-3 mt-8">
+          <button @click="saveNewComp" :disabled="savingAddComp" class="btn-primary flex-1 text-sm">
+            {{ savingAddComp ? 'Creando...' : 'Crear Componente Maestro' }}
+          </button>
+          <button @click="closeAddModal" class="btn-secondary text-sm px-5">Cancelar</button>
         </div>
       </div>
     </div>
@@ -676,6 +925,34 @@
             </div>
           </div>
 
+          <div class="grid grid-cols-2 gap-4">
+            <div>
+              <label class="block text-sm font-medium text-text-primary mb-2">Núcleos (Opcional)</label>
+              <input v-model="editingComp.nucleos" type="number" min="1" placeholder="Ej: 8" class="w-full bg-dark-bg border border-dark-border rounded-lg px-4 py-3 text-sm text-text-primary focus:outline-none focus:border-accent transition-colors" />
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-text-primary mb-2">Hilos (Opcional)</label>
+              <input v-model="editingComp.hilos" type="number" min="1" placeholder="Ej: 16" class="w-full bg-dark-bg border border-dark-border rounded-lg px-4 py-3 text-sm text-text-primary focus:outline-none focus:border-accent transition-colors" />
+            </div>
+          </div>
+
+          <div class="grid grid-cols-2 gap-4">
+            <div>
+              <label class="block text-sm font-medium text-text-primary mb-2">Frecuencia GHz (Opcional)</label>
+              <input v-model="editingComp.frecuencia_hz" type="number" step="0.1" min="0" placeholder="Ej: 3.5" class="w-full bg-dark-bg border border-dark-border rounded-lg px-4 py-3 text-sm text-text-primary focus:outline-none focus:border-accent transition-colors" />
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-text-primary mb-2">Enfoque de uso</label>
+              <select v-model="editingComp.enfoque_uso" class="w-full bg-dark-bg border border-dark-border rounded-lg px-4 py-3 text-sm text-text-primary focus:outline-none focus:border-accent transition-colors">
+                <option :value="null">Ninguno</option>
+                <option value="estudio">Estudio</option>
+                <option value="oficina">Oficina</option>
+                <option value="gaming">Gaming</option>
+                <option value="diseño">Diseño</option>
+              </select>
+            </div>
+          </div>
+
           <div>
             <label class="block text-sm font-medium text-text-primary mb-3">Gama del componente</label>
             <div class="grid grid-cols-3 gap-3">
@@ -699,6 +976,48 @@
       </div>
     </div>
 
+    <!-- ===== MODAL AGREGAR PRODUCTO BASE ===== -->
+    <div v-if="showAddProductoModal" class="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto py-6 px-4">
+      <div class="fixed inset-0 bg-black/60 backdrop-blur-sm" @click="showAddProductoModal = false"></div>
+      <div class="relative card-dark rounded-2xl p-6 w-full max-w-sm my-auto shadow-2xl">
+        <div class="flex items-center justify-between mb-6">
+          <div>
+            <h2 class="text-lg font-bold text-text-primary">Añadir Producto Base</h2>
+            <p class="text-xs text-text-muted mt-0.5">Crear un nuevo producto predefinido</p>
+          </div>
+          <button @click="showAddProductoModal = false" class="text-text-muted hover:text-text-primary transition-colors text-2xl leading-none w-8 h-8 flex items-center justify-center rounded-lg hover:bg-dark-bg">×</button>
+        </div>
+
+        <div class="space-y-4">
+          <div>
+            <label class="block text-sm font-medium text-text-primary mb-1">Nombre del producto <span class="text-red-400">*</span></label>
+            <input v-model="newProducto.nombre" type="text" placeholder="Ej: Intel Core i9 14900K" class="w-full bg-dark-bg border border-dark-border rounded-lg px-4 py-3 text-sm text-text-primary placeholder-text-muted focus:outline-none focus:border-accent transition-colors" />
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-text-primary mb-1">Categoría <span class="text-red-400">*</span></label>
+            <select v-model="newProducto.categoria" class="w-full bg-dark-bg border border-dark-border rounded-lg px-4 py-3 text-sm text-text-primary focus:outline-none focus:border-accent transition-colors">
+              <option value="" disabled>Seleccionar...</option>
+              <option value="Procesadores">Procesadores</option>
+              <option value="Tarjetas de Video">Tarjetas de Video</option>
+              <option value="Placas Madre">Placas Madre</option>
+              <option value="Memorias RAM">Memorias RAM</option>
+              <option value="Almacenamiento">Almacenamiento</option>
+              <option value="Fuentes de Poder">Fuentes de Poder</option>
+              <option value="Gabinetes">Gabinetes</option>
+              <option value="Refrigeración">Refrigeración</option>
+              <option value="Monitores">Monitores</option>
+              <option value="Periféricos">Periféricos</option>
+            </select>
+          </div>
+          <p v-if="addProductoError" class="text-xs text-red-400 bg-red-500/10 border border-red-500/20 rounded-lg px-4 py-2.5">{{ addProductoError }}</p>
+        </div>
+        <div class="flex gap-3 mt-8">
+          <button @click="saveNewProducto" :disabled="savingProducto || !newProducto.nombre || !newProducto.categoria" class="btn-primary flex-1 text-sm">{{ savingProducto ? 'Guardando...' : 'Crear Producto' }}</button>
+          <button @click="showAddProductoModal = false" class="btn-secondary text-sm px-5">Cancelar</button>
+        </div>
+      </div>
+    </div>
+
     <!-- ===== MODAL ELIMINAR COMPONENTE ===== -->
     <div v-if="showDeleteCompModal" class="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto py-6 px-4">
       <div class="fixed inset-0 bg-black/60 backdrop-blur-sm" @click="showDeleteCompModal = false"></div>
@@ -716,6 +1035,87 @@
         </div>
       </div>
     </div>
+
+    <!-- ===== MODAL ELIMINAR PERFIL ===== -->
+    <div v-if="showDeletePerfilModal" class="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto py-6 px-4">
+      <div class="fixed inset-0 bg-black/60 backdrop-blur-sm" @click="showDeletePerfilModal = false"></div>
+      <div class="relative card-dark rounded-2xl p-6 w-full max-w-sm my-auto shadow-2xl text-center">
+        <div class="w-14 h-14 rounded-full bg-red-500/10 border border-red-500/20 flex items-center justify-center mx-auto mb-4 text-2xl">🗑️</div>
+        <h2 class="text-lg font-bold text-text-primary mb-2">Eliminar perfil</h2>
+        <p class="text-text-muted text-sm mb-1">¿Estás seguro de que deseas eliminar</p>
+        <p class="text-text-primary font-semibold mb-2">{{ deletingPerfil?.nombre }}?</p>
+        <div class="flex gap-3 mt-6">
+          <button @click="deletePerfil" :disabled="savingDeletePerfil" class="flex-1 py-3 rounded-lg text-sm font-medium bg-red-500/10 text-red-400 border border-red-500/20 hover:bg-red-500/20 transition-colors">
+            {{ savingDeletePerfil ? 'Eliminando...' : 'Sí, eliminar' }}
+          </button>
+          <button @click="showDeletePerfilModal = false" class="flex-1 btn-secondary text-sm">Cancelar</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== MODAL EDITAR PERFIL ===== -->
+    <div v-if="showPerfilModal" class="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto py-6 px-4">
+      <div class="fixed inset-0 bg-black/60 backdrop-blur-sm" @click="closePerfilModal"></div>
+      <div class="relative card-dark rounded-2xl p-6 w-full max-w-4xl my-auto shadow-2xl">
+        <div class="flex items-center justify-between mb-6">
+          <div>
+            <h2 class="text-lg font-bold text-text-primary">{{ editingPerfil?.id ? 'Editar Perfil' : 'Crear Perfil' }}</h2>
+            <p class="text-sm text-text-muted mt-1">Configura los permisos de acceso para este perfil.</p>
+          </div>
+          <button @click="closePerfilModal" class="p-2 hover:bg-dark-bg rounded-lg text-text-muted hover:text-text-primary transition-colors">✕</button>
+        </div>
+
+        <div class="space-y-6">
+          <div class="grid grid-cols-2 gap-4">
+            <div>
+              <label class="block text-sm font-medium text-text-primary mb-2">Nombre del Perfil</label>
+              <input v-model="editingPerfil.nombre" type="text" placeholder="Ej: Vendedor" class="w-full bg-dark-bg border border-dark-border rounded-lg px-4 py-3 text-sm text-text-primary placeholder-text-muted focus:outline-none focus:border-accent transition-colors" />
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-text-primary mb-2">Estado</label>
+              <select v-model="editingPerfil.activo" class="w-full bg-dark-bg border border-dark-border rounded-lg px-4 py-3 text-sm text-text-primary focus:outline-none focus:border-accent transition-colors">
+                <option :value="1">Activo</option>
+                <option :value="0">Inactivo</option>
+              </select>
+            </div>
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-text-primary mb-2">Descripción (Opcional)</label>
+            <input v-model="editingPerfil.descripcion" type="text" placeholder="Breve descripción del perfil" class="w-full bg-dark-bg border border-dark-border rounded-lg px-4 py-3 text-sm text-text-primary placeholder-text-muted focus:outline-none focus:border-accent transition-colors" />
+          </div>
+
+          <div>
+            <label class="block text-sm font-medium text-text-primary mb-4">Permisos Asignados</label>
+            <div class="grid grid-cols-2 md:grid-cols-3 gap-4">
+              <div v-for="(permisos, module) in availablePermisos" :key="module" class="bg-dark-bg rounded-xl border border-dark-border p-4">
+                <h3 class="text-xs font-semibold text-text-primary uppercase tracking-wider mb-3">{{ module }}</h3>
+                <div class="space-y-2">
+                  <label v-for="(label, code) in permisos" :key="code" class="flex items-start gap-2 cursor-pointer group">
+                    <div class="relative flex items-center justify-center mt-0.5">
+                      <input type="checkbox" :checked="editingPerfil.permisos.includes(code)" @change="togglePermiso(code)" class="appearance-none w-4 h-4 rounded border border-dark-border bg-dark-bg checked:bg-accent checked:border-accent transition-colors" />
+                      <svg v-if="editingPerfil.permisos.includes(code)" class="absolute w-2.5 h-2.5 text-white pointer-events-none" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
+                      </svg>
+                    </div>
+                    <span class="text-sm text-text-muted group-hover:text-text-primary transition-colors">{{ label }}</span>
+                  </label>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <p v-if="perfilError" class="text-sm text-red-400 bg-red-500/10 border border-red-500/20 rounded-lg px-4 py-3">{{ perfilError }}</p>
+        </div>
+
+        <div class="mt-8 flex gap-3">
+          <button @click="savePerfil" :disabled="savingPerfil" class="flex-1 py-3 rounded-lg text-sm font-medium bg-accent text-white hover:bg-accent-hover transition-colors shadow-lg shadow-accent/20">
+            {{ savingPerfil ? 'Guardando...' : 'Guardar perfil' }}
+          </button>
+          <button @click="closePerfilModal" class="flex-1 btn-secondary text-sm">Cancelar</button>
+        </div>
+      </div>
+    </div>
+
   </div>
 </template>
 
@@ -740,10 +1140,12 @@ const activeSection = ref('proveedores')
 const sections = computed(() => [
   { id: 'proveedores',       icon: '🏢', label: 'Proveedores',       description: `${proveedores.value.length} proveedores`,       cta: '+ Agregar proveedor', count: proveedores.value.length   },
   { id: 'bodegas',           icon: '🏪', label: 'Bodegas',           description: `${bodegas.value.length} bodegas`,               cta: '+ Agregar bodega',                  count: bodegas.value.length        },
-  { id: 'componentes',       icon: '🔧', label: 'Componentes',       description: `${componentes.value.length} componentes`,       cta: null,                  count: componentes.value.length    },
+  { id: 'catalogo',          icon: '📦', label: 'Catálogo Base',     description: 'Productos predefinidos',                        cta: '+ Añadir Producto',   count: null                        },
+  { id: 'componentes',       icon: '🔧', label: 'Componentes',       description: `${componentes.value.length} componentes en inventario`, cta: '+ Nuevo Componente Maestro', count: componentes.value.length    },
   { id: 'cotizaciones',      icon: '📄', label: 'Cotizaciones',      description: `${cotizaciones.value.length} cotizaciones`,     cta: null,                  count: cotizaciones.value.length   },
   { id: 'crear-usuario',     icon: '➕', label: 'Crear usuario',     description: 'Registrar nuevo usuario',                       cta: null,                  count: null                        },
   { id: 'gestionar-usuarios',icon: '👥', label: 'Gestionar usuarios',description: `${usuarios.value.length} usuarios`,            cta: '+ Crear usuario',     count: usuarios.value.length       },
+  { id: 'perfiles',          icon: '🔐', label: 'Perfiles y Permisos',description: `${perfiles.value.length} perfiles`,           cta: '+ Crear perfil',      count: perfiles.value.length       },
   { id: 'historial',         icon: '📋', label: 'Historial',         description: 'Registro global de acciones',                   cta: null,                  count: historial.value.length      },
 ])
 
@@ -752,7 +1154,10 @@ const currentSection = computed(() => sections.value.find(s => s.id === activeSe
 function handleCta() {
   if (activeSection.value === 'proveedores')        showProveedorModal.value = true
   if (activeSection.value === 'bodegas')            showBodegaModal.value = true
+  if (activeSection.value === 'catalogo')           showAddProductoModal.value = true
+  if (activeSection.value === 'componentes')        openAddModal()
   if (activeSection.value === 'gestionar-usuarios') activeSection.value = 'crear-usuario'
+  if (activeSection.value === 'perfiles')           openEditPerfil(null)
 }
 
 // ── Estilos ───────────────────────────────────────────────
@@ -912,11 +1317,13 @@ async function toggleActivoProveedor(p) {
   }
 }
 
-function openEditProveedor(p) {
+const openEditProveedor = (p) => {
   editingProveedor.value = { ...p }
   editProveedorError.value = ''
   showEditProveedorModal.value = true
 }
+
+// ... remove Asignar Catalogo variables ...
 
 async function saveEditProveedor() {
   editProveedorError.value = ''
@@ -1098,26 +1505,208 @@ const savingDeleteComp = ref(false)
 const editingComp = ref({})
 const editCompError = ref('')
 const savingEditComp = ref(false)
+const stockQtyAdmin = ref({})
+
+// Variables para Add Component
+const showAddCompModal = ref(false)
+const newComp = ref({ producto_id: '', nombre: '', categoria: '', especificacion: '', nucleos: '', hilos: '', frecuencia_hz: '', enfoque_uso: '', gama: 'media' })
+const addCompError = ref('')
+const savingAddComp = ref(false)
+const productoSearch = ref('')
+const showProductoDropdown = ref(false)
+const productosCatalogo = ref([])
+
+const productosFiltrados = computed(() => {
+  if (!productoSearch.value) return productosCatalogo.value
+  const q = productoSearch.value.toLowerCase()
+  return productosCatalogo.value.filter(p => p.nombre.toLowerCase().includes(q) || p.categoria.toLowerCase().includes(q))
+})
+
+async function fetchProductosCatalogo() {
+  try {
+    const res = await fetch(`${API}/productos-catalogo/`, { headers: { Authorization: `Bearer ${getToken()}` } })
+    const data = await res.json()
+    if (res.ok) productosCatalogo.value = data.productos || data.componentes || []
+  } catch(e) { console.error(e) }
+}
+
+function openAddModal() {
+  newComp.value = { producto_id: '', nombre: '', categoria: '', especificacion: '', nucleos: '', hilos: '', frecuencia_hz: '', enfoque_uso: '', gama: 'media' }
+  addCompError.value = ''
+  productoSearch.value = ''
+  showProductoDropdown.value = false
+  if (productosCatalogo.value.length === 0) fetchProductosCatalogo()
+  showAddCompModal.value = true
+}
+
+function closeAddModal() {
+  showAddCompModal.value = false
+  addCompError.value = ''
+}
+
+function selectProducto(prod) {
+  newComp.value.producto_id = prod.id
+  newComp.value.nombre = prod.nombre
+  newComp.value.categoria = prod.categoria
+  productoSearch.value = prod.nombre
+  showProductoDropdown.value = false
+}
+
+async function saveNewComp() {
+  addCompError.value = ''
+  const c = newComp.value
+  if (!c.producto_id || !c.especificacion || !c.gama) {
+    return addCompError.value = 'El producto, especificación y gama son obligatorios'
+  }
+  savingAddComp.value = true
+  try {
+    const res = await fetch(`${API}/componentes`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Accept: 'application/json', Authorization: `Bearer ${getToken()}` },
+      body: JSON.stringify({
+        producto_id: c.producto_id,
+        especificacion: c.especificacion,
+        nucleos: c.nucleos,
+        hilos: c.hilos,
+        frecuencia_hz: c.frecuencia_hz,
+        enfoque_uso: c.enfoque_uso,
+        gama: c.gama
+      })
+    })
+    const data = await res.json()
+    if (!res.ok) {
+      toast.error(data.message ?? 'Error al guardar')
+      return addCompError.value = data.message ?? 'Error al guardar'
+    }
+    await fetchComponentes()
+    closeAddModal()
+    toast.success('Componente maestro creado exitosamente')
+  } catch(e) {
+    addCompError.value = 'Error de conexión'
+    toast.error('Error de conexión')
+  } finally {
+    savingAddComp.value = false
+  }
+}
+
+const filterNucleos = ref('')
+const filterHilos = ref('')
+const filterFrecuenciaMin = ref('')
+const filterFrecuenciaMax = ref('')
+const filterEnfoque = ref('')
+const filterGama = ref('')
+
 
 const filteredComponentes = computed(() => {
-  if (!filterComponente.value.trim()) return componentes.value
-  const q = filterComponente.value.toLowerCase()
-  return componentes.value.filter(c => c.nombre.toLowerCase().includes(q) || c.categoria.toLowerCase().includes(q))
+  let result = componentes.value
+  
+  if (filterComponente.value.trim()) {
+    const q = filterComponente.value.toLowerCase()
+    result = result.filter(c => c.nombre.toLowerCase().includes(q) || c.categoria.toLowerCase().includes(q))
+  }
+  
+  if (filterNucleos.value) result = result.filter(c => c.nucleos === parseInt(filterNucleos.value))
+  if (filterHilos.value) result = result.filter(c => c.hilos === parseInt(filterHilos.value))
+  if (filterFrecuenciaMin.value) result = result.filter(c => (c.frecuencia_hz || 0) >= parseFloat(filterFrecuenciaMin.value))
+  if (filterFrecuenciaMax.value) result = result.filter(c => (c.frecuencia_hz || 0) <= parseFloat(filterFrecuenciaMax.value))
+  if (filterEnfoque.value) result = result.filter(c => c.enfoque_uso === filterEnfoque.value)
+  if (filterGama.value) result = result.filter(c => c.gama === filterGama.value)
+  
+  return result
 })
 
 async function fetchComponentes() {
   loadingComponentes.value = true
   try {
-    const res = await fetch(`${API}/componentes/admin`, { headers: { Authorization: `Bearer ${getToken()}` } })
+    const res = await fetch(`${API}/componentes/admin`, { headers: { Accept: 'application/json', Authorization: `Bearer ${getToken()}` } })
     const data = await res.json()
     if (res.ok) componentes.value = data.componentes
   } catch(e) { console.error(e) } finally { loadingComponentes.value = false }
+}
+
+
+async function quickAdjustAdmin(comp, operacion, cantidad) {
+  comp._adjusting = true
+  try {
+    const res = await fetch(`${API}/componentes/stock`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getToken()}` },
+      body: JSON.stringify({ id: comp.id, cantidad, operacion })
+    })
+    const data = await res.json()
+    if (!res.ok) {
+      toast.error(data.message ?? 'Error al ajustar stock')
+      return
+    }
+    comp.stock = data.nuevo_stock
+    toast.success(`Stock ${operacion === 'incrementar' ? 'aumentado' : 'reducido'} (${operacion === 'incrementar' ? '+' : '-'}${cantidad})`)
+  } catch (e) {
+    toast.error('Error de conexión')
+  } finally {
+    comp._adjusting = false
+  }
 }
 
 function openEditComp(comp) {
   editingComp.value = { ...comp }
   editCompError.value = ''
   showEditCompModal.value = true
+}
+
+// Añadir Producto Base Variables
+const showAddProductoModal = ref(false)
+const savingProducto = ref(false)
+const addProductoError = ref('')
+const newProducto = ref({ nombre: '', categoria: '' })
+const catalogoList = ref([])
+const filterCatalogo = ref('')
+const loadingCatalogo = ref(false)
+
+const filteredCatalogoList = computed(() => {
+  if (!filterCatalogo.value.trim()) return catalogoList.value
+  const q = filterCatalogo.value.toLowerCase()
+  return catalogoList.value.filter(p => p.nombre.toLowerCase().includes(q) || p.categoria.toLowerCase().includes(q))
+})
+
+async function fetchCatalogo() {
+  loadingCatalogo.value = true
+  try {
+    const res = await fetch(`${API}/productos-catalogo/`, { headers: { Authorization: `Bearer ${getToken()}` } })
+    const data = await res.json()
+    if (res.ok) catalogoList.value = data.productos
+  } catch(e) {
+    console.error('Error cargando catalogo', e)
+  } finally {
+    loadingCatalogo.value = false
+  }
+}
+
+async function saveNewProducto() {
+  addProductoError.value = ''
+  if (!newProducto.value.nombre || !newProducto.value.categoria) {
+    return addProductoError.value = 'Nombre y categoría son obligatorios.'
+  }
+  savingProducto.value = true
+  try {
+    const res = await fetch(`${API}/productos-catalogo`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Accept: 'application/json', Authorization: `Bearer ${getToken()}` },
+      body: JSON.stringify(newProducto.value)
+    })
+    const data = await res.json()
+    if (!res.ok) {
+      toast.error(data.message ?? 'Error al crear producto')
+      return addProductoError.value = data.message ?? 'Error al crear producto'
+    }
+    toast.success('Producto base creado exitosamente')
+    showAddProductoModal.value = false
+    newProducto.value = { nombre: '', categoria: '' }
+    await fetchCatalogo()
+  } catch(e) {
+    addProductoError.value = 'Error de conexión'
+  } finally {
+    savingProducto.value = false
+  }
 }
 
 async function saveEditComp() {
@@ -1132,12 +1721,16 @@ async function saveEditComp() {
 
   savingEditComp.value = true
   try {
-    const res = await fetch(`${API}/componentes/`, {
+    const res = await fetch(`${API}/componentes`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getToken()}` },
       body: JSON.stringify({
         id:             editingComp.value.id,
         especificacion: editingComp.value.especificacion,
+        nucleos:        editingComp.value.nucleos,
+        hilos:          editingComp.value.hilos,
+        frecuencia_hz:  editingComp.value.frecuencia_hz,
+        enfoque_uso:    editingComp.value.enfoque_uso,
         gama:           editingComp.value.gama,
         precio:         editingComp.value.precio,
         stock:          editingComp.value.stock,
@@ -1163,7 +1756,7 @@ async function saveEditComp() {
 async function toggleComponente(c) {
   const activo = c.activo == 1 ? 0 : 1
   try {
-    await fetch(`${API}/componentes/`, {
+    await fetch(`${API}/componentes`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getToken()}` },
       body: JSON.stringify({ id: c.id, activo })
@@ -1183,7 +1776,7 @@ function openDeleteComp(c) {
 async function confirmDeleteComp() {
   savingDeleteComp.value = true
   try {
-    await fetch(`${API}/componentes/?id=${deletingComp.value.id}`, {
+    await fetch(`${API}/componentes?id=${deletingComp.value.id}`, {
       method: 'DELETE',
       headers: { Authorization: `Bearer ${getToken()}` }
     })
@@ -1358,6 +1951,111 @@ async function fetchHistorial() {
   } catch(e) { console.error(e) } finally { loadingHistorial.value = false }
 }
 
+
+// ── Perfiles y Permisos ───────────────────────────────────
+const perfiles = ref([])
+const loadingPerfiles = ref(false)
+const showPerfilModal = ref(false)
+const showDeletePerfilModal = ref(false)
+const editingPerfil = ref({ id: null, nombre: '', descripcion: '', activo: 1, permisos: [] })
+const deletingPerfil = ref(null)
+const savingPerfil = ref(false)
+const savingDeletePerfil = ref(false)
+const perfilError = ref('')
+const availablePermisos = ref({})
+
+async function fetchPerfiles() {
+  loadingPerfiles.value = true
+  try {
+    const res = await fetch(`${API}/perfiles`, { headers: { Authorization: `Bearer ${getToken()}` } })
+    const data = await res.json()
+    if (res.ok) perfiles.value = data.perfiles || data
+  } catch(e) { console.error(e) } finally { loadingPerfiles.value = false }
+}
+
+async function fetchPermisosDisponibles() {
+  try {
+    const res = await fetch(`${API}/perfiles/permisos`, { headers: { Authorization: `Bearer ${getToken()}` } })
+    const data = await res.json()
+    if (res.ok) availablePermisos.value = data.permisos || data
+  } catch(e) { console.error(e) }
+}
+
+function openEditPerfil(p = null) {
+  if (p) {
+    editingPerfil.value = { ...p, permisos: [...(p.permisos || [])] }
+  } else {
+    editingPerfil.value = { id: null, nombre: '', descripcion: '', permisos: [], activo: 1 }
+  }
+  perfilError.value = ''
+  showPerfilModal.value = true
+}
+
+function closePerfilModal() {
+  showPerfilModal.value = false
+  perfilError.value = ''
+}
+
+function togglePermiso(code) {
+  const idx = editingPerfil.value.permisos.indexOf(code)
+  if (idx === -1) editingPerfil.value.permisos.push(code)
+  else editingPerfil.value.permisos.splice(idx, 1)
+}
+
+async function savePerfil() {
+  perfilError.value = ''
+  if (!editingPerfil.value.nombre) {
+    return perfilError.value = 'El nombre es requerido'
+  }
+  
+  savingPerfil.value = true
+  const method = editingPerfil.value.id ? 'PUT' : 'POST'
+  const url = `${API}/perfiles`
+  try {
+    const res = await fetch(url, {
+      method: method,
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getToken()}` },
+      body: JSON.stringify(editingPerfil.value)
+    })
+    if (res.ok) {
+      toast.success(editingPerfil.value.id ? 'Perfil actualizado' : 'Perfil creado')
+      closePerfilModal()
+      fetchPerfiles()
+    } else {
+      const data = await res.json()
+      perfilError.value = data.message || 'Error al guardar el perfil'
+    }
+  } catch (error) {
+    perfilError.value = 'Error de red al guardar el perfil'
+  } finally {
+    savingPerfil.value = false
+  }
+}
+
+function confirmDeletePerfilAction(p) {
+  deletingPerfil.value = p
+  showDeletePerfilModal.value = true
+}
+
+async function deletePerfil() {
+  savingDeletePerfil.value = true
+  try {
+    const res = await fetch(`${API}/perfiles/${deletingPerfil.value.id}`, {
+      method: 'DELETE',
+      headers: { Authorization: `Bearer ${getToken()}` }
+    })
+    if (res.ok) {
+      toast.success('Perfil eliminado')
+      showDeletePerfilModal.value = false
+      fetchPerfiles()
+    }
+  } catch(e) {
+    console.error(e)
+  } finally {
+    savingDeletePerfil.value = false
+  }
+}
+
 // ── Lifecycle ─────────────────────────────────────────────
 onMounted(() => {
   fetchProveedores()
@@ -1365,6 +2063,9 @@ onMounted(() => {
   fetchComponentes()
   fetchCotizaciones()
   fetchUsuarios()
+  fetchPerfiles()
+  fetchPermisosDisponibles()
   fetchHistorial()
+  fetchCatalogo()
 })
 </script>

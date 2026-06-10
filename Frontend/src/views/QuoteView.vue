@@ -61,15 +61,36 @@
                   <p class="text-xs text-text-muted mt-0.5">{{ item.especificacion }}</p>
                 </div>
 
-                <!-- Store + Price + Remove -->
-                <div class="text-right flex-shrink-0 flex flex-col items-end gap-1">
+                <!-- Store + Price + Qty + Remove -->
+                <div class="flex-shrink-0 flex flex-col items-end gap-2">
                   <button
                     @click="handleRemove(stepId)"
                     class="text-text-muted hover:text-red-400 transition-colors opacity-0 group-hover:opacity-100 text-xs"
                     title="Quitar componente"
                   >✕ quitar</button>
                   <p class="text-xs text-text-muted">{{ item.bodega }}</p>
-                  <p class="text-accent font-semibold font-mono text-sm">${{ Number(item.precio).toLocaleString() }}</p>
+                  <div class="flex items-center gap-1.5">
+                    <button
+                      @click="updateQuantity(stepId, (item.cantidad || 1) - 1)"
+                      :disabled="(item.cantidad || 1) <= 1"
+                      class="w-6 h-6 rounded border border-dark-border bg-dark-bg text-text-muted hover:text-red-400 hover:border-red-500/40 transition-colors flex items-center justify-center text-xs font-bold disabled:opacity-30 disabled:cursor-not-allowed"
+                    >−</button>
+                    <input
+                      type="number"
+                      :value="item.cantidad || 1"
+                      @change="updateQuantity(stepId, parseInt($event.target.value) || 1)"
+                      min="1"
+                      :max="item.stock || 999"
+                      class="w-10 h-6 bg-dark-bg border border-dark-border rounded text-center text-xs font-mono text-text-primary focus:outline-none focus:border-accent transition-colors [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                    />
+                    <button
+                      @click="updateQuantity(stepId, (item.cantidad || 1) + 1)"
+                      :disabled="(item.cantidad || 1) >= (item.stock || 999)"
+                      class="w-6 h-6 rounded border border-dark-border bg-dark-bg text-text-muted hover:text-green-400 hover:border-green-500/40 transition-colors flex items-center justify-center text-xs font-bold disabled:opacity-30 disabled:cursor-not-allowed"
+                    >+</button>
+                  </div>
+                  <p class="text-accent font-semibold font-mono text-sm">${{ (Number(item.precio) * (item.cantidad || 1)).toLocaleString() }}</p>
+                  <p v-if="(item.cantidad || 1) > 1" class="text-[10px] text-text-muted">${{ Number(item.precio).toLocaleString() }} × {{ item.cantidad }}</p>
                 </div>
               </div>
             </div>
@@ -159,7 +180,7 @@ import { useAuth } from '../composables/useAuth'
 
 const API = '/api'
 const router = useRouter()
-const { steps, selectedComponents, totalPrice, perfil, removeItem, clearAll } = useBuilder()
+const { steps, selectedComponents, totalPrice, perfil, removeItem, clearAll, updateQuantity } = useBuilder()
 const { getToken } = useAuth()
 
 const saving      = ref(false)
@@ -175,9 +196,10 @@ const missingSteps = computed(() =>
 const storeBreakdown = computed(() => {
   const map = {}
   Object.values(selectedComponents.value).forEach(item => {
+    const qty = item.cantidad || 1
     if (!map[item.bodega]) map[item.bodega] = { name: item.bodega, count: 0, total: 0 }
-    map[item.bodega].count++
-    map[item.bodega].total += Number(item.precio)
+    map[item.bodega].count += qty
+    map[item.bodega].total += Number(item.precio) * qty
   })
   return Object.values(map)
 })
@@ -199,11 +221,11 @@ async function saveCotizacion() {
 const items = Object.values(selectedComponents.value).map(item => ({
   componente_id: item.id,
   precio:        Number(item.precio),
-  cantidad:      1,
+  cantidad:      item.cantidad || 1,
 }))
 
   try {
-    const res = await fetch(`${API}/cotizaciones/`, {
+    const res = await fetch(`${API}/cotizaciones`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getToken()}` },
       body: JSON.stringify({ items, total: totalPrice.value, perfil: perfil.value })

@@ -11,4 +11,9 @@ class Usuario extends Authenticatable
 
     protected $table = 'usuarios';
     public $timestamps = false; // El backend viejo PHP asume tablas sin created_at
+
+    public function perfil()
+    {
+        return $this->belongsTo(Perfil::class, 'perfil_id');
+    }
 }

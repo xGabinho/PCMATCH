@@ -27,20 +27,28 @@ export function useBuilder() {
   })
 
   const totalPrice = computed(() =>
-    Object.values(selectedComponents.value).reduce((sum, item) => sum + Number(item.precio), 0)
+    Object.values(selectedComponents.value).reduce((sum, item) => sum + Number(item.precio) * (item.cantidad || 1), 0)
   )
 
   function selectItem(stepId, item) {
-    selectedItems.value[stepId] = item
+    selectedItems.value[stepId] = { ...item, cantidad: 1 }
   }
 
   function removeItem(stepId) {
     delete selectedItems.value[stepId]
   }
 
+  function updateQuantity(stepId, newQty) {
+    if (!selectedItems.value[stepId]) return
+    const item = selectedItems.value[stepId]
+    const maxStock = item.stock ?? 999
+    const clamped = Math.max(1, Math.min(newQty, maxStock))
+    selectedItems.value[stepId] = { ...item, cantidad: clamped }
+  }
+
   function clearAll() {
     selectedItems.value = {}
   }
 
-  return { steps, selectedItems, selectedComponents, totalPrice, perfil, selectItem, removeItem, clearAll }
+  return { steps, selectedItems, selectedComponents, totalPrice, perfil, selectItem, removeItem, updateQuantity, clearAll }
 }

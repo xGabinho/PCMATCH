@@ -20,6 +20,10 @@ class Componente extends Model
         'bodega_id',
         'producto_id',
         'especificacion',
+        'nucleos',
+        'hilos',
+        'frecuencia_hz',
+        'enfoque_uso',
         'gama',
         'precio',
         'stock',
@@ -27,6 +31,9 @@ class Componente extends Model
     ];
 
     protected $casts = [
+        'nucleos' => 'integer',
+        'hilos' => 'integer',
+        'frecuencia_hz' => 'decimal:2',
         'precio' => 'decimal:2',
         'stock'  => 'integer',
         'activo' => 'boolean',
@@ -127,6 +134,28 @@ class Componente extends Model
                   $sub->where('nombre', 'LIKE', "%{$termino}%");
               });
         });
+    }
+
+    public function scopePorNucleos($query, $nucleos)
+    {
+        return $query->where('nucleos', $nucleos);
+    }
+
+    public function scopePorHilos($query, $hilos)
+    {
+        return $query->where('hilos', $hilos);
+    }
+
+    public function scopePorFrecuencia($query, $min = null, $max = null)
+    {
+        if ($min !== null) $query->where('frecuencia_hz', '>=', $min);
+        if ($max !== null) $query->where('frecuencia_hz', '<=', $max);
+        return $query;
+    }
+
+    public function scopePorEnfoque($query, $enfoque)
+    {
+        return $query->where('enfoque_uso', $enfoque);
     }
 
     // ──────────────────────────────────────────────

@@ -42,6 +42,19 @@
     Armar mi PC
   </router-link>
 
+  <!-- Mi perfil — todos los roles -->
+  <router-link
+    v-if="isLoggedIn"
+    to="/mi-perfil"
+    class="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium text-text-muted hover:text-accent hover:bg-dark-card transition-all duration-150"
+    active-class="text-accent bg-dark-card"
+  >
+    <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+      <path stroke-linecap="round" stroke-linejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
+    </svg>
+    Mi perfil
+  </router-link>
+
   <!-- Cerrar sesión — todos los roles -->
   <button
     v-if="isLoggedIn"

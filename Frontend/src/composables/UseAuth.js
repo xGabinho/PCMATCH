@@ -62,5 +62,11 @@ export function useAuth() {
     return localStorage.getItem('token') ?? ''
   }
 
-  return { isLoggedIn, user, login, register, logout, getToken }
+  function updateUser(data) {
+    const updated = { ...user.value, ...data }
+    localStorage.setItem('usuario', JSON.stringify(updated))
+    user.value = updated
+  }
+
+  return { isLoggedIn, user, login, register, logout, getToken, updateUser }
 }

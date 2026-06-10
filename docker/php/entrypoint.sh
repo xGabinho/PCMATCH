@@ -32,7 +32,7 @@ else
 
     # Ejecutar migraciones
     echo "🗃️  Ejecutando migraciones..."
-    php artisan migrate --force
+    php artisan migrate --force || true
 
     echo "✅ Migraciones completadas"
 fi

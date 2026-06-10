@@ -111,8 +111,50 @@
         <template v-if="activeSection === 'componentes'">
           <div class="card-dark rounded-xl overflow-hidden overflow-x-auto">
             <div class="px-6 py-4 border-b border-dark-border flex items-center justify-between">
-              <h2 class="font-semibold text-text-primary">Listado de componentes</h2>
-              <input v-model="filterComponente" type="text" placeholder="Buscar..." class="bg-dark-bg border border-dark-border rounded-lg px-4 py-2 text-sm text-text-primary placeholder-text-muted focus:outline-none focus:border-accent transition-colors w-48" />
+              <div class="flex items-center justify-between">
+                <h2 class="font-semibold text-text-primary">Listado de componentes</h2>
+                <div class="flex items-center gap-3">
+                  <input v-model="filterComponente" type="text" placeholder="Buscar..." class="bg-dark-bg border border-dark-border rounded-lg px-4 py-2 text-sm text-text-primary placeholder-text-muted focus:outline-none focus:border-accent transition-colors w-48" />
+                  <button @click="showAdvancedFilters = !showAdvancedFilters" class="btn-secondary text-sm px-4 py-2 flex items-center gap-2">
+                    <span>⚙️</span> Filtros
+                  </button>
+                </div>
+              </div>
+              
+              <!-- Advanced Filters Panel -->
+              <div v-if="showAdvancedFilters" class="p-4 bg-dark-bg border border-dark-border rounded-xl grid grid-cols-2 md:grid-cols-5 gap-4 animate-fade-in mt-4">
+                <div>
+                  <label class="block text-xs font-medium text-text-muted mb-1.5">Gama</label>
+                  <select v-model="filterGama" class="w-full bg-dark-card border border-dark-border rounded-lg px-3 py-2 text-sm text-text-primary focus:outline-none focus:border-accent transition-colors">
+                    <option value="">Todas</option>
+                    <option value="alta">Alta</option>
+                    <option value="media">Media</option>
+                    <option value="baja">Baja</option>
+                  </select>
+                </div>
+                <div>
+                  <label class="block text-xs font-medium text-text-muted mb-1.5">Enfoque</label>
+                  <select v-model="filterEnfoque" class="w-full bg-dark-card border border-dark-border rounded-lg px-3 py-2 text-sm text-text-primary focus:outline-none focus:border-accent transition-colors">
+                    <option value="">Todos</option>
+                    <option value="gaming">Gaming</option>
+                    <option value="diseño">Diseño</option>
+                    <option value="estudio">Estudio</option>
+                    <option value="oficina">Oficina</option>
+                  </select>
+                </div>
+                <div>
+                  <label class="block text-xs font-medium text-text-muted mb-1.5">Núcleos</label>
+                  <input v-model="filterNucleos" type="number" min="1" placeholder="Ej: 6" class="w-full bg-dark-card border border-dark-border rounded-lg px-3 py-2 text-sm text-text-primary focus:outline-none focus:border-accent transition-colors" />
+                </div>
+                <div>
+                  <label class="block text-xs font-medium text-text-muted mb-1.5">Hilos</label>
+                  <input v-model="filterHilos" type="number" min="1" placeholder="Ej: 12" class="w-full bg-dark-card border border-dark-border rounded-lg px-3 py-2 text-sm text-text-primary focus:outline-none focus:border-accent transition-colors" />
+                </div>
+                <div>
+                  <label class="block text-xs font-medium text-text-muted mb-1.5">Frec. mínima (GHz)</label>
+                  <input v-model="filterFrecuenciaMin" type="number" step="0.1" min="0" placeholder="Ej: 3.5" class="w-full bg-dark-card border border-dark-border rounded-lg px-3 py-2 text-sm text-text-primary focus:outline-none focus:border-accent transition-colors" />
+                </div>
+              </div>
             </div>
             <div v-if="loadingComponentes" class="px-6 py-12 text-center text-text-muted text-sm">Cargando componentes...</div>
             <table v-else class="w-full min-w-[640px]">
@@ -185,6 +227,15 @@
                 <p class="text-xs text-text-muted mt-2 min-h-[1rem]">{{ roles.find(r => r.id === newUser.rol)?.description }}</p>
               </div>
 
+              
+              <div>
+                <label class="block text-sm font-medium text-text-primary mb-2">Perfil de Permisos (Opcional)</label>
+                <select v-model="newUser.perfil_id" class="w-full bg-dark-bg border border-dark-border rounded-lg px-4 py-3 text-sm text-text-primary focus:outline-none focus:border-accent transition-colors">
+                  <option :value="null">Sin perfil</option>
+                  <option v-for="p in perfiles.filter(p => p.activo == 1)" :key="p.id" :value="p.id">{{ p.nombre }}</option>
+                </select>
+              </div>
+
               <div class="border-t border-dark-border"></div>
 
               <div class="grid grid-cols-2 gap-4">
@@ -223,6 +274,39 @@
                 <button @click="resetNewUser" class="btn-secondary text-sm px-5">Limpiar</button>
               </div>
             </div>
+          </div>
+        </template>
+
+
+        <!-- ===== PERFILES Y PERMISOS ===== -->
+        <template v-if="activeSection === 'perfiles'">
+          <div class="card-dark rounded-xl overflow-hidden overflow-x-auto">
+            <div class="px-6 py-4 border-b border-dark-border flex items-center justify-between">
+              <h2 class="font-semibold text-text-primary">Perfiles de Permisos</h2>
+            </div>
+            <div v-if="loadingPerfiles" class="px-6 py-12 text-center text-text-muted text-sm">Cargando perfiles...</div>
+            <table v-else class="w-full min-w-[640px]">
+              <thead class="border-b border-dark-border">
+                <tr><th v-for="h in ['Nombre','Descripción','Permisos','Estado','Acciones']" :key="h" class="px-6 py-3 text-left text-xs text-text-muted uppercase tracking-wider font-medium">{{ h }}</th></tr>
+              </thead>
+              <tbody class="divide-y divide-dark-border">
+                <tr v-if="perfiles.length === 0"><td colspan="5" class="px-6 py-12 text-center text-text-muted text-sm">Sin perfiles</td></tr>
+                <tr v-for="p in perfiles" :key="p.id" class="hover:bg-dark-bg/50 transition-colors">
+                  <td class="px-6 py-4 text-sm font-medium text-text-primary">{{ p.nombre }}</td>
+                  <td class="px-6 py-4 text-sm text-text-muted max-w-48 truncate">{{ p.descripcion || '—' }}</td>
+                  <td class="px-6 py-4 text-sm text-text-primary font-mono">{{ p.permisos?.length || 0 }}</td>
+                  <td class="px-6 py-4">
+                    <span class="badge text-xs px-2.5 py-1" :class="p.activo == 1 ? 'bg-green-500/10 text-green-400 border border-green-500/20' : 'bg-red-500/10 text-red-400 border border-red-500/20'">
+                      {{ p.activo == 1 ? 'Activo' : 'Inactivo' }}
+                    </span>
+                  </td>
+                  <td class="px-6 py-4 text-right space-x-2">
+                    <button @click="openEditPerfil(p)" class="p-2 bg-dark-bg border border-dark-border rounded-lg text-text-muted hover:text-accent hover:border-accent/40 transition-colors">✏️</button>
+                    <button @click="confirmDeletePerfilAction(p)" class="p-2 bg-dark-bg border border-dark-border rounded-lg text-text-muted hover:text-red-400 hover:border-red-500/40 transition-colors">🗑️</button>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
           </div>
         </template>
 
@@ -346,6 +430,15 @@
               </button>
             </div>
           </div>
+          
+          <div>
+            <label class="block text-sm font-medium text-text-primary mb-2">Perfil de Permisos (Opcional)</label>
+            <select v-model="editingUser.perfil_id" class="w-full bg-dark-bg border border-dark-border rounded-lg px-4 py-3 text-sm text-text-primary focus:outline-none focus:border-accent transition-colors">
+              <option :value="null">Sin perfil</option>
+              <option v-for="p in perfiles.filter(p => p.activo == 1)" :key="p.id" :value="p.id">{{ p.nombre }}</option>
+            </select>
+          </div>
+
           <p v-if="editUserError" class="text-xs text-red-400 bg-red-500/10 border border-red-500/20 rounded-lg px-4 py-2.5">{{ editUserError }}</p>
         </div>
         <div class="flex gap-3 mt-8">
@@ -452,6 +545,105 @@
       </div>
     </div>
 
+    <!-- ===== MODAL AGREGAR COMPONENTE ===== -->
+    <div v-if="showAddCompModal" class="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto py-6 px-4">
+      <div class="fixed inset-0 bg-black/60 backdrop-blur-sm" @click="closeAddModal"></div>
+      <div class="relative card-dark rounded-2xl p-6 w-full max-w-lg my-auto shadow-2xl">
+        <div class="flex items-center justify-between mb-6">
+          <div>
+            <h2 class="text-lg font-bold text-text-primary">Crear Componente Maestro</h2>
+            <p class="text-xs text-text-muted mt-0.5">Agrega especificaciones técnicas para que proveedores lo usen</p>
+          </div>
+          <button @click="closeAddModal" class="text-text-muted hover:text-text-primary transition-colors text-2xl leading-none w-8 h-8 flex items-center justify-center rounded-lg hover:bg-dark-bg">×</button>
+        </div>
+
+        <div class="space-y-5 max-h-[60vh] overflow-y-auto pr-2">
+
+          <!-- Select buscable de producto -->
+          <div>
+            <label class="block text-sm font-medium text-text-primary mb-2">Producto Base <span class="text-red-400">*</span></label>
+            <div class="relative">
+              <input
+                v-model="productoSearch"
+                @input="showProductoDropdown = true"
+                @focus="showProductoDropdown = true"
+                type="text"
+                placeholder="Buscar producto..."
+                class="w-full bg-dark-bg border border-dark-border rounded-lg px-4 py-3 text-sm text-text-primary placeholder-text-muted focus:outline-none focus:border-accent transition-colors"
+                :class="{ 'border-accent': newComp.producto_id }"
+                autocomplete="off"
+              />
+              <div v-if="showProductoDropdown && productosFiltrados.length > 0" class="absolute top-full left-0 right-0 mt-1 bg-dark-card border border-dark-border rounded-lg shadow-xl z-20 max-h-52 overflow-y-auto">
+                <button v-for="prod in productosFiltrados" :key="prod.id" @click="selectProducto(prod)" class="w-full flex items-center justify-between px-4 py-2.5 text-sm hover:bg-dark-bg transition-colors text-left">
+                  <span class="text-text-primary">{{ prod.nombre }}</span>
+                  <span class="text-xs text-text-muted ml-3 flex-shrink-0">{{ prod.categoria }}</span>
+                </button>
+              </div>
+            </div>
+            <p v-if="newComp.categoria" class="text-xs text-accent mt-1.5 flex items-center gap-1">
+              <span>✓</span> Categoría: {{ newComp.categoria }}
+            </p>
+          </div>
+
+          <!-- Especificación -->
+          <div>
+            <label class="block text-sm font-medium text-text-primary mb-2">Especificación técnica <span class="text-red-400">*</span></label>
+            <input v-model="newComp.especificacion" type="text" placeholder="Ej: 6 núcleos / 12 hilos · 3.7GHz · AM4" class="w-full bg-dark-bg border border-dark-border rounded-lg px-4 py-3 text-sm text-text-primary placeholder-text-muted focus:outline-none focus:border-accent transition-colors" />
+          </div>
+
+          <!-- Gama -->
+          <div>
+            <label class="block text-sm font-medium text-text-primary mb-3">Gama <span class="text-red-400">*</span></label>
+            <div class="grid grid-cols-3 gap-3">
+              <button v-for="tier in ['alta', 'media', 'baja']" :key="tier" @click="newComp.gama = tier"
+                class="py-2.5 rounded-lg border text-sm font-medium transition-all"
+                :class="newComp.gama === tier ? 'border-accent bg-accent/10 text-accent' : 'border-dark-border text-text-muted hover:border-accent/40'">
+                {{ tier.charAt(0).toUpperCase() + tier.slice(1) }}
+              </button>
+            </div>
+          </div>
+
+          <!-- Especificaciones Avanzadas -->
+          <div class="grid grid-cols-2 gap-4">
+            <div>
+              <label class="block text-sm font-medium text-text-primary mb-2">Núcleos (Opcional)</label>
+              <input v-model="newComp.nucleos" type="number" min="1" placeholder="Ej: 8" class="w-full bg-dark-bg border border-dark-border rounded-lg px-4 py-3 text-sm text-text-primary focus:outline-none focus:border-accent transition-colors" />
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-text-primary mb-2">Hilos (Opcional)</label>
+              <input v-model="newComp.hilos" type="number" min="1" placeholder="Ej: 16" class="w-full bg-dark-bg border border-dark-border rounded-lg px-4 py-3 text-sm text-text-primary focus:outline-none focus:border-accent transition-colors" />
+            </div>
+          </div>
+
+          <div class="grid grid-cols-2 gap-4">
+            <div>
+              <label class="block text-sm font-medium text-text-primary mb-2">Frecuencia GHz (Opcional)</label>
+              <input v-model="newComp.frecuencia_hz" type="number" step="0.1" min="0" placeholder="Ej: 3.5" class="w-full bg-dark-bg border border-dark-border rounded-lg px-4 py-3 text-sm text-text-primary focus:outline-none focus:border-accent transition-colors" />
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-text-primary mb-2">Enfoque de uso</label>
+              <select v-model="newComp.enfoque_uso" class="w-full bg-dark-bg border border-dark-border rounded-lg px-4 py-3 text-sm text-text-primary focus:outline-none focus:border-accent transition-colors">
+                <option :value="null">Ninguno</option>
+                <option value="estudio">Estudio</option>
+                <option value="oficina">Oficina</option>
+                <option value="gaming">Gaming</option>
+                <option value="diseño">Diseño</option>
+              </select>
+            </div>
+          </div>
+
+          <p v-if="addCompError" class="text-xs text-red-400 bg-red-500/10 border border-red-500/20 rounded-lg px-4 py-2.5">{{ addCompError }}</p>
+        </div>
+
+        <div class="flex gap-3 mt-8">
+          <button @click="saveNewComp" :disabled="savingAddComp" class="btn-primary flex-1 text-sm">
+            {{ savingAddComp ? 'Creando...' : 'Crear Componente Maestro' }}
+          </button>
+          <button @click="closeAddModal" class="btn-secondary text-sm px-5">Cancelar</button>
+        </div>
+      </div>
+    </div>
+
     <!-- ===== MODAL EDITAR COMPONENTE ===== -->
     <div v-if="showEditCompModal" class="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto py-6 px-4">
       <div class="fixed inset-0 bg-black/60 backdrop-blur-sm" @click="showEditCompModal = false"></div>
@@ -521,6 +713,87 @@
         </div>
       </div>
     </div>
+
+    <!-- ===== MODAL ELIMINAR PERFIL ===== -->
+    <div v-if="showDeletePerfilModal" class="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto py-6 px-4">
+      <div class="fixed inset-0 bg-black/60 backdrop-blur-sm" @click="showDeletePerfilModal = false"></div>
+      <div class="relative card-dark rounded-2xl p-6 w-full max-w-sm my-auto shadow-2xl text-center">
+        <div class="w-14 h-14 rounded-full bg-red-500/10 border border-red-500/20 flex items-center justify-center mx-auto mb-4 text-2xl">🗑️</div>
+        <h2 class="text-lg font-bold text-text-primary mb-2">Eliminar perfil</h2>
+        <p class="text-text-muted text-sm mb-1">¿Estás seguro de que deseas eliminar</p>
+        <p class="text-text-primary font-semibold mb-2">{{ deletingPerfil?.nombre }}?</p>
+        <div class="flex gap-3 mt-6">
+          <button @click="deletePerfil" :disabled="savingDeletePerfil" class="flex-1 py-3 rounded-lg text-sm font-medium bg-red-500/10 text-red-400 border border-red-500/20 hover:bg-red-500/20 transition-colors">
+            {{ savingDeletePerfil ? 'Eliminando...' : 'Sí, eliminar' }}
+          </button>
+          <button @click="showDeletePerfilModal = false" class="flex-1 btn-secondary text-sm">Cancelar</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== MODAL EDITAR PERFIL ===== -->
+    <div v-if="showPerfilModal" class="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto py-6 px-4">
+      <div class="fixed inset-0 bg-black/60 backdrop-blur-sm" @click="closePerfilModal"></div>
+      <div class="relative card-dark rounded-2xl p-6 w-full max-w-4xl my-auto shadow-2xl">
+        <div class="flex items-center justify-between mb-6">
+          <div>
+            <h2 class="text-lg font-bold text-text-primary">{{ editingPerfil?.id ? 'Editar Perfil' : 'Crear Perfil' }}</h2>
+            <p class="text-sm text-text-muted mt-1">Configura los permisos de acceso para este perfil.</p>
+          </div>
+          <button @click="closePerfilModal" class="p-2 hover:bg-dark-bg rounded-lg text-text-muted hover:text-text-primary transition-colors">✕</button>
+        </div>
+
+        <div class="space-y-6">
+          <div class="grid grid-cols-2 gap-4">
+            <div>
+              <label class="block text-sm font-medium text-text-primary mb-2">Nombre del Perfil</label>
+              <input v-model="editingPerfil.nombre" type="text" placeholder="Ej: Vendedor" class="w-full bg-dark-bg border border-dark-border rounded-lg px-4 py-3 text-sm text-text-primary placeholder-text-muted focus:outline-none focus:border-accent transition-colors" />
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-text-primary mb-2">Estado</label>
+              <select v-model="editingPerfil.activo" class="w-full bg-dark-bg border border-dark-border rounded-lg px-4 py-3 text-sm text-text-primary focus:outline-none focus:border-accent transition-colors">
+                <option :value="1">Activo</option>
+                <option :value="0">Inactivo</option>
+              </select>
+            </div>
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-text-primary mb-2">Descripción (Opcional)</label>
+            <input v-model="editingPerfil.descripcion" type="text" placeholder="Breve descripción del perfil" class="w-full bg-dark-bg border border-dark-border rounded-lg px-4 py-3 text-sm text-text-primary placeholder-text-muted focus:outline-none focus:border-accent transition-colors" />
+          </div>
+
+          <div>
+            <label class="block text-sm font-medium text-text-primary mb-4">Permisos Asignados</label>
+            <div class="grid grid-cols-2 md:grid-cols-3 gap-4">
+              <div v-for="(permisos, module) in availablePermisos" :key="module" class="bg-dark-bg rounded-xl border border-dark-border p-4">
+                <h3 class="text-xs font-semibold text-text-primary uppercase tracking-wider mb-3">{{ module }}</h3>
+                <div class="space-y-2">
+                  <label v-for="(label, code) in permisos" :key="code" class="flex items-start gap-2 cursor-pointer group">
+                    <div class="relative flex items-center justify-center mt-0.5">
+                      <input type="checkbox" :checked="editingPerfil.permisos.includes(code)" @change="togglePermiso(code)" class="appearance-none w-4 h-4 rounded border border-dark-border bg-dark-bg checked:bg-accent checked:border-accent transition-colors" />
+                      <svg v-if="editingPerfil.permisos.includes(code)" class="absolute w-2.5 h-2.5 text-white pointer-events-none" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
+                      </svg>
+                    </div>
+                    <span class="text-sm text-text-muted group-hover:text-text-primary transition-colors">{{ label }}</span>
+                  </label>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <p v-if="perfilError" class="text-sm text-red-400 bg-red-500/10 border border-red-500/20 rounded-lg px-4 py-3">{{ perfilError }}</p>
+        </div>
+
+        <div class="mt-8 flex gap-3">
+          <button @click="savePerfil" :disabled="savingPerfil" class="flex-1 py-3 rounded-lg text-sm font-medium bg-accent text-white hover:bg-accent-hover transition-colors shadow-lg shadow-accent/20">
+            {{ savingPerfil ? 'Guardando...' : 'Guardar perfil' }}
+          </button>
+          <button @click="closePerfilModal" class="flex-1 btn-secondary text-sm">Cancelar</button>
+        </div>
+      </div>
+    </div>
+
   </div>
 </template>
 
@@ -550,10 +823,11 @@ const activeSection = ref('bodegas')
 
 const sections = computed(() => [
   { id: 'bodegas',            icon: '🏪', label: 'Bodegas',            description: `${bodegas.value.length} bodegas registradas`,    cta: '+ Agregar bodega', count: bodegas.value.length    },
-  { id: 'componentes',        icon: '🔧', label: 'Componentes',        description: `${componentes.value.length} componentes en total`, cta: null,               count: componentes.value.length },
+  { id: 'componentes',        icon: '🔧', label: 'Componentes',        description: `${componentes.value.length} componentes en total`, cta: '+ Nuevo Componente Maestro',               count: componentes.value.length },
   { id: 'cotizaciones',       icon: '📄', label: 'Cotizaciones',       description: 'Historial de cotizaciones',                       cta: null,               count: null },
   { id: 'crear-usuario',      icon: '➕', label: 'Crear usuario',      description: 'Registrar nuevo usuario',                        cta: null,               count: null },
   { id: 'gestionar-usuarios', icon: '👥', label: 'Gestionar usuarios', description: `${usuarios.value.length} usuarios registrados`,   cta: '+ Crear usuario',  count: usuarios.value.length   },
+  { id: 'perfiles', icon: '🔐', label: 'Perfiles y Permisos', description: `${perfiles.value.length} perfiles`, cta: '+ Crear perfil', count: perfiles.value.length },
 ])
 
 const currentSection = computed(() => sections.value.find(s => s.id === activeSection.value))
@@ -597,7 +871,7 @@ const filteredBodegas = computed(() => {
 async function fetchBodegas() {
   loadingBodegas.value = true
   try {
-    const res = await fetch(`${API}/bodegas/`, { headers: { Authorization: `Bearer ${getToken()}` } })
+    const res = await fetch(`${API}/bodegas`, { headers: { Authorization: `Bearer ${getToken()}` } })
     const data = await res.json()
     if (res.ok) bodegas.value = data.bodegas
   } catch(e) { console.error(e) } finally { loadingBodegas.value = false }
@@ -620,7 +894,7 @@ async function saveNewBodega() {
     return bodegaError.value = 'Nombre, correo y contraseña son requeridos'
   savingBodega.value = true
   try {
-    const res = await fetch(`${API}/bodegas/`, {
+    const res = await fetch(`${API}/bodegas`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getToken()}` },
       body: JSON.stringify(newBodega.value)
@@ -642,7 +916,7 @@ async function saveNewBodega() {
 async function toggleBodega(b) {
   const activa = b.activa == 1 ? 0 : 1
   try {
-    await fetch(`${API}/bodegas/`, {
+    await fetch(`${API}/bodegas`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getToken()}` },
       body: JSON.stringify({ id: b.id, nombre: b.nombre, telefono: b.telefono, activa })
@@ -662,7 +936,7 @@ function openDeleteBodega(b) {
 async function confirmDeleteBodega() {
   savingDeleteBodega.value = true
   try {
-    await fetch(`${API}/bodegas/?id=${deletingBodega.value.id}`, {
+    await fetch(`${API}/bodegas?id=${deletingBodega.value.id}`, {
       method: 'DELETE',
       headers: { Authorization: `Bearer ${getToken()}` }
     })
@@ -687,16 +961,117 @@ const editingComp = ref({})
 const editCompError = ref('')
 const savingEditComp = ref(false)
 
+// Variables para Add Component
+const showAddCompModal = ref(false)
+const newComp = ref({ producto_id: '', nombre: '', categoria: '', especificacion: '', nucleos: '', hilos: '', frecuencia_hz: '', enfoque_uso: '', gama: 'media' })
+const addCompError = ref('')
+const savingAddComp = ref(false)
+const productoSearch = ref('')
+const showProductoDropdown = ref(false)
+const productosCatalogo = ref([])
+
+const productosFiltrados = computed(() => {
+  if (!productoSearch.value) return productosCatalogo.value
+  const q = productoSearch.value.toLowerCase()
+  return productosCatalogo.value.filter(p => p.nombre.toLowerCase().includes(q) || p.categoria.toLowerCase().includes(q))
+})
+
+async function fetchProductosCatalogo() {
+  try {
+    const res = await fetch(`${API}/productos-catalogo/`, { headers: { Authorization: `Bearer ${getToken()}` } })
+    const data = await res.json()
+    if (res.ok) productosCatalogo.value = data.productos || data.componentes || []
+  } catch(e) { console.error(e) }
+}
+
+function openAddModal() {
+  newComp.value = { producto_id: '', nombre: '', categoria: '', especificacion: '', nucleos: '', hilos: '', frecuencia_hz: '', enfoque_uso: '', gama: 'media' }
+  addCompError.value = ''
+  productoSearch.value = ''
+  showProductoDropdown.value = false
+  if (productosCatalogo.value.length === 0) fetchProductosCatalogo()
+  showAddCompModal.value = true
+}
+
+function closeAddModal() {
+  showAddCompModal.value = false
+  addCompError.value = ''
+}
+
+function selectProducto(prod) {
+  newComp.value.producto_id = prod.id
+  newComp.value.nombre = prod.nombre
+  newComp.value.categoria = prod.categoria
+  productoSearch.value = prod.nombre
+  showProductoDropdown.value = false
+}
+
+async function saveNewComp() {
+  addCompError.value = ''
+  const c = newComp.value
+  if (!c.producto_id || !c.especificacion || !c.gama) {
+    return addCompError.value = 'El producto, especificación y gama son obligatorios'
+  }
+  savingAddComp.value = true
+  try {
+    const res = await fetch(`${API}/componentes`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Accept: 'application/json', Authorization: `Bearer ${getToken()}` },
+      body: JSON.stringify({
+        producto_id: c.producto_id,
+        especificacion: c.especificacion,
+        nucleos: c.nucleos,
+        hilos: c.hilos,
+        frecuencia_hz: c.frecuencia_hz,
+        enfoque_uso: c.enfoque_uso,
+        gama: c.gama
+      })
+    })
+    const data = await res.json()
+    if (!res.ok) {
+      toast.error(data.message ?? 'Error al guardar')
+      return addCompError.value = data.message ?? 'Error al guardar'
+    }
+    await fetchComponentes()
+    closeAddModal()
+    toast.success('Componente maestro creado exitosamente')
+  } catch(e) {
+    addCompError.value = 'Error de conexión'
+    toast.error('Error de conexión')
+  } finally {
+    savingAddComp.value = false
+  }
+}
+
+
+const showAdvancedFilters = ref(false)
+const filterGama = ref('')
+const filterEnfoque = ref('')
+const filterNucleos = ref('')
+const filterHilos = ref('')
+const filterFrecuenciaMin = ref('')
+
 const filteredComponentes = computed(() => {
-  if (!filterComponente.value.trim()) return componentes.value
-  const q = filterComponente.value.toLowerCase()
-  return componentes.value.filter(c => c.nombre.toLowerCase().includes(q) || c.categoria.toLowerCase().includes(q))
+  let result = componentes.value
+  
+  if (filterComponente.value.trim()) {
+    const q = filterComponente.value.toLowerCase()
+    result = result.filter(c => c.nombre.toLowerCase().includes(q) || c.categoria.toLowerCase().includes(q))
+  }
+  
+  if (filterGama.value) result = result.filter(c => c.gama === filterGama.value)
+  if (filterEnfoque.value) result = result.filter(c => c.enfoque_uso === filterEnfoque.value)
+  if (filterNucleos.value) result = result.filter(c => c.nucleos == filterNucleos.value)
+  if (filterHilos.value) result = result.filter(c => c.hilos == filterHilos.value)
+  if (filterFrecuenciaMin.value) result = result.filter(c => (c.frecuencia_hz || 0) >= parseFloat(filterFrecuenciaMin.value))
+  
+  return result
 })
 
 async function fetchComponentes() {
   loadingComponentes.value = true
   try {
-    const res = await fetch(`${API}/componentes/admin/`, { headers: { Authorization: `Bearer ${getToken()}` } })
+    const res = await fetch(`${API}/componentes/admin`, { headers: { Accept: 'application/json', Authorization: `Bearer ${getToken()}` } })
     const data = await res.json()
     if (res.ok) componentes.value = data.componentes
   } catch(e) { console.error(e) } finally { loadingComponentes.value = false }
@@ -720,7 +1095,7 @@ async function saveEditComp() {
 
   savingEditComp.value = true
   try {
-    const res = await fetch(`${API}/componentes/`, {
+    const res = await fetch(`${API}/componentes`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getToken()}` },
       body: JSON.stringify({
@@ -750,7 +1125,7 @@ async function saveEditComp() {
 async function toggleComponente(c) {
   const activo = c.activo == 1 ? 0 : 1
   try {
-    await fetch(`${API}/componentes/`, {
+    await fetch(`${API}/componentes`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getToken()}` },
       body: JSON.stringify({ id: c.id, activo })
@@ -770,7 +1145,7 @@ function openDeleteComp(c) {
 async function confirmDeleteComp() {
   savingDeleteComp.value = true
   try {
-    await fetch(`${API}/componentes/?id=${deletingComp.value.id}`, {
+    await fetch(`${API}/componentes?id=${deletingComp.value.id}`, {
       method: 'DELETE',
       headers: { Authorization: `Bearer ${getToken()}` }
     })
@@ -812,7 +1187,7 @@ const filteredUsuarios = computed(() => {
 async function fetchUsuarios() {
   loadingUsuarios.value = true
   try {
-    const res = await fetch(`${API}/usuarios/`, { headers: { Authorization: `Bearer ${getToken()}` } })
+    const res = await fetch(`${API}/usuarios`, { headers: { Authorization: `Bearer ${getToken()}` } })
     const data = await res.json()
     if (res.ok) usuarios.value = data.usuarios
   } catch(e) { console.error(e) } finally { loadingUsuarios.value = false }
@@ -831,7 +1206,7 @@ async function saveNewUser() {
     return createUserError.value = 'Nombre, correo y contraseña son requeridos'
   savingUser.value = true
   try {
-    const res = await fetch(`${API}/usuarios/`, {
+    const res = await fetch(`${API}/usuarios`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getToken()}` },
       body: JSON.stringify(newUser.value)
@@ -861,7 +1236,7 @@ async function saveEditUser() {
   editUserError.value = ''
   savingEditUser.value = true
   try {
-    const res = await fetch(`${API}/usuarios/`, {
+    const res = await fetch(`${API}/usuarios`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getToken()}` },
       body: JSON.stringify(editingUser.value)
@@ -889,7 +1264,7 @@ async function confirmDeleteUser() {
   savingDeleteUser.value = true
   try {
     const activoNuevo = deletingUser.value.activo == 1 ? 0 : 1
-    await fetch(`${API}/usuarios/`, {
+    await fetch(`${API}/usuarios`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json', Accept: 'application/json', Authorization: `Bearer ${getToken()}` },
       body: JSON.stringify({
@@ -907,6 +1282,111 @@ async function confirmDeleteUser() {
     console.error(e)
     toast.error('Error al cambiar el estado del usuario')
   } finally { savingDeleteUser.value = false }
+}
+
+
+// ── Perfiles y Permisos ───────────────────────────────────
+const perfiles = ref([])
+const loadingPerfiles = ref(false)
+const showPerfilModal = ref(false)
+const showDeletePerfilModal = ref(false)
+const editingPerfil = ref({ id: null, nombre: '', descripcion: '', activo: 1, permisos: [] })
+const deletingPerfil = ref(null)
+const savingPerfil = ref(false)
+const savingDeletePerfil = ref(false)
+const perfilError = ref('')
+const availablePermisos = ref({})
+
+async function fetchPerfiles() {
+  loadingPerfiles.value = true
+  try {
+    const res = await fetch(`${API}/perfiles`, { headers: { Authorization: `Bearer ${getToken()}` } })
+    const data = await res.json()
+    if (res.ok) perfiles.value = data.perfiles || data
+  } catch(e) { console.error(e) } finally { loadingPerfiles.value = false }
+}
+
+async function fetchPermisosDisponibles() {
+  try {
+    const res = await fetch(`${API}/perfiles/permisos`, { headers: { Authorization: `Bearer ${getToken()}` } })
+    const data = await res.json()
+    if (res.ok) availablePermisos.value = data.permisos || data
+  } catch(e) { console.error(e) }
+}
+
+function openEditPerfil(p = null) {
+  if (p) {
+    editingPerfil.value = { ...p, permisos: [...(p.permisos || [])] }
+  } else {
+    editingPerfil.value = { id: null, nombre: '', descripcion: '', permisos: [], activo: 1 }
+  }
+  perfilError.value = ''
+  showPerfilModal.value = true
+}
+
+function closePerfilModal() {
+  showPerfilModal.value = false
+  perfilError.value = ''
+}
+
+function togglePermiso(code) {
+  const idx = editingPerfil.value.permisos.indexOf(code)
+  if (idx === -1) editingPerfil.value.permisos.push(code)
+  else editingPerfil.value.permisos.splice(idx, 1)
+}
+
+async function savePerfil() {
+  perfilError.value = ''
+  if (!editingPerfil.value.nombre) {
+    return perfilError.value = 'El nombre es requerido'
+  }
+  
+  savingPerfil.value = true
+  const method = editingPerfil.value.id ? 'PUT' : 'POST'
+  const url = editingPerfil.value.id ? `${API}/perfiles/${editingPerfil.value.id}` : `${API}/perfiles`
+  try {
+    const res = await fetch(url, {
+      method: method,
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getToken()}` },
+      body: JSON.stringify(editingPerfil.value)
+    })
+    if (res.ok) {
+      toast.success(editingPerfil.value.id ? 'Perfil actualizado' : 'Perfil creado')
+      closePerfilModal()
+      fetchPerfiles()
+    } else {
+      const data = await res.json()
+      perfilError.value = data.message || 'Error al guardar el perfil'
+    }
+  } catch (error) {
+    perfilError.value = 'Error de red al guardar el perfil'
+  } finally {
+    savingPerfil.value = false
+  }
+}
+
+function confirmDeletePerfilAction(p) {
+  deletingPerfil.value = p
+  showDeletePerfilModal.value = true
+}
+
+async function deletePerfil() {
+  savingDeletePerfil.value = true
+  try {
+    const res = await fetch(`${API}/perfiles/${deletingPerfil.value.id}`, {
+      method: 'DELETE',
+      headers: { Authorization: `Bearer ${getToken()}` }
+    })
+    if (res.ok) {
+      toast.success('Perfil eliminado')
+      showDeletePerfilModal.value = false
+      fetchPerfiles()
+    }
+  } catch(e) {
+    console.error(e)
+  } finally {
+    savingDeletePerfil.value = false
+  }
 }
 
 // ── Lifecycle ─────────────────────────────────────────────

@@ -39,24 +39,32 @@
 
     <div class="max-w-7xl mx-auto px-6 py-10">
 
-      <!-- Search + Filters -->
-      <div class="flex flex-col md:flex-row gap-4 mb-10">
-        <div class="relative flex-1">
-          <span class="absolute left-4 top-1/2 -translate-y-1/2 text-text-muted text-sm">🔍</span>
-          <input
-            v-model="searchQuery"
-            type="text"
-            placeholder="Buscar componente... Ej: RTX 3060, Ryzen 5, 16GB DDR4"
-            class="w-full bg-dark-card border border-dark-border rounded-xl pl-11 pr-4 py-3.5 text-sm text-text-primary placeholder-text-muted focus:outline-none focus:border-accent transition-colors"
-          />
-          <button
-            v-if="searchQuery"
-            @click="searchQuery = ''"
-            class="absolute right-4 top-1/2 -translate-y-1/2 text-text-muted hover:text-text-primary transition-colors text-lg leading-none"
-          >×</button>
+      <!-- Search + Category + Filters -->
+      <div class="flex flex-col gap-4 mb-10">
+        <div class="flex flex-col md:flex-row gap-4">
+          <div class="relative flex-1">
+            <span class="absolute left-4 top-1/2 -translate-y-1/2 text-text-muted text-sm">🔍</span>
+            <input
+              v-model="searchQuery"
+              type="text"
+              placeholder="Buscar componente... Ej: RTX 3060, Ryzen 5, 16GB DDR4"
+              class="w-full bg-dark-card border border-dark-border rounded-xl pl-11 pr-4 py-3.5 text-sm text-text-primary placeholder-text-muted focus:outline-none focus:border-accent transition-colors"
+            />
+            <button
+              v-if="searchQuery"
+              @click="searchQuery = ''"
+              class="absolute right-4 top-1/2 -translate-y-1/2 text-text-muted hover:text-text-primary transition-colors text-lg leading-none"
+            >×</button>
+          </div>
+
+          <div class="flex items-center gap-2 flex-wrap">
+            <button @click="showAdvancedFilters = !showAdvancedFilters" class="px-5 py-3.5 rounded-xl border border-dark-border bg-dark-card text-text-primary hover:border-accent/40 transition-all flex items-center gap-2 font-medium text-sm">
+              <span>⚙️</span> Filtros avanzados
+            </button>
+          </div>
         </div>
 
-        <div class="flex items-center gap-2 flex-wrap">
+        <div class="flex items-center gap-2 flex-wrap mt-2">
           <button
             v-for="cat in ['Todos', ...categories]"
             :key="cat"
@@ -68,6 +76,41 @@
           >
             {{ cat }}
           </button>
+        </div>
+
+        <!-- Advanced Filters Panel -->
+        <div v-if="showAdvancedFilters" class="p-6 bg-dark-card border border-dark-border rounded-xl grid grid-cols-2 md:grid-cols-5 gap-6 animate-fade-in mt-2">
+          <div>
+            <label class="block text-sm font-medium text-text-muted mb-2">Gama</label>
+            <select v-model="filterGama" class="w-full bg-dark-bg border border-dark-border rounded-lg px-4 py-2.5 text-sm text-text-primary focus:outline-none focus:border-accent transition-colors">
+              <option value="">Todas</option>
+              <option value="alta">Alta</option>
+              <option value="media">Media</option>
+              <option value="baja">Baja</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-text-muted mb-2">Enfoque</label>
+            <select v-model="filterEnfoque" class="w-full bg-dark-bg border border-dark-border rounded-lg px-4 py-2.5 text-sm text-text-primary focus:outline-none focus:border-accent transition-colors">
+              <option value="">Todos</option>
+              <option value="gaming">Gaming</option>
+              <option value="diseño">Diseño</option>
+              <option value="estudio">Estudio</option>
+              <option value="oficina">Oficina</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-text-muted mb-2">Núcleos (Mín.)</label>
+            <input v-model="filterNucleos" type="number" min="1" placeholder="Ej: 6" class="w-full bg-dark-bg border border-dark-border rounded-lg px-4 py-2.5 text-sm text-text-primary focus:outline-none focus:border-accent transition-colors" />
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-text-muted mb-2">Hilos (Mín.)</label>
+            <input v-model="filterHilos" type="number" min="1" placeholder="Ej: 12" class="w-full bg-dark-bg border border-dark-border rounded-lg px-4 py-2.5 text-sm text-text-primary focus:outline-none focus:border-accent transition-colors" />
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-text-muted mb-2">Frec. (GHz Mín.)</label>
+            <input v-model="filterFrecuenciaMin" type="number" step="0.1" min="0" placeholder="Ej: 3.5" class="w-full bg-dark-bg border border-dark-border rounded-lg px-4 py-2.5 text-sm text-text-primary focus:outline-none focus:border-accent transition-colors" />
+          </div>
         </div>
       </div>
 
@@ -226,6 +269,13 @@ const tierStyles = {
 
 const totalBodegas = computed(() => new Set(allComponents.value.map(c => c.bodega)).size)
 
+const showAdvancedFilters = ref(false)
+const filterGama = ref('')
+const filterEnfoque = ref('')
+const filterNucleos = ref('')
+const filterHilos = ref('')
+const filterFrecuenciaMin = ref('')
+
 const filteredComponents = computed(() => {
   let result = [...allComponents.value]
 
@@ -243,6 +293,12 @@ const filteredComponents = computed(() => {
     )
   }
 
+  if (filterGama.value) result = result.filter(c => c.gama === filterGama.value)
+  if (filterEnfoque.value) result = result.filter(c => c.enfoque_uso === filterEnfoque.value)
+  if (filterNucleos.value) result = result.filter(c => c.nucleos >= Number(filterNucleos.value))
+  if (filterHilos.value) result = result.filter(c => c.hilos >= Number(filterHilos.value))
+  if (filterFrecuenciaMin.value) result = result.filter(c => c.frecuencia_hz >= Number(filterFrecuenciaMin.value))
+
   if (sortBy.value === 'price-asc')  result.sort((a, b) => a.precio - b.precio)
   if (sortBy.value === 'price-desc') result.sort((a, b) => b.precio - a.precio)
   if (sortBy.value === 'name')       result.sort((a, b) => a.nombre.localeCompare(b.nombre))
@@ -253,7 +309,7 @@ const filteredComponents = computed(() => {
 async function fetchComponentes() {
   loading.value = true
   try {
-    const res = await fetch(`${API}/componentes/publico/`)
+    const res = await fetch(`${API}/componentespublico/`)
     const data = await res.json()
     if (res.ok) allComponents.value = data.componentes
   } catch(e) {

@@ -187,12 +187,15 @@ class BodegaController extends Controller
             return response()->json(['success' => false, 'message' => 'Bodega no encontrada'], 404);
         }
 
-        if (!is_null($bodega->proveedor_id)) {
-            return response()->json(['success' => false, 'message' => 'No se puede eliminar una bodega si tiene un proveedor asignado'], 400);
-        }
-
-        if ($rol === 'proveedor' && $bodega->proveedor_id !== $user->id) {
-            return response()->json(['success' => false, 'message' => 'No tienes permiso para eliminar esta bodega'], 403);
+        if ($rol === 'proveedor') {
+            if ($bodega->proveedor_id !== $user->id) {
+                return response()->json(['success' => false, 'message' => 'No tienes permiso para eliminar esta bodega'], 403);
+            }
+        } else {
+            // Si es admin/superadmin, mantenemos la regla original de no eliminar bodegas de proveedores
+            if (!is_null($bodega->proveedor_id)) {
+                return response()->json(['success' => false, 'message' => 'No se puede eliminar una bodega si tiene un proveedor asignado'], 400);
+            }
         }
 
         $bodega->delete();

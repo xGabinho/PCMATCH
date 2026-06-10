@@ -207,4 +207,60 @@ class ProveedorController extends Controller
 
         return response()->json(['message' => 'Proveedor eliminado']);
     }
+
+    /**
+     * Obtener productos del catálogo asignados a un proveedor
+     */
+    public function productos(Request $request, $id)
+    {
+        $user = $request->user();
+        $clase = get_class($user);
+        
+        if ($id === 'me') {
+            if ($clase !== \App\Models\Proveedor::class) {
+                return response()->json(['success' => false, 'message' => 'No autorizado'], 403);
+            }
+            $id = $user->id;
+        } else {
+            if (!$this->checkSuperAdmin($request)) {
+                return response()->json(['success' => false, 'message' => 'No autorizado'], 403);
+            }
+        }
+
+        $proveedor = Proveedor::with('productosCatalogo')->find($id);
+        if (!$proveedor) {
+            return response()->json(['success' => false, 'message' => 'Proveedor no encontrado'], 404);
+        }
+
+        return response()->json([
+            'productos' => $proveedor->productosCatalogo
+        ]);
+    }
+
+    /**
+     * Sincronizar productos del catálogo para un proveedor
+     */
+    public function syncProductos(Request $request, $id)
+    {
+        if (!$this->checkSuperAdmin($request)) {
+            return response()->json(['success' => false, 'message' => 'No autorizado'], 403);
+        }
+
+        $proveedor = Proveedor::find($id);
+        if (!$proveedor) {
+            return response()->json(['success' => false, 'message' => 'Proveedor no encontrado'], 404);
+        }
+
+        $request->validate([
+            'productos' => 'array',
+            'productos.*' => 'integer|exists:productos_catalogo,id'
+        ]);
+
+        $productos = $request->input('productos', []);
+        $proveedor->productosCatalogo()->sync($productos);
+
+        AuditLog::log($request, "Asignó " . count($productos) . " productos del catálogo al proveedor: {$proveedor->nombre}", 'Proveedores');
+
+        return response()->json(['success' => true, 'message' => 'Catálogo asignado correctamente']);
+    }
 }

@@ -172,9 +172,51 @@
         <!-- ===== COMPONENTES ===== -->
         <template v-if="activeSection === 'componentes'">
           <div class="card-dark rounded-xl overflow-hidden overflow-x-auto">
-            <div class="px-6 py-4 border-b border-dark-border flex items-center justify-between">
-              <h2 class="font-semibold text-text-primary">Componentes de mis bodegas</h2>
-              <input v-model="filterComponente" type="text" placeholder="Buscar..." class="bg-dark-bg border border-dark-border rounded-lg px-4 py-2 text-sm text-text-primary placeholder-text-muted focus:outline-none focus:border-accent transition-colors w-48" />
+            <div class="px-6 py-4 border-b border-dark-border">
+              <div class="flex items-center justify-between">
+                <h2 class="font-semibold text-text-primary">Componentes de mis bodegas</h2>
+                <div class="flex items-center gap-3">
+                  <input v-model="filterComponente" type="text" placeholder="Buscar..." class="bg-dark-bg border border-dark-border rounded-lg px-4 py-2 text-sm text-text-primary placeholder-text-muted focus:outline-none focus:border-accent transition-colors w-48" />
+                  <button @click="showAdvancedFilters = !showAdvancedFilters" class="btn-secondary text-sm px-4 py-2 flex items-center gap-2">
+                    <span>⚙️</span> Filtros
+                  </button>
+                </div>
+              </div>
+              
+              <!-- Advanced Filters Panel -->
+              <div v-if="showAdvancedFilters" class="p-4 bg-dark-bg border border-dark-border rounded-xl grid grid-cols-2 md:grid-cols-5 gap-4 animate-fade-in mt-4">
+                <div>
+                  <label class="block text-xs font-medium text-text-muted mb-1.5">Gama</label>
+                  <select v-model="filterGama" class="w-full bg-dark-card border border-dark-border rounded-lg px-3 py-2 text-sm text-text-primary focus:outline-none focus:border-accent transition-colors">
+                    <option value="">Todas</option>
+                    <option value="alta">Alta</option>
+                    <option value="media">Media</option>
+                    <option value="baja">Baja</option>
+                  </select>
+                </div>
+                <div>
+                  <label class="block text-xs font-medium text-text-muted mb-1.5">Enfoque</label>
+                  <select v-model="filterEnfoque" class="w-full bg-dark-card border border-dark-border rounded-lg px-3 py-2 text-sm text-text-primary focus:outline-none focus:border-accent transition-colors">
+                    <option value="">Todos</option>
+                    <option value="gaming">Gaming</option>
+                    <option value="diseño">Diseño</option>
+                    <option value="estudio">Estudio</option>
+                    <option value="oficina">Oficina</option>
+                  </select>
+                </div>
+                <div>
+                  <label class="block text-xs font-medium text-text-muted mb-1.5">Núcleos</label>
+                  <input v-model="filterNucleos" type="number" min="1" placeholder="Ej: 6" class="w-full bg-dark-card border border-dark-border rounded-lg px-3 py-2 text-sm text-text-primary focus:outline-none focus:border-accent transition-colors" />
+                </div>
+                <div>
+                  <label class="block text-xs font-medium text-text-muted mb-1.5">Hilos</label>
+                  <input v-model="filterHilos" type="number" min="1" placeholder="Ej: 12" class="w-full bg-dark-card border border-dark-border rounded-lg px-3 py-2 text-sm text-text-primary focus:outline-none focus:border-accent transition-colors" />
+                </div>
+                <div>
+                  <label class="block text-xs font-medium text-text-muted mb-1.5">Frec. mínima (GHz)</label>
+                  <input v-model="filterFrecuenciaMin" type="number" step="0.1" min="0" placeholder="Ej: 3.5" class="w-full bg-dark-card border border-dark-border rounded-lg px-3 py-2 text-sm text-text-primary focus:outline-none focus:border-accent transition-colors" />
+                </div>
+              </div>
             </div>
             <div v-if="loadingComponentes" class="px-6 py-12 text-center text-text-muted text-sm">Cargando componentes...</div>
             <table v-else class="w-full min-w-[640px]">
@@ -221,49 +263,42 @@
                 <p v-if="bodegas.filter(b => b.activa == 1).length === 0" class="text-xs text-red-400 mt-1">No tienes bodegas activas para asignar componentes.</p>
               </div>
 
-              <!-- Select buscable de producto -->
+              <!-- Select buscable de componente maestro -->
               <div>
-                <label class="block text-sm font-medium text-text-primary mb-2">Producto del catálogo <span class="text-red-400">*</span></label>
+                <label class="block text-sm font-medium text-text-primary mb-2">Componente del catálogo maestro <span class="text-red-400">*</span></label>
                 <div class="relative">
                   <input
                     v-model="productoSearch"
                     @input="showProductoDropdown = true"
                     @focus="showProductoDropdown = true"
                     type="text"
-                    placeholder="Buscar producto..."
+                    placeholder="Buscar componente..."
                     class="w-full bg-dark-bg border border-dark-border rounded-lg px-4 py-3 text-sm text-text-primary placeholder-text-muted focus:outline-none focus:border-accent transition-colors"
-                    :class="{ 'border-accent': newComp.producto_id }"
+                    :class="{ 'border-accent': newComp.master_component_id }"
                     autocomplete="off"
                   />
                   <div v-if="showProductoDropdown && productosFiltrados.length > 0" class="absolute top-full left-0 right-0 mt-1 bg-dark-card border border-dark-border rounded-lg shadow-xl z-20 max-h-52 overflow-y-auto">
                     <button v-for="prod in productosFiltrados" :key="prod.id" @click="selectProducto(prod)" class="w-full flex items-center justify-between px-4 py-2.5 text-sm hover:bg-dark-bg transition-colors text-left">
-                      <span class="text-text-primary">{{ prod.nombre }}</span>
-                      <span class="text-xs text-text-muted ml-3 flex-shrink-0">{{ prod.categoria }}</span>
+                      <div class="flex-1 overflow-hidden pr-2">
+                        <span class="text-text-primary block truncate">{{ prod.nombre }}</span>
+                        <span class="text-xs text-text-muted block mt-0.5 truncate">{{ prod.especificacion }}</span>
+                      </div>
+                      <span class="text-xs text-accent ml-2 flex-shrink-0">{{ prod.categoria }}</span>
                     </button>
                   </div>
+                  <!-- Sin resultados -->
+                  <div v-if="showProductoDropdown && productoSearch.length > 0 && productosFiltrados.length === 0" class="absolute top-full left-0 right-0 mt-1 bg-dark-card border border-dark-border rounded-lg shadow-xl z-20 px-4 py-3 text-sm text-text-muted">
+                    No se encontraron componentes
+                  </div>
                 </div>
-                <p v-if="newComp.categoria" class="text-xs text-accent mt-1.5 flex items-center gap-1">
-                  <span>✓</span> Categoría: {{ newComp.categoria }}
-                </p>
-              </div>
-
-              <!-- Especificación -->
-              <div>
-                <label class="block text-sm font-medium text-text-primary mb-2">Especificación técnica <span class="text-red-400">*</span></label>
-                <input v-model="newComp.especificacion" type="text" placeholder="Ej: 6 núcleos / 12 hilos · 3.7GHz · AM4" class="w-full bg-dark-bg border border-dark-border rounded-lg px-4 py-3 text-sm text-text-primary placeholder-text-muted focus:outline-none focus:border-accent transition-colors" />
-              </div>
-
-              <!-- Gama -->
-              <div>
-                <label class="block text-sm font-medium text-text-primary mb-3">Gama <span class="text-red-400">*</span></label>
-                <div class="grid grid-cols-3 gap-3">
-                  <button v-for="tier in ['alta', 'media', 'baja']" :key="tier" @click="newComp.gama = tier"
-                    class="py-2.5 rounded-lg border text-sm font-medium transition-all"
-                    :class="newComp.gama === tier ? 'border-accent bg-accent/10 text-accent' : 'border-dark-border text-text-muted hover:border-accent/40'">
-                    {{ tier.charAt(0).toUpperCase() + tier.slice(1) }}
-                  </button>
+                <!-- Selección actual -->
+                <div v-if="newComp.master_component_id" class="mt-2 p-3 bg-dark-card border border-dark-border rounded-lg flex flex-col gap-1">
+                  <span class="text-sm font-medium text-text-primary flex items-center gap-2"><span class="text-accent text-xs">✓</span> {{ newComp.nombre }}</span>
+                  <span class="text-xs text-text-muted">{{ newComp.especificacion }}</span>
                 </div>
               </div>
+
+
 
               <!-- Precio y Stock -->
               <div class="grid grid-cols-2 gap-4">
@@ -393,11 +428,6 @@
         </div>
 
         <div class="space-y-5">
-          <div>
-            <label class="block text-sm font-medium text-text-primary mb-2">Especificación técnica</label>
-            <input v-model="editingComp.especificacion" type="text" class="allow-special w-full bg-dark-bg border border-dark-border rounded-lg px-4 py-3 text-sm text-text-primary focus:outline-none focus:border-accent transition-colors" />
-          </div>
-
           <div class="grid grid-cols-2 gap-4">
             <div>
               <label class="block text-sm font-medium text-text-primary mb-2">Precio ($)</label>
@@ -408,16 +438,9 @@
               <input v-model="editingComp.stock" type="number" min="0" class="w-full bg-dark-bg border border-dark-border rounded-lg px-4 py-3 text-sm text-text-primary focus:outline-none focus:border-accent transition-colors" />
             </div>
           </div>
-
-          <div>
-            <label class="block text-sm font-medium text-text-primary mb-3">Gama del componente</label>
-            <div class="grid grid-cols-3 gap-3">
-              <button v-for="tier in ['alta', 'media', 'baja']" :key="tier" @click="editingComp.gama = tier"
-                class="py-2.5 rounded-lg border text-sm font-medium transition-all"
-                :class="editingComp.gama === tier ? 'border-accent bg-accent/10 text-accent' : 'border-dark-border text-text-muted hover:border-accent/40'">
-                {{ tier.charAt(0).toUpperCase() + tier.slice(1) }}
-              </button>
-            </div>
+          
+          <div class="p-3 bg-accent/5 border border-accent/20 rounded-lg mt-4">
+            <p class="text-xs text-text-muted">Las especificaciones técnicas solo pueden ser modificadas por un Administrador desde el Catálogo Maestro.</p>
           </div>
 
           <p v-if="editCompError" class="text-xs text-red-400 bg-red-500/10 border border-red-500/20 rounded-lg px-4 py-2.5">{{ editCompError }}</p>
@@ -502,7 +525,7 @@ const filteredBodegas = computed(() => {
 async function fetchBodegas() {
   loadingBodegas.value = true
   try {
-    const res = await fetch(`${API}/bodegas/`, { headers: { Authorization: `Bearer ${getToken()}` } })
+    const res = await fetch(`${API}/bodegas`, { headers: { Authorization: `Bearer ${getToken()}` } })
     const data = await res.json()
     if (res.ok) bodegas.value = data.bodegas
   } catch(e) { console.error(e) } finally { loadingBodegas.value = false }
@@ -514,7 +537,7 @@ async function saveNewBodega() {
     return bodegaError.value = 'Nombre, correo y contraseña son requeridos'
   savingBodega.value = true
   try {
-    const res = await fetch(`${API}/bodegas/`, {
+    const res = await fetch(`${API}/bodegas`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', Accept: 'application/json', Authorization: `Bearer ${getToken()}` },
       body: JSON.stringify(newBodega.value)
@@ -540,7 +563,7 @@ async function saveEditBodega() {
   if (!editingBodega.value.nombre) return editBodegaError.value = 'El nombre es requerido'
   savingEditBodega.value = true
   try {
-    const res = await fetch(`${API}/bodegas/`, {
+    const res = await fetch(`${API}/bodegas`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json', Accept: 'application/json', Authorization: `Bearer ${getToken()}` },
       body: JSON.stringify({ id: editingBodega.value.id, nombre: editingBodega.value.nombre, telefono: editingBodega.value.telefono, activa: editingBodega.value.activa })
@@ -564,7 +587,7 @@ function openDeleteBodega(b) { deletingBodega.value = b; showDeleteBodegaModal.v
 async function confirmDeleteBodega() {
   savingDeleteBodega.value = true
   try {
-    const res = await fetch(`${API}/bodegas/?id=${deletingBodega.value.id}`, {
+    const res = await fetch(`${API}/bodegas?id=${deletingBodega.value.id}`, {
       method: 'DELETE', headers: { Authorization: `Bearer ${getToken()}` }
     })
     if (res.ok) {
@@ -583,7 +606,7 @@ async function confirmDeleteBodega() {
 async function toggleActivoBodega(b) {
   const activaNuevo = b.activa == 1 ? 0 : 1
   try {
-    const res = await fetch(`${API}/bodegas/`, {
+    const res = await fetch(`${API}/bodegas`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json', Accept: 'application/json', Authorization: `Bearer ${getToken()}` },
       body: JSON.stringify({
@@ -611,7 +634,7 @@ const loadingCotizaciones = ref(false)
 async function fetchCotizaciones() {
   loadingCotizaciones.value = true
   try {
-    const res = await fetch(`${API}/cotizaciones/`, { headers: { Authorization: `Bearer ${getToken()}` } })
+    const res = await fetch(`${API}/cotizaciones`, { headers: { Authorization: `Bearer ${getToken()}` } })
     const data = await res.json()
     if (res.ok) cotizaciones.value = data.cotizaciones
   } catch(e) { console.error(e) } finally { loadingCotizaciones.value = false }
@@ -626,15 +649,30 @@ const editingComp = ref({})
 const editCompError = ref('')
 const savingEditComp = ref(false)
 
+const showAdvancedFilters = ref(false)
+const filterGama = ref('')
+const filterEnfoque = ref('')
+const filterNucleos = ref('')
+const filterHilos = ref('')
+const filterFrecuenciaMin = ref('')
+
 const filteredComponentes = computed(() => {
-  if (!filterComponente.value.trim()) return componentes.value
-  const q = filterComponente.value.toLowerCase()
-  return componentes.value.filter(c => c.nombre.toLowerCase().includes(q) || c.categoria.toLowerCase().includes(q))
+  let result = [...componentes.value]
+  if (filterComponente.value.trim()) {
+    const q = filterComponente.value.toLowerCase()
+    result = result.filter(c => c.nombre.toLowerCase().includes(q) || c.categoria.toLowerCase().includes(q))
+  }
+  if (filterGama.value) result = result.filter(c => c.gama === filterGama.value)
+  if (filterEnfoque.value) result = result.filter(c => c.enfoque_uso === filterEnfoque.value)
+  if (filterNucleos.value) result = result.filter(c => c.nucleos == filterNucleos.value)
+  if (filterHilos.value) result = result.filter(c => c.hilos == filterHilos.value)
+  if (filterFrecuenciaMin.value) result = result.filter(c => c.frecuencia_hz >= Number(filterFrecuenciaMin.value))
+  return result
 })
 
 // Variables para Add Component
 const showAddCompModal = ref(false)
-const newComp = ref({ producto_id: '', nombre: '', categoria: '', bodega_id: '', especificacion: '', gama: 'media', precio: '', stock: '' })
+const newComp = ref({ master_component_id: '', nombre: '', especificacion: '', bodega_id: '', precio: '', stock: '' })
 const addCompError = ref('')
 const savingAddComp = ref(false)
 const productoSearch = ref('')
@@ -644,19 +682,19 @@ const productosCatalogo = ref([])
 const productosFiltrados = computed(() => {
   if (!productoSearch.value) return productosCatalogo.value
   const q = productoSearch.value.toLowerCase()
-  return productosCatalogo.value.filter(p => p.nombre.toLowerCase().includes(q) || p.categoria.toLowerCase().includes(q))
+  return productosCatalogo.value.filter(p => p.nombre.toLowerCase().includes(q) || p.especificacion?.toLowerCase().includes(q) || p.categoria.toLowerCase().includes(q))
 })
 
 async function fetchProductosCatalogo() {
   try {
-    const res = await fetch(`${API}/productos-catalogo/`, { headers: { Authorization: `Bearer ${getToken()}` } })
+    const res = await fetch(`${API}/componentes/maestros`, { headers: { Authorization: `Bearer ${getToken()}` } })
     const data = await res.json()
-    if (res.ok) productosCatalogo.value = data.productos
+    if (res.ok) productosCatalogo.value = data.componentes
   } catch(e) { console.error(e) }
 }
 
 function openAddModal() {
-  newComp.value = { producto_id: '', nombre: '', categoria: '', bodega_id: '', especificacion: '', gama: 'media', precio: '', stock: '' }
+  newComp.value = { master_component_id: '', nombre: '', especificacion: '', bodega_id: '', precio: '', stock: '' }
   addCompError.value = ''
   productoSearch.value = ''
   showProductoDropdown.value = false
@@ -670,9 +708,9 @@ function closeAddModal() {
 }
 
 function selectProducto(prod) {
-  newComp.value.producto_id = prod.id
+  newComp.value.master_component_id = prod.id
   newComp.value.nombre = prod.nombre
-  newComp.value.categoria = prod.categoria
+  newComp.value.especificacion = prod.especificacion
   productoSearch.value = prod.nombre
   showProductoDropdown.value = false
 }
@@ -683,19 +721,17 @@ function blockInvalidCharsStock(e) { if (['e', 'E', '+', '-', '.'].includes(e.ke
 async function saveNewComp() {
   addCompError.value = ''
   const c = newComp.value
-  if (!c.producto_id || !c.bodega_id || !c.especificacion || !c.precio || c.stock === '' || !c.gama) {
+  if (!c.master_component_id || !c.bodega_id || !c.precio || c.stock === '') {
     return addCompError.value = 'Todos los campos son requeridos, incluyendo la bodega destino'
   }
   savingAddComp.value = true
   try {
-    const res = await fetch(`${API}/componentes/`, {
+    const res = await fetch(`${API}/componentes`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getToken()}` },
       body: JSON.stringify({
-        producto_id: c.producto_id,
+        master_component_id: c.master_component_id,
         bodega_id: c.bodega_id,
-        especificacion: c.especificacion,
-        gama: c.gama,
         precio: c.precio,
         stock: c.stock
       })
@@ -720,7 +756,7 @@ async function saveNewComp() {
 async function fetchComponentes() {
   loadingComponentes.value = true
   try {
-    const res = await fetch(`${API}/componentes/`, { headers: { Authorization: `Bearer ${getToken()}` } })
+    const res = await fetch(`${API}/componentes`, { headers: { Authorization: `Bearer ${getToken()}` } })
     const data = await res.json()
     if (res.ok) componentes.value = data.componentes
   } catch(e) { console.error(e) } finally { loadingComponentes.value = false }
@@ -744,13 +780,11 @@ async function saveEditComp() {
 
   savingEditComp.value = true
   try {
-    const res = await fetch(`${API}/componentes/`, {
+    const res = await fetch(`${API}/componentes`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getToken()}` },
       body: JSON.stringify({
         id:             editingComp.value.id,
-        especificacion: editingComp.value.especificacion,
-        gama:           editingComp.value.gama,
         precio:         editingComp.value.precio,
         stock:          editingComp.value.stock,
       })

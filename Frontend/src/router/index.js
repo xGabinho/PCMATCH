@@ -11,6 +11,7 @@ import SuperAdminView from '../views/SuperAdminView.vue'
 import BodegaView     from '../views/BodegaView.vue'
 import ProveedorView  from '../views/ProveedorView.vue'
 import ProfileView    from '../views/ProfileView.vue'
+import UserProfileView from '../views/UserProfileView.vue'
 
 const routes = [
   // Públicas
@@ -22,6 +23,9 @@ const routes = [
   { path: '/perfil',    component: ProfileView,    meta: { requiresAuth: true, roles: ['cliente'] } },
   { path: '/armar',     component: BuilderView,    meta: { requiresAuth: true, roles: ['cliente'] } },
   { path: '/cotizacion',component: QuoteView,      meta: { requiresAuth: true, roles: ['cliente'] } },
+
+  // Perfil de usuario (todos los roles)
+  { path: '/mi-perfil', component: UserProfileView, meta: { requiresAuth: true, roles: ['cliente', 'admin', 'superadmin', 'bodega', 'proveedor'] } },
 
   // Admin
   { path: '/admin',  component: AdminView,  meta: { requiresAuth: true, roles: ['admin']  } },

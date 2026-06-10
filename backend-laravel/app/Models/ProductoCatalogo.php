@@ -21,4 +21,12 @@ class ProductoCatalogo extends Model
     {
         return $this->hasMany(Componente::class, 'producto_id');
     }
+
+    /**
+     * Relación: Un producto del catálogo puede ser ofrecido por muchos proveedores.
+     */
+    public function proveedores()
+    {
+        return $this->belongsToMany(Proveedor::class, 'proveedor_producto_catalogo', 'producto_catalogo_id', 'proveedor_id');
+    }
 }
