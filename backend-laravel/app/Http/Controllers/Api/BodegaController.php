@@ -47,10 +47,10 @@ class BodegaController extends Controller
         } else {
             // Admin y Superadmin ven todas, además cruzamos el nombre del proveedor
             $query->leftJoin('proveedores as p', 'p.id', '=', 'b.proveedor_id')
-                  ->groupBy('p.nombre')
+                  ->groupBy('p.razon_social')
                   ->select(
                       'b.id', 'b.nombre', 'b.telefono', 'b.correo', 'b.activa', 'b.proveedor_id',
-                      'p.nombre AS proveedor_nombre',
+                      'p.razon_social AS proveedor_nombre',
                       DB::raw('COUNT(c.id) AS total_componentes')
                   );
         }
@@ -212,10 +212,7 @@ class BodegaController extends Controller
         }
 
         if ($rol === 'superadmin' || $rol === 'admin') {
-            // Si es admin/superadmin, solo bloqueamos si tiene un proveedor Y NO es el proveedor quien lo borra
-            // Pero en realidad, el admin debería poder borrarla si quiere, 
-            // aunque el requerimiento previo decía que no si tenía proveedor.
-            // Vamos a mantener la restricción para admins pero permitirla para proveedores sobre sus propias bodegas.
+            // Si es admin/superadmin, mantenemos la restricción para admins pero permitirla para proveedores sobre sus propias bodegas.
             if (!is_null($bodega->proveedor_id)) {
                 return response()->json(['success' => false, 'message' => 'No se puede eliminar una bodega si tiene un proveedor asignado'], 400);
             }

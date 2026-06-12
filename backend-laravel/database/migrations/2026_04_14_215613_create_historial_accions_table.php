@@ -11,15 +11,17 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('historial_acciones', function (Blueprint $table) {
-            $table->id();
-            $table->integer('usuario_id')->nullable();
-            $table->string('usuario_nombre')->nullable();
-            $table->string('rol_usuario')->nullable();
-            $table->string('accion');
-            $table->string('modulo');
-            $table->timestamps();
-        });
+        if (!Schema::hasTable('historial_acciones')) {
+            Schema::create('historial_acciones', function (Blueprint $table) {
+                $table->id();
+                $table->integer('usuario_id')->nullable();
+                $table->string('usuario_nombre')->nullable();
+                $table->string('rol_usuario')->nullable();
+                $table->string('accion');
+                $table->string('modulo');
+                $table->timestamps();
+            });
+        }
     }
 
     /**

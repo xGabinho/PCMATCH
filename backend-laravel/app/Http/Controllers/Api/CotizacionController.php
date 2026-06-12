@@ -74,7 +74,7 @@ class CotizacionController extends Controller
                 ->groupBy('c.id', 'c.perfil', 'c.total', 'c.created_at');
         }
 
-        $cotizaciones = $query->orderBy('c.created_at', 'DESC')->get();
+        $cotizaciones = $query->orderBy('c.created_at', 'DESC')->paginate(15);
 
         return response()->json([
             'cotizaciones' => $cotizaciones

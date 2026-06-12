@@ -24,9 +24,18 @@ class UsuarioController extends Controller
 
         // 2. Consulta de usuarios
         // Seleccionamos las columnas específicas que pedía el PHP y las ordenamos
-        $usuarios = Usuario::select('id', 'nombre', 'apellido', 'correo', 'telefono', 'rol', 'activo', 'created_at')
+        $usuarios = Usuario::with('perfil:id,nombre')
+            ->select('id', 'nombre', 'apellido', 'correo', 'telefono', 'rol', 'activo', 'created_at', 'perfil_id')
             ->orderBy('created_at', 'desc')
             ->get();
+
+        // Formatear para retornar perfil_nombre
+        $usuarios = $usuarios->map(function ($u) {
+            $arr = $u->toArray();
+            $arr['perfil_nombre'] = $u->perfil ? $u->perfil->nombre : null;
+            unset($arr['perfil']);
+            return $arr;
+        });
 
         // 3. Respuesta idéntica al original
         return response()->json([
@@ -72,6 +81,7 @@ class UsuarioController extends Controller
         $usuario->telefono = $request->input('telefono', '');
         $usuario->password = password_hash($request->input('password'), PASSWORD_BCRYPT);
         $usuario->rol = $request->input('rol', 'cliente');
+        $usuario->perfil_id = $request->input('perfil_id', null);
 
         if (!$usuario->save()) {
             return response()->json(['success' => false, 'message' => 'Error al crear el usuario'], 500);
@@ -132,6 +142,9 @@ class UsuarioController extends Controller
         $usuario->correo = $request->input('correo');
         $usuario->telefono = $request->input('telefono', '');
         $usuario->rol = $request->input('rol');
+        if ($request->has('perfil_id')) {
+            $usuario->perfil_id = $request->input('perfil_id');
+        }
         if ($request->has('activo')) {
             $usuario->activo = $request->input('activo');
         }

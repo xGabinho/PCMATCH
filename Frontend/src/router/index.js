@@ -7,10 +7,11 @@ import ClientHomeView from '../views/ClientHomeView.vue'
 import BuilderView    from '../views/BuilderView.vue'
 import QuoteView      from '../views/QuoteView.vue'
 import AdminView      from '../views/AdminView.vue'
-import BodegaView     from '../views/BodegaView.vue'
-import ProfileView    from '../views/ProfileView.vue'
-import ProveedorView  from '../views/ProveedorView.vue'
 import SuperAdminView from '../views/SuperAdminView.vue'
+import BodegaView     from '../views/BodegaView.vue'
+import ProveedorView  from '../views/ProveedorView.vue'
+import ProfileView    from '../views/ProfileView.vue'
+import UserProfileView from '../views/UserProfileView.vue'
 
 const routes = [
   // Públicas
@@ -23,17 +24,19 @@ const routes = [
   { path: '/armar',     component: BuilderView,    meta: { requiresAuth: true, roles: ['cliente'] } },
   { path: '/cotizacion',component: QuoteView,      meta: { requiresAuth: true, roles: ['cliente'] } },
 
+  // Perfil de usuario (todos los roles)
+  { path: '/mi-perfil', component: UserProfileView, meta: { requiresAuth: true, roles: ['cliente', 'admin', 'superadmin', 'bodega', 'proveedor'] } },
+
   // Admin
   { path: '/admin',  component: AdminView,  meta: { requiresAuth: true, roles: ['admin']  } },
 
-  // Bodega
-  { path: '/bodega', component: BodegaView, meta: { requiresAuth: true, roles: ['bodega'] } },
+  // Super Admin
+  { path: '/superadmin', component: SuperAdminView, meta: { requiresAuth: true, roles: ['superadmin'] } },
 
+  // Bodega / Proveedor
+  { path: '/bodega', component: BodegaView, meta: { requiresAuth: true, roles: ['bodega'] } },
   // Proveedor
   { path: '/proveedor', component: ProveedorView, meta: { requiresAuth: true, roles: ['proveedor'] } },
-
-  // SuperAdmin
-  { path: '/superadmin', component: SuperAdminView, meta: { requiresAuth: true, roles: ['superadmin'] } },
 ]
 
 const router = createRouter({
@@ -52,20 +55,22 @@ router.beforeEach((to) => {
     // Verificar rol
     if (to.meta.roles && !to.meta.roles.includes(user.value?.rol)) {
       // Redirigir a su home según rol
+      if (user.value?.rol === 'superadmin') return { path: '/superadmin' }
       if (user.value?.rol === 'admin')  return { path: '/admin'  }
       if (user.value?.rol === 'bodega') return { path: '/bodega' }
       if (user.value?.rol === 'proveedor') return { path: '/proveedor' }
-      if (user.value?.rol === 'superadmin') return { path: '/superadmin' }
+
       return { path: '/inicio' }
     }
   }
 
   // Si ya está logueado y va al login, redirigir a su home
   if (to.path === '/login' && isLoggedIn.value) {
+    if (user.value?.rol === 'superadmin') return { path: '/superadmin' }
     if (user.value?.rol === 'admin')  return { path: '/admin'  }
     if (user.value?.rol === 'bodega') return { path: '/bodega' }
     if (user.value?.rol === 'proveedor') return { path: '/proveedor' }
-    if (user.value?.rol === 'superadmin') return { path: '/superadmin' }
+
     return { path: '/inicio' }
   }
 })

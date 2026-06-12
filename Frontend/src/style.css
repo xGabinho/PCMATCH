@@ -9,53 +9,232 @@
     box-sizing: border-box;
   }
 
+  /* ── Theme-aware body ─────────────────────────────────── */
+  body {
+    font-family: 'DM Sans', sans-serif;
+    -webkit-font-smoothing: antialiased;
+    transition: background-color 0.25s ease, color 0.25s ease;
+  }
+
+  .dark body,
+  html.dark body {
+    background-color: #1A1A1A;
+    color: #E0E0E0;
+  }
+
+  .light body,
+  html.light body {
+    background-color: #F8F9FC;
+    color: #1A1D26;
+  }
+
+  /* Fallback if no class yet */
   body {
     background-color: #1A1A1A;
     color: #E0E0E0;
-    font-family: 'DM Sans', sans-serif;
-    -webkit-font-smoothing: antialiased;
   }
 
+  /* ── Scrollbar dark ─────────────────────────────────── */
   ::-webkit-scrollbar {
     width: 6px;
   }
 
-  ::-webkit-scrollbar-track {
+  html.dark ::-webkit-scrollbar-track {
     background: #1A1A1A;
   }
 
-  ::-webkit-scrollbar-thumb {
+  html.dark ::-webkit-scrollbar-thumb {
     background: #2E2E2E;
     border-radius: 3px;
   }
 
-  ::-webkit-scrollbar-thumb:hover {
+  html.dark ::-webkit-scrollbar-thumb:hover {
     background: #3B82F6;
+  }
+
+  /* ── Scrollbar light ─────────────────────────────────── */
+  html.light ::-webkit-scrollbar-track {
+    background: #F0F1F4;
+  }
+
+  html.light ::-webkit-scrollbar-thumb {
+    background: #CBD5E1;
+    border-radius: 3px;
+  }
+
+  html.light ::-webkit-scrollbar-thumb:hover {
+    background: #3B82F6;
+  }
+
+  /* ── Focus visible ─────────────────────────────────── */
+  *:focus-visible {
+    outline: 2px solid #3B82F6;
+    outline-offset: 2px;
+    border-radius: 4px;
   }
 }
 
 @layer components {
+
+  /* ── Buttons ─────────────────────────────────────────── */
   .btn-primary {
-    @apply bg-accent text-white px-6 py-3 rounded-lg font-medium transition-all duration-200 hover:bg-blue-500 hover:shadow-lg hover:shadow-blue-500/20 active:scale-95;
+    @apply bg-accent text-white px-6 py-3 rounded-lg font-medium transition-all duration-200 hover:bg-blue-500 hover:shadow-lg hover:shadow-blue-500/20 active:scale-95 min-h-[44px] inline-flex items-center justify-center;
   }
 
   .btn-secondary {
-    @apply border border-dark-border text-text-primary px-6 py-3 rounded-lg font-medium transition-all duration-200 hover:border-accent hover:text-accent active:scale-95;
+    @apply px-6 py-3 rounded-lg font-medium transition-all duration-200 active:scale-95 min-h-[44px] inline-flex items-center justify-center;
+  }
+
+  html.dark .btn-secondary {
+    @apply border border-dark-border text-text-primary hover:border-accent hover:text-accent;
+  }
+
+  html.light .btn-secondary {
+    @apply border border-light-border text-text-light hover:border-accent hover:text-accent;
   }
 
   .btn-ghost {
-    @apply text-text-muted px-6 py-3 rounded-lg font-medium transition-all duration-200 hover:text-text-primary hover:bg-dark-card active:scale-95;
+    @apply px-6 py-3 rounded-lg font-medium transition-all duration-200 active:scale-95 min-h-[44px] inline-flex items-center justify-center;
   }
 
+  html.dark .btn-ghost {
+    @apply text-text-muted hover:text-text-primary hover:bg-dark-card;
+  }
+
+  html.light .btn-ghost {
+    @apply text-text-light-muted hover:text-text-light hover:bg-gray-100;
+  }
+
+  /* ── Cards ───────────────────────────────────────────── */
   .card-dark {
-    @apply bg-dark-card border border-dark-border rounded-xl;
+    @apply rounded-xl transition-colors duration-200;
+  }
+
+  html.dark .card-dark {
+    @apply bg-dark-card border border-dark-border;
+  }
+
+  html.light .card-dark {
+    @apply bg-light-card border border-light-border shadow-sm;
   }
 
   .card-hover {
-    @apply transition-all duration-200 hover:border-accent/40 hover:shadow-lg hover:shadow-accent/5;
+    @apply transition-all duration-200 hover:shadow-lg;
   }
 
+  html.dark .card-hover {
+    @apply hover:border-accent/40 hover:shadow-accent/5;
+  }
+
+  html.light .card-hover {
+    @apply hover:border-accent/30 hover:shadow-accent/10;
+  }
+
+  /* ── Badge ───────────────────────────────────────────── */
   .badge {
     @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium;
+  }
+
+  /* ── Theme-aware utility classes ─────────────────────── */
+  /* These are semantic classes that switch between dark/light */
+
+  .theme-bg {
+    @apply transition-colors duration-200;
+  }
+  html.dark .theme-bg {
+    @apply bg-dark-bg;
+  }
+  html.light .theme-bg {
+    @apply bg-light-bg;
+  }
+
+  .theme-card {
+    @apply transition-colors duration-200;
+  }
+  html.dark .theme-card {
+    @apply bg-dark-card;
+  }
+  html.light .theme-card {
+    @apply bg-light-card;
+  }
+
+  .theme-border {
+    @apply transition-colors duration-200;
+  }
+  html.dark .theme-border {
+    @apply border-dark-border;
+  }
+  html.light .theme-border {
+    @apply border-light-border;
+  }
+
+  .theme-text {
+    @apply transition-colors duration-200;
+  }
+  html.dark .theme-text {
+    @apply text-text-primary;
+  }
+  html.light .theme-text {
+    @apply text-text-light;
+  }
+
+  .theme-text-muted {
+    @apply transition-colors duration-200;
+  }
+  html.dark .theme-text-muted {
+    @apply text-text-muted;
+  }
+  html.light .theme-text-muted {
+    @apply text-text-light-muted;
+  }
+
+  /* ── Theme-aware inputs ──────────────────────────────── */
+  .theme-input {
+    @apply w-full rounded-lg px-4 py-3 text-sm transition-colors duration-200 focus:outline-none focus:border-accent;
+  }
+
+  html.dark .theme-input {
+    @apply bg-dark-bg border border-dark-border text-text-primary placeholder-text-muted;
+  }
+
+  html.light .theme-input {
+    @apply bg-gray-50 border border-light-border text-text-light placeholder-text-light-muted;
+  }
+
+  /* ── Sidebar & overlay ───────────────────────────────── */
+  .sidebar-overlay {
+    @apply fixed inset-0 bg-black/40 backdrop-blur-sm z-40 transition-opacity duration-300;
+  }
+
+  .sidebar-drawer {
+    @apply fixed inset-y-0 left-0 z-50 flex flex-col transition-transform duration-300 ease-in-out;
+  }
+
+  /* ── Animations ──────────────────────────────────────── */
+  @keyframes fade-in {
+    from { opacity: 0; transform: translateY(-4px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  .animate-fade-in {
+    animation: fade-in 0.2s ease-out;
+  }
+
+  @keyframes slide-up {
+    from { opacity: 0; transform: translateY(100%); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  .animate-slide-up {
+    animation: slide-up 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  @keyframes slide-in-left {
+    from { transform: translateX(-100%); }
+    to   { transform: translateX(0); }
+  }
+
+  .animate-slide-in-left {
+    animation: slide-in-left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   }
 }

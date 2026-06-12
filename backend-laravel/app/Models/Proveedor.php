@@ -11,4 +11,13 @@ class Proveedor extends Authenticatable
 
     protected $table = 'proveedores';
     public $timestamps = false;
+
+    protected $casts = [
+        'activo' => 'boolean',
+    ];
+
+    public function productosCatalogo()
+    {
+        return $this->belongsToMany(ProductoCatalogo::class, 'proveedor_producto_catalogo', 'proveedor_id', 'producto_catalogo_id');
+    }
 }

@@ -26,6 +26,10 @@ Route::middleware('auth:sanctum')->get('/auth/me', function (Request $request) {
 
 // RUTAS PROTEGIDAS
 Route::middleware('auth:sanctum')->group(function () {
+    // PERFIL DEL USUARIO AUTENTICADO
+    Route::get('/auth/profile', [AuthController::class, 'profile']);
+    Route::put('/auth/profile', [AuthController::class, 'updateProfile']);
+
     // RUTAS DE USUARIOS
     Route::get('/usuarios', [UsuarioController::class, 'index']); // Listar (Admin)
     Route::post('/usuarios', [UsuarioController::class, 'store']); // Crear (Admin)
@@ -46,13 +50,21 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::put('/proveedores', [ProveedorController::class, 'update']); // Editar
     Route::delete('/proveedores', [ProveedorController::class, 'destroy']); // Eliminar
     Route::delete('/proveedores/{id}', [ProveedorController::class, 'destroy']); // Soporte params
+    Route::get('/proveedores/{id}/productos', [ProveedorController::class, 'productos']); // Obtener catálogo asignado
+    Route::post('/proveedores/{id}/productos', [ProveedorController::class, 'syncProductos']); // Asignar catálogo
 
     // RUTAS DE COMPONENTES (Admin/Proveedor/Bodega)
     Route::get('/componentes/admin', [ComponenteController::class, 'indexAdmin']); // Ver Componentes (admin/superadmin)
+    Route::get('/componentes/maestros', [ComponenteController::class, 'maestros']); // Ver maestros (admin/bodega/proveedor)
     Route::get('/componentes', [ComponenteController::class, 'indexBodega']);      // Ver los propios (bodega)
     Route::post('/componentes/admin', [ComponenteController::class, 'store']);     // Crear (admin/superadmin)
     Route::post('/componentes', [ComponenteController::class, 'store']);           // Crear (bodega/proveedor)
+
+    // RUTAS DE CATÁLOGO BASE
+    Route::post('/productos-catalogo', [CatalogoController::class, 'store']); // Crear producto base (Admin)
+    Route::get('/productos-catalogo', [CatalogoController::class, 'index']); // GET alternativo
     Route::put('/componentes', [ComponenteController::class, 'update']);           // Editar
+    Route::patch('/componentes/stock', [ComponenteController::class, 'adjustStock']); // Ajustar stock +/-
     Route::delete('/componentes', [ComponenteController::class, 'destroy']);       // Eliminar
     Route::delete('/componentes/{id}', [ComponenteController::class, 'destroy']); // Eliminar por ID
 
@@ -61,6 +73,15 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/cotizaciones', [CotizacionController::class, 'store']); // Crear (Solo cliente)
     Route::delete('/cotizaciones', [CotizacionController::class, 'destroy']); // Eliminar
     Route::delete('/cotizaciones/{id}', [CotizacionController::class, 'destroy']); // Soporte params
+
+    // RUTAS DE PERFILES Y PERMISOS (Admin / Superadmin)
+    Route::get('/perfiles/permisos', [\App\Http\Controllers\Api\PerfilController::class, 'available']);
+    Route::get('/perfiles', [\App\Http\Controllers\Api\PerfilController::class, 'index']);
+    Route::post('/perfiles', [\App\Http\Controllers\Api\PerfilController::class, 'store']);
+    Route::put('/perfiles', [\App\Http\Controllers\Api\PerfilController::class, 'update']);
+    Route::delete('/perfiles', [\App\Http\Controllers\Api\PerfilController::class, 'destroy']);
+    Route::delete('/perfiles/{id}', [\App\Http\Controllers\Api\PerfilController::class, 'destroy']);
+    Route::put('/perfiles/asignar', [\App\Http\Controllers\Api\PerfilController::class, 'assign']);
 
     // RUTAS DE HISTORIAL (Admin / Superadmin)
     Route::get('/historial', [HistorialController::class, 'index']);

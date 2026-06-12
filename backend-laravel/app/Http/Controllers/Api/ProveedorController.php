@@ -39,11 +39,11 @@ class ProveedorController extends Controller
             ->groupBy('p.id', 'p.nombre', 'p.correo', 'p.activo', 'p.created_at', 'p.identificacion_legal', 'p.razon_social', 'p.estado_aprobacion', 'p.documento_soporte')
             ->select('p.id', 'p.nombre', 'p.correo', 'p.activo', 'p.created_at', 'p.identificacion_legal', 'p.razon_social', 'p.estado_aprobacion', 'p.documento_soporte', DB::raw('COUNT(b.id) AS total_bodegas'))
             ->orderBy('p.created_at', 'DESC')
-            ->get();
+            ->paginate(15);
 
         // Convert the relative path of documents to full URLs
-        foreach ($proveedores as $prov) {
-            if ($prov->documento_soporte) {
+        foreach ($proveedores->items() as $prov) {
+            if (isset($prov->documento_soporte) && $prov->documento_soporte) {
                 $prov->documento_soporte_url = url('storage/' . $prov->documento_soporte);
             } else {
                 $prov->documento_soporte_url = null;
@@ -200,5 +200,61 @@ class ProveedorController extends Controller
         AuditLog::log($request, "Eliminó el proveedor «{$proveedor->nombre}»", 'Proveedores');
 
         return response()->json(['message' => 'Proveedor eliminado']);
+    }
+
+    /**
+     * Obtener productos del catálogo asignados a un proveedor
+     */
+    public function productos(Request $request, $id)
+    {
+        $user = $request->user();
+        $clase = get_class($user);
+        
+        if ($id === 'me') {
+            if ($clase !== \App\Models\Proveedor::class) {
+                return response()->json(['success' => false, 'message' => 'No autorizado'], 403);
+            }
+            $id = $user->id;
+        } else {
+            if (!$this->checkSuperAdmin($request)) {
+                return response()->json(['success' => false, 'message' => 'No autorizado'], 403);
+            }
+        }
+
+        $proveedor = Proveedor::with('productosCatalogo')->find($id);
+        if (!$proveedor) {
+            return response()->json(['success' => false, 'message' => 'Proveedor no encontrado'], 404);
+        }
+
+        return response()->json([
+            'productos' => $proveedor->productosCatalogo
+        ]);
+    }
+
+    /**
+     * Sincronizar productos del catálogo para un proveedor
+     */
+    public function syncProductos(Request $request, $id)
+    {
+        if (!$this->checkSuperAdmin($request)) {
+            return response()->json(['success' => false, 'message' => 'No autorizado'], 403);
+        }
+
+        $proveedor = Proveedor::find($id);
+        if (!$proveedor) {
+            return response()->json(['success' => false, 'message' => 'Proveedor no encontrado'], 404);
+        }
+
+        $request->validate([
+            'productos' => 'array',
+            'productos.*' => 'integer|exists:productos_catalogo,id'
+        ]);
+
+        $productos = $request->input('productos', []);
+        $proveedor->productosCatalogo()->sync($productos);
+
+        AuditLog::log($request, "Asignó " . count($productos) . " productos del catálogo al proveedor: {$proveedor->nombre}", 'Proveedores');
+
+        return response()->json(['success' => true, 'message' => 'Catálogo asignado correctamente']);
     }
 }

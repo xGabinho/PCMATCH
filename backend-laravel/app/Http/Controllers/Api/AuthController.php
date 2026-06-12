@@ -38,13 +38,24 @@ class AuthController extends Controller
                 return response()->json(['success' => false, 'message' => 'Este usuario está desactivado'], 403);
             }
             $token = $usuario->createToken('auth_token_usuario')->plainTextToken;
+
+            $permisos = [];
+            if ($usuario->perfil_id) {
+                $perfil = \App\Models\Perfil::with('permisos')->find($usuario->perfil_id);
+                if ($perfil && $perfil->activo) {
+                    $permisos = $perfil->permisos->pluck('permiso')->toArray();
+                }
+            }
+
             return response()->json([
                 'token' => $token,
                 'usuario' => [
                     'id' => $usuario->id,
                     'nombre' => $usuario->nombre,
                     'correo' => $usuario->correo,
-                    'rol' => $usuario->rol
+                    'rol' => $usuario->rol,
+                    'perfil_id' => $usuario->perfil_id,
+                    'permisos' => $permisos
                 ]
             ]);
         }
@@ -154,5 +165,202 @@ class AuthController extends Controller
                 'rol' => $usuario->rol
             ]
         ], 201);
+    }
+
+    /**
+     * GET /api/auth/profile — Obtener datos del perfil autenticado
+     */
+    public function profile(Request $request)
+    {
+        $user = $request->user();
+        $clase = get_class($user);
+
+        if ($clase === Bodega::class) {
+            return response()->json([
+                'perfil' => [
+                    'id' => $user->id,
+                    'nombre' => $user->nombre,
+                    'correo' => $user->correo,
+                    'telefono' => $user->telefono,
+                    'rol' => 'bodega',
+                ],
+                'tipo' => 'bodega'
+            ]);
+        }
+
+        if ($clase === Proveedor::class) {
+            return response()->json([
+                'perfil' => [
+                    'id' => $user->id,
+                    'nombre' => $user->nombre,
+                    'correo' => $user->correo,
+                    'identificacion_legal' => $user->identificacion_legal,
+                    'razon_social' => $user->razon_social,
+                    'rol' => 'proveedor',
+                ],
+                'tipo' => 'proveedor'
+            ]);
+        }
+
+        // Usuario (cliente, admin, superadmin)
+        $permisos = [];
+        if ($user->perfil_id) {
+            $perfil = \App\Models\Perfil::with('permisos')->find($user->perfil_id);
+            if ($perfil && $perfil->activo) {
+                $permisos = $perfil->permisos->pluck('permiso')->toArray();
+            }
+        }
+
+        return response()->json([
+            'perfil' => [
+                'id' => $user->id,
+                'nombre' => $user->nombre,
+                'apellido' => $user->apellido,
+                'correo' => $user->correo,
+                'telefono' => $user->telefono,
+                'rol' => $user->rol,
+                'perfil_id' => $user->perfil_id,
+                'permisos' => $permisos
+            ],
+            'tipo' => 'usuario'
+        ]);
+    }
+
+    /**
+     * PUT /api/auth/profile — Actualizar datos del perfil autenticado
+     */
+    public function updateProfile(Request $request)
+    {
+        $user = $request->user();
+        $clase = get_class($user);
+
+        // --- Validación de contraseña actual si se quiere cambiar ---
+        if ($request->filled('password')) {
+            if (!$request->filled('password_actual')) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Debes ingresar tu contraseña actual para cambiarla',
+                    'errors' => ['password_actual' => ['Contraseña actual requerida']]
+                ], 422);
+            }
+            if (!password_verify($request->input('password_actual'), $user->password)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'La contraseña actual es incorrecta',
+                    'errors' => ['password_actual' => ['Contraseña actual incorrecta']]
+                ], 422);
+            }
+        }
+
+        // --- Validación según tipo de modelo ---
+        if ($clase === Bodega::class) {
+            $rules = [
+                'nombre' => 'required|string|max:150',
+                'correo' => 'required|email|max:150|unique:bodegas,correo,' . $user->id,
+                'telefono' => 'nullable|string|max:20',
+                'password' => 'nullable|string|min:8',
+            ];
+        } elseif ($clase === Proveedor::class) {
+            $rules = [
+                'nombre' => 'required|string|max:100',
+                'correo' => 'required|email|max:100|unique:proveedores,correo,' . $user->id,
+                'password' => 'nullable|string|min:8',
+            ];
+        } else {
+            $rules = [
+                'nombre' => 'required|string|max:100',
+                'apellido' => 'nullable|string|max:100',
+                'correo' => 'required|email|max:150|unique:usuarios,correo,' . $user->id,
+                'telefono' => 'nullable|string|max:20',
+                'password' => 'nullable|string|min:8',
+            ];
+        }
+
+        $messages = [
+            'nombre.required' => 'El nombre es requerido',
+            'correo.required' => 'El correo es requerido',
+            'correo.email' => 'El correo no es válido',
+            'correo.unique' => 'Este correo ya está en uso por otra cuenta',
+            'password.min' => 'La contraseña debe tener al menos 8 caracteres',
+        ];
+
+        $validator = Validator::make($request->all(), $rules, $messages);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'message' => $validator->errors()->first(),
+                'errors' => $validator->errors()
+            ], 422);
+        }
+
+        // --- Aplicar cambios ---
+        $user->nombre = $request->input('nombre');
+        $user->correo = $request->input('correo');
+
+        if ($clase === Bodega::class) {
+            $user->telefono = $request->input('telefono', $user->telefono);
+        } elseif ($clase === Proveedor::class) {
+            // Proveedor solo edita nombre y correo desde perfil
+        } else {
+            $user->apellido = $request->input('apellido', $user->apellido);
+            $user->telefono = $request->input('telefono', $user->telefono);
+        }
+
+        if ($request->filled('password')) {
+            $user->password = password_hash($request->input('password'), PASSWORD_BCRYPT);
+        }
+
+        // Audit trail
+        $dirty = $user->getDirty();
+        $cambios = [];
+        foreach ($dirty as $campo => $nuevo) {
+            if ($campo === 'password') {
+                $cambios[] = 'contraseña actualizada';
+                continue;
+            }
+            $viejo = $user->getOriginal($campo);
+            $cambios[] = "{$campo}: '{$viejo}' → '{$nuevo}'";
+        }
+
+        $user->save();
+
+        $detalles = empty($cambios) ? 'Sin cambios' : implode(', ', $cambios);
+        $rol = ($clase === Bodega::class) ? 'bodega' : (($clase === Proveedor::class) ? 'proveedor' : $user->rol);
+        AuditLog::log($request, "Editó su propio perfil — {$detalles}", 'Perfil');
+
+        // Retornar datos actualizados
+        $perfil = [
+            'id' => $user->id,
+            'nombre' => $user->nombre,
+            'correo' => $user->correo,
+            'rol' => $rol,
+        ];
+
+        if ($clase === Bodega::class) {
+            $perfil['telefono'] = $user->telefono;
+        } elseif ($clase === Proveedor::class) {
+            $perfil['identificacion_legal'] = $user->identificacion_legal;
+            $perfil['razon_social'] = $user->razon_social;
+        } else {
+            $perfil['apellido'] = $user->apellido;
+            $perfil['telefono'] = $user->telefono;
+            $perfil['perfil_id'] = $user->perfil_id;
+            
+            $permisos = [];
+            if ($user->perfil_id) {
+                $perfil_model = \App\Models\Perfil::with('permisos')->find($user->perfil_id);
+                if ($perfil_model && $perfil_model->activo) {
+                    $permisos = $perfil_model->permisos->pluck('permiso')->toArray();
+                }
+            }
+            $perfil['permisos'] = $permisos;
+        }
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Perfil actualizado correctamente',
+            'perfil' => $perfil
+        ]);
     }
 }

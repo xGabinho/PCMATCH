@@ -1,13 +1,13 @@
 <template>
-  <div class="flex h-screen overflow-hidden bg-dark-bg">
+  <div class="flex h-screen overflow-hidden theme-bg">
 
     <!-- Sidebar -->
-    <aside class="w-60 border-r border-dark-border flex-shrink-0 flex flex-col h-screen overflow-y-auto sticky top-0">
-      <div class="h-16 px-5 flex items-center border-b border-dark-border gap-2.5">
+    <aside class="w-60 border-r theme-border flex-shrink-0 flex flex-col h-screen overflow-y-auto sticky top-0">
+      <div class="h-16 px-5 flex items-center border-b theme-border gap-2.5">
         <div class="w-7 h-7 rounded-lg bg-yellow-500 flex items-center justify-center text-white font-bold text-xs">🏪</div>
         <div>
-          <p class="text-text-primary font-semibold text-sm leading-none">{{ bodegaNombre }}</p>
-          <p class="text-text-muted text-xs mt-0.5">Gestor de bodega</p>
+          <p class="theme-text font-semibold text-sm leading-none">{{ bodegaNombre }}</p>
+          <p class="theme-text-muted text-xs mt-0.5">Gestor de bodega</p>
         </div>
       </div>
 
@@ -19,7 +19,7 @@
           class="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-150 text-left"
           :class="activeSection === section.id
             ? 'bg-accent/10 text-accent border border-accent/20'
-            : 'text-text-muted hover:text-text-primary hover:bg-dark-card'"
+            : 'theme-text-muted hover:theme-text hover:theme-card'"
         >
           <span>{{ section.icon }}</span>
           {{ section.label }}
@@ -27,12 +27,16 @@
         </button>
       </nav>
 
-      <div class="p-3 border-t border-dark-border space-y-1">
-        <div class="px-3 py-2.5 rounded-lg bg-dark-card border border-dark-border">
-          <p class="text-xs text-text-muted">Sesión activa</p>
-          <p class="text-sm font-medium text-text-primary mt-0.5">{{ bodegaCorreo }}</p>
+      <div class="p-3 border-t theme-border space-y-1">
+        <div class="px-3 py-2.5 rounded-lg theme-card border theme-border">
+          <p class="text-xs theme-text-muted">Sesión activa</p>
+          <p class="text-sm font-medium theme-text mt-0.5">{{ bodegaCorreo }}</p>
         </div>
-        <button @click="handleLogout" class="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-text-muted hover:text-text-primary hover:bg-dark-card transition-all duration-150">
+        <button @click="toggleTheme" class="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm theme-text-muted hover:theme-text hover:theme-card transition-all duration-150">
+          <span v-if="isDark">☀️ Modo claro</span>
+          <span v-else>🌙 Modo oscuro</span>
+        </button>
+        <button @click="handleLogout" class="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm theme-text-muted hover:theme-text hover:theme-card transition-all duration-150">
           ← Cerrar sesión
         </button>
       </div>
@@ -42,10 +46,10 @@
     <main class="flex-1 overflow-auto">
 
       <!-- Topbar -->
-      <div class="h-16 border-b border-dark-border px-8 flex items-center justify-between sticky top-0 bg-dark-bg/90 backdrop-blur z-10">
+      <div class="h-16 border-b theme-border px-8 flex items-center justify-between sticky top-0 bg-light-bg/90 dark:bg-dark-bg/90 backdrop-blur z-10">
         <div>
-          <h1 class="font-semibold text-text-primary">{{ currentSection.label }}</h1>
-          <p class="text-xs text-text-muted mt-0.5">{{ currentSection.description }}</p>
+          <h1 class="font-semibold theme-text">{{ currentSection.label }}</h1>
+          <p class="text-xs theme-text-muted mt-0.5">{{ currentSection.description }}</p>
         </div>
         <button v-if="activeSection === 'componentes'" @click="openAddModal" class="btn-primary text-sm">
           + Añadir componente
@@ -58,40 +62,40 @@
         <template v-if="activeSection === 'dashboard'">
           <div class="grid grid-cols-3 gap-4 mb-8">
             <div class="card-dark rounded-xl p-5">
-              <p class="text-text-muted text-xs uppercase tracking-wider mb-2">Componentes activos</p>
-              <p class="text-3xl font-bold font-mono text-text-primary">{{ myComponents.length }}</p>
-              <p class="text-xs text-text-muted mt-1">En catálogo de cotizaciones</p>
+              <p class="theme-text-muted text-xs uppercase tracking-wider mb-2">Componentes activos</p>
+              <p class="text-3xl font-bold font-mono theme-text">{{ myComponents.length }}</p>
+              <p class="text-xs theme-text-muted mt-1">En catálogo de cotizaciones</p>
             </div>
             <div class="card-dark rounded-xl p-5">
-              <p class="text-text-muted text-xs uppercase tracking-wider mb-2">Stock total</p>
+              <p class="theme-text-muted text-xs uppercase tracking-wider mb-2">Stock total</p>
               <p class="text-3xl font-bold font-mono text-accent">{{ totalStock }}</p>
-              <p class="text-xs text-text-muted mt-1">Unidades disponibles</p>
+              <p class="text-xs theme-text-muted mt-1">Unidades disponibles</p>
             </div>
             <div class="card-dark rounded-xl p-5">
-              <p class="text-text-muted text-xs uppercase tracking-wider mb-2">Alertas de stock</p>
+              <p class="theme-text-muted text-xs uppercase tracking-wider mb-2">Alertas de stock</p>
               <p class="text-3xl font-bold font-mono text-yellow-400">{{ stockAlerts.length }}</p>
-              <p class="text-xs text-text-muted mt-1">Requieren atención</p>
+              <p class="text-xs theme-text-muted mt-1">Requieren atención</p>
             </div>
           </div>
 
           <!-- Stock alerts -->
           <div class="card-dark rounded-xl overflow-hidden mb-6">
-            <div class="px-6 py-4 border-b border-dark-border flex items-center gap-3">
+            <div class="px-6 py-4 border-b theme-border flex items-center gap-3">
               <span class="text-yellow-400">⚠️</span>
-              <h2 class="font-semibold text-text-primary">Alertas de stock bajo</h2>
+              <h2 class="font-semibold theme-text">Alertas de stock bajo</h2>
             </div>
-            <div v-if="stockAlerts.length === 0" class="px-6 py-8 text-center text-text-muted text-sm">
+            <div v-if="stockAlerts.length === 0" class="px-6 py-8 text-center theme-text-muted text-sm">
               Sin alertas de stock
             </div>
             <div v-else class="divide-y divide-dark-border">
               <div v-for="alert in stockAlerts" :key="alert.id" class="px-6 py-4 flex items-center justify-between">
                 <div class="flex items-center gap-3">
                   <span class="badge text-xs bg-accent/10 text-accent border border-accent/20">{{ alert.categoria }}</span>
-                  <span class="text-sm text-text-primary">{{ alert.nombre }}</span>
+                  <span class="text-sm theme-text">{{ alert.nombre }}</span>
                 </div>
                 <div class="flex items-center gap-6">
                   <div class="text-right">
-                    <p class="text-xs text-text-muted">Stock actual</p>
+                    <p class="text-xs theme-text-muted">Stock actual</p>
                     <p class="text-sm font-mono font-semibold text-yellow-400">{{ alert.stock }} unid.</p>
                   </div>
                   <button @click="openEditComp(alert)" class="btn-secondary text-xs px-3 py-1.5">
@@ -107,48 +111,88 @@
         <template v-if="activeSection === 'componentes'">
 
           <!-- Filters -->
-          <div class="flex items-center gap-3 mb-6">
-            <input
-              v-model="filterSearch"
-              type="text"
-              placeholder="Buscar componente..."
-              class="bg-dark-card border border-dark-border rounded-lg px-4 py-2.5 text-sm text-text-primary placeholder-text-muted focus:outline-none focus:border-accent transition-colors flex-1 max-w-xs"
-            />
-            <select
-              v-model="filterCategory"
-              class="bg-dark-card border border-dark-border rounded-lg px-4 py-2.5 text-sm text-text-primary focus:outline-none focus:border-accent transition-colors"
-            >
-              <option value="" class="bg-dark-bg">Todas las categorías</option>
-              <option v-for="cat in categories" :key="cat" :value="cat" class="bg-dark-bg">{{ cat }}</option>
-            </select>
+          <div class="flex flex-col gap-3 mb-6">
+            <div class="flex items-center gap-3">
+              <input
+                v-model="filterSearch"
+                type="text"
+                placeholder="Buscar componente..."
+                class="theme-card border theme-border rounded-lg px-4 py-2.5 text-sm theme-text placeholder-text-muted focus:outline-none focus:border-accent transition-colors flex-1 max-w-xs"
+              />
+              <select
+                v-model="filterCategory"
+                class="theme-card border theme-border rounded-lg px-4 py-2.5 text-sm theme-text focus:outline-none focus:border-accent transition-colors"
+              >
+                <option value="" class="theme-bg">Todas las categorías</option>
+                <option v-for="cat in categories" :key="cat" :value="cat" class="theme-bg">{{ cat }}</option>
+              </select>
+              <button @click="showAdvancedFilters = !showAdvancedFilters" class="btn-secondary text-sm px-4 py-2.5 flex items-center gap-2">
+                <span>⚙️</span> Filtros avanzados
+              </button>
+            </div>
+            
+            <!-- Advanced Filters Panel -->
+            <div v-if="showAdvancedFilters" class="p-4 theme-card border theme-border rounded-xl grid grid-cols-2 md:grid-cols-5 gap-4 animate-fade-in">
+              <div>
+                <label class="block text-xs font-medium theme-text-muted mb-1.5">Gama</label>
+                <select v-model="filterGama" class="w-full theme-bg border theme-border rounded-lg px-3 py-2 text-sm theme-text focus:outline-none focus:border-accent transition-colors">
+                  <option value="">Todas</option>
+                  <option value="alta">Alta</option>
+                  <option value="media">Media</option>
+                  <option value="baja">Baja</option>
+                </select>
+              </div>
+              <div>
+                <label class="block text-xs font-medium theme-text-muted mb-1.5">Enfoque</label>
+                <select v-model="filterEnfoque" class="w-full theme-bg border theme-border rounded-lg px-3 py-2 text-sm theme-text focus:outline-none focus:border-accent transition-colors">
+                  <option value="">Todos</option>
+                  <option value="gaming">Gaming</option>
+                  <option value="diseño">Diseño</option>
+                  <option value="estudio">Estudio</option>
+                  <option value="oficina">Oficina</option>
+                </select>
+              </div>
+              <div>
+                <label class="block text-xs font-medium theme-text-muted mb-1.5">Núcleos</label>
+                <input v-model="filterNucleos" type="number" min="1" placeholder="Ej: 6" class="w-full theme-bg border theme-border rounded-lg px-3 py-2 text-sm theme-text focus:outline-none focus:border-accent transition-colors" />
+              </div>
+              <div>
+                <label class="block text-xs font-medium theme-text-muted mb-1.5">Hilos</label>
+                <input v-model="filterHilos" type="number" min="1" placeholder="Ej: 12" class="w-full theme-bg border theme-border rounded-lg px-3 py-2 text-sm theme-text focus:outline-none focus:border-accent transition-colors" />
+              </div>
+              <div>
+                <label class="block text-xs font-medium theme-text-muted mb-1.5">Frec. mínima (GHz)</label>
+                <input v-model="filterFrecuenciaMin" type="number" step="0.1" min="0" placeholder="Ej: 3.5" class="w-full theme-bg border theme-border rounded-lg px-3 py-2 text-sm theme-text focus:outline-none focus:border-accent transition-colors" />
+              </div>
+            </div>
           </div>
 
           <!-- Loading -->
-          <div v-if="loadingComponents" class="text-center py-16 text-text-muted text-sm">
+          <div v-if="loadingComponents" class="text-center py-16 theme-text-muted text-sm">
             Cargando componentes...
           </div>
 
           <!-- Table -->
           <div v-else class="card-dark rounded-xl overflow-hidden overflow-x-auto">
             <table class="w-full min-w-[640px]">
-              <thead class="border-b border-dark-border">
+              <thead class="border-b theme-border">
                 <tr>
                   <th v-for="h in ['Componente', 'Categoría', 'Especificación', 'Gama', 'Precio', 'Stock', 'Estado', 'Acciones']"
-                    :key="h" class="px-6 py-3 text-left text-xs text-text-muted uppercase tracking-wider font-medium">
+                    :key="h" class="px-6 py-3 text-left text-xs theme-text-muted uppercase tracking-wider font-medium">
                     {{ h }}
                   </th>
                 </tr>
               </thead>
               <tbody class="divide-y divide-dark-border">
                 <tr v-if="filteredComponents.length === 0">
-                  <td colspan="8" class="px-6 py-12 text-center text-text-muted text-sm">Sin componentes</td>
+                  <td colspan="8" class="px-6 py-12 text-center theme-text-muted text-sm">Sin componentes</td>
                 </tr>
-                <tr v-for="comp in filteredComponents" :key="comp.id" class="hover:bg-dark-bg/50 transition-colors">
-                  <td class="px-6 py-4 text-sm font-medium text-text-primary">{{ comp.nombre }}</td>
+                <tr v-for="comp in filteredComponents" :key="comp.id" class="hover:bg-gray-100 dark:bg-dark-bg/50 transition-colors">
+                  <td class="px-6 py-4 text-sm font-medium theme-text">{{ comp.nombre }}</td>
                   <td class="px-6 py-4">
                     <span class="badge text-xs bg-accent/10 text-accent border border-accent/20">{{ comp.categoria }}</span>
                   </td>
-                  <td class="px-6 py-4 text-sm text-text-muted max-w-48 truncate">{{ comp.especificacion }}</td>
+                  <td class="px-6 py-4 text-sm theme-text-muted max-w-48 truncate">{{ comp.especificacion }}</td>
                   <td class="px-6 py-4">
                     <span class="text-xs px-2 py-0.5 rounded-full font-medium border" :class="tierStyles[comp.gama]">
                       {{ comp.gama }}
@@ -156,11 +200,17 @@
                   </td>
                   <td class="px-6 py-4 text-sm text-accent font-mono font-semibold">${{ Number(comp.precio).toLocaleString() }}</td>
                   <td class="px-6 py-4">
-                    <div class="flex items-center gap-2">
-                      <span class="text-sm font-mono font-medium" :class="comp.stock <= 3 ? 'text-yellow-400' : 'text-text-primary'">
-                        {{ comp.stock }}
-                      </span>
-                      <span class="text-xs text-text-muted">unid.</span>
+                    <div class="flex items-center gap-1.5">
+                      <button @click="quickAdjust(comp, 'decrementar', stockQty[comp.id] ?? 1)" :disabled="comp.stock < (stockQty[comp.id] ?? 1) || comp._adjusting" class="w-7 h-7 rounded-lg border theme-border theme-bg theme-text-muted hover:text-red-400 hover:border-red-500/40 transition-colors flex items-center justify-center text-sm font-bold disabled:opacity-30 disabled:cursor-not-allowed">−</button>
+                      <input
+                        type="number"
+                        :value="stockQty[comp.id] ?? 1"
+                        @input="stockQty[comp.id] = Math.max(1, parseInt($event.target.value) || 1)"
+                        min="1"
+                        class="w-12 h-7 theme-bg border theme-border rounded-lg text-center text-xs font-mono theme-text focus:outline-none focus:border-accent transition-colors [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                      />
+                      <button @click="quickAdjust(comp, 'incrementar', stockQty[comp.id] ?? 1)" :disabled="comp._adjusting" class="w-7 h-7 rounded-lg border theme-border theme-bg theme-text-muted hover:text-green-400 hover:border-green-500/40 transition-colors flex items-center justify-center text-sm font-bold disabled:opacity-30 disabled:cursor-not-allowed">+</button>
+                      <span class="text-sm font-mono font-semibold ml-1.5" :class="comp.stock <= 3 ? 'text-yellow-400' : 'text-accent'">{{ comp.stock }}</span>
                     </div>
                   </td>
                   <td class="px-6 py-4">
@@ -175,8 +225,8 @@
                   </td>
                   <td class="px-6 py-4">
                     <div class="flex items-center gap-2">
-                      <button @click="openEditComp(comp)" class="text-xs text-text-muted hover:text-yellow-400 px-2 py-1 rounded hover:bg-yellow-400/10 transition-colors">Editar</button>
-                      <button @click="openDeleteComp(comp)" class="text-xs text-text-muted hover:text-red-400 px-2 py-1 rounded hover:bg-red-400/10 transition-colors">Eliminar</button>
+                      <button @click="openEditComp(comp)" class="text-xs theme-text-muted hover:text-yellow-400 px-2 py-1 rounded hover:bg-yellow-400/10 transition-colors">Editar</button>
+                      <button @click="openDeleteComp(comp)" class="text-xs theme-text-muted hover:text-red-400 px-2 py-1 rounded hover:bg-red-400/10 transition-colors">Eliminar</button>
                     </div>
                   </td>
                 </tr>
@@ -195,108 +245,58 @@
 
         <div class="flex items-center justify-between mb-6">
           <div>
-            <h2 class="text-lg font-bold text-text-primary">Añadir componente</h2>
-            <p class="text-xs text-text-muted mt-0.5">Agrega un nuevo producto a tu bodega</p>
+            <h2 class="text-lg font-bold theme-text">Añadir componente al inventario</h2>
+            <p class="text-xs theme-text-muted mt-0.5">Selecciona un componente del catálogo maestro</p>
           </div>
-          <button @click="closeAddModal" class="text-text-muted hover:text-text-primary transition-colors text-2xl leading-none w-8 h-8 flex items-center justify-center rounded-lg hover:bg-dark-bg">×</button>
+          <button @click="closeAddModal" class="theme-text-muted hover:theme-text transition-colors text-2xl leading-none w-8 h-8 flex items-center justify-center rounded-lg hover:theme-bg">×</button>
         </div>
 
         <div class="space-y-5">
 
-          <!-- Select buscable de producto -->
+          <!-- Select buscable de producto maestro -->
           <div>
-            <label class="block text-sm font-medium text-text-primary mb-2">Producto</label>
+            <label class="block text-sm font-medium theme-text mb-2">Componente maestro</label>
             <div class="relative">
               <input
                 v-model="productoSearch"
                 @input="showProductoDropdown = true"
                 @focus="showProductoDropdown = true"
                 type="text"
-                placeholder="Buscar producto del catálogo..."
-                class="w-full bg-dark-bg border border-dark-border rounded-lg px-4 py-3 text-sm text-text-primary placeholder-text-muted focus:outline-none focus:border-accent transition-colors"
-                :class="{ 'border-accent': newComp.producto_id }"
+                placeholder="Buscar componente (ej: Ryzen 5)..."
+                class="w-full theme-bg border theme-border rounded-lg px-4 py-3 text-sm theme-text placeholder-text-muted focus:outline-none focus:border-accent transition-colors"
+                :class="{ 'border-accent': newComp.master_component_id }"
                 autocomplete="off"
               />
               <!-- Dropdown -->
               <div
                 v-if="showProductoDropdown && productosFiltrados.length > 0"
-                class="absolute top-full left-0 right-0 mt-1 bg-dark-card border border-dark-border rounded-lg shadow-xl z-20 max-h-52 overflow-y-auto"
+                class="absolute top-full left-0 right-0 mt-1 theme-card border theme-border rounded-lg shadow-xl z-20 max-h-52 overflow-y-auto"
               >
                 <button
                   v-for="prod in productosFiltrados"
                   :key="prod.id"
                   @click="selectProducto(prod)"
-                  class="w-full flex items-center justify-between px-4 py-2.5 text-sm hover:bg-dark-bg transition-colors text-left"
+                  class="w-full flex items-center justify-between px-4 py-2.5 text-sm hover:theme-bg transition-colors text-left"
                 >
-                  <span class="text-text-primary">{{ prod.nombre }}</span>
-                  <span class="text-xs text-text-muted ml-3 flex-shrink-0">{{ prod.categoria }}</span>
+                  <div class="flex-1 overflow-hidden pr-2">
+                    <span class="theme-text block truncate">{{ prod.nombre }}</span>
+                    <span class="text-xs theme-text-muted block mt-0.5 truncate">{{ prod.especificacion }}</span>
+                  </div>
+                  <span class="text-xs text-accent ml-2 flex-shrink-0">{{ prod.categoria }}</span>
                 </button>
               </div>
               <!-- Sin resultados -->
               <div
                 v-if="showProductoDropdown && productoSearch.length > 0 && productosFiltrados.length === 0"
-                class="absolute top-full left-0 right-0 mt-1 bg-dark-card border border-dark-border rounded-lg shadow-xl z-20 px-4 py-3 text-sm text-text-muted"
+                class="absolute top-full left-0 right-0 mt-1 theme-card border theme-border rounded-lg shadow-xl z-20 px-4 py-3 text-sm theme-text-muted"
               >
-                No existe ese producto en el catálogo
+                No se encontraron componentes
               </div>
             </div>
-            <!-- Categoría autocompletada -->
-            <p v-if="newComp.categoria" class="text-xs text-accent mt-1.5 flex items-center gap-1">
-              <span>✓</span> Categoría: {{ newComp.categoria }}
-            </p>
-          </div>
-
-          <!-- Especificación -->
-          <div>
-            <label class="block text-sm font-medium text-text-primary mb-2">Especificación técnica</label>
-            <input
-              v-model="newComp.especificacion"
-              type="text"
-              placeholder="Ej: 6 núcleos / 12 hilos · 3.7GHz · AM4"
-              class="w-full bg-dark-bg border border-dark-border rounded-lg px-4 py-3 text-sm text-text-primary placeholder-text-muted focus:outline-none focus:border-accent transition-colors"
-            />
-          </div>
-
-          <!-- Gama -->
-          <div>
-            <label class="block text-sm font-medium text-text-primary mb-3">Gama del componente</label>
-            <div class="grid grid-cols-3 gap-3">
-              <button
-                v-for="tier in tiers"
-                :key="tier.id"
-                @click="newComp.gama = tier.id"
-                class="flex flex-col items-center gap-2 p-3 rounded-xl border transition-all duration-150"
-                :class="newComp.gama === tier.id
-                  ? `${tier.activeBorder} ${tier.activeBg} ${tier.activeText}`
-                  : 'border-dark-border text-text-muted hover:border-accent/40 hover:text-text-primary'"
-              >
-                <span class="text-xl">{{ tier.icon }}</span>
-                <span class="text-xs font-semibold">{{ tier.label }}</span>
-                <span class="text-xs opacity-70 text-center leading-tight">{{ tier.desc }}</span>
-              </button>
-            </div>
-          </div>
-
-          <!-- Precio y Stock -->
-          <div class="grid grid-cols-2 gap-4">
-            <div>
-              <label class="block text-sm font-medium text-text-primary mb-2">Precio ($)</label>
-              <input
-                v-model="newComp.precio"
-                type="number"
-                placeholder="189000"
-                class="w-full bg-dark-bg border border-dark-border rounded-lg px-4 py-3 text-sm text-text-primary placeholder-text-muted focus:outline-none focus:border-accent transition-colors"
-              />
-            </div>
-            <div>
-              <label class="block text-sm font-medium text-text-primary mb-2">Stock inicial</label>
-              <input
-                v-model="newComp.stock"
-                type="number"
-                placeholder="10"
-                min="0"
-                class="w-full bg-dark-bg border border-dark-border rounded-lg px-4 py-3 text-sm text-text-primary placeholder-text-muted focus:outline-none focus:border-accent transition-colors"
-              />
+            <!-- Selección actual -->
+            <div v-if="newComp.master_component_id" class="mt-2 p-3 theme-card border theme-border rounded-lg flex flex-col gap-1">
+              <span class="text-sm font-medium theme-text flex items-center gap-2"><span class="text-accent text-xs">✓</span> {{ newComp.nombre }}</span>
+              <span class="text-xs theme-text-muted">{{ newComp.especificacion }}</span>
             </div>
           </div>
 
@@ -319,46 +319,26 @@
 
         <div class="flex items-center justify-between mb-6">
           <div>
-            <h2 class="text-lg font-bold text-text-primary">Editar componente</h2>
-            <p class="text-xs text-text-muted mt-0.5">{{ editingComp.nombre }}</p>
+            <h2 class="text-lg font-bold theme-text">Editar componente</h2>
+            <p class="text-xs theme-text-muted mt-0.5">{{ editingComp.nombre }}</p>
           </div>
-          <button @click="showEditModal = false" class="text-text-muted hover:text-text-primary transition-colors text-2xl leading-none w-8 h-8 flex items-center justify-center rounded-lg hover:bg-dark-bg">×</button>
+          <button @click="showEditModal = false" class="theme-text-muted hover:theme-text transition-colors text-2xl leading-none w-8 h-8 flex items-center justify-center rounded-lg hover:theme-bg">×</button>
         </div>
 
         <div class="space-y-5">
-          <div>
-            <label class="block text-sm font-medium text-text-primary mb-2">Especificación técnica</label>
-            <input v-model="editingComp.especificacion" type="text" class="w-full bg-dark-bg border border-dark-border rounded-lg px-4 py-3 text-sm text-text-primary focus:outline-none focus:border-accent transition-colors" />
-          </div>
-
           <div class="grid grid-cols-2 gap-4">
             <div>
-              <label class="block text-sm font-medium text-text-primary mb-2">Precio ($)</label>
-              <input v-model="editingComp.precio" type="number" class="w-full bg-dark-bg border border-dark-border rounded-lg px-4 py-3 text-sm text-text-primary focus:outline-none focus:border-accent transition-colors" />
+              <label class="block text-sm font-medium theme-text mb-2">Precio ($)</label>
+              <input v-model="editingComp.precio" type="number" class="w-full theme-bg border theme-border rounded-lg px-4 py-3 text-sm theme-text focus:outline-none focus:border-accent transition-colors" />
             </div>
             <div>
-              <label class="block text-sm font-medium text-text-primary mb-2">Stock</label>
-              <input v-model="editingComp.stock" type="number" min="0" class="w-full bg-dark-bg border border-dark-border rounded-lg px-4 py-3 text-sm text-text-primary focus:outline-none focus:border-accent transition-colors" />
+              <label class="block text-sm font-medium theme-text mb-2">Stock</label>
+              <input v-model="editingComp.stock" type="number" min="0" class="w-full theme-bg border theme-border rounded-lg px-4 py-3 text-sm theme-text focus:outline-none focus:border-accent transition-colors" />
             </div>
           </div>
-
-          <div>
-            <label class="block text-sm font-medium text-text-primary mb-3">Gama del componente</label>
-            <div class="grid grid-cols-3 gap-3">
-              <button
-                v-for="tier in tiers"
-                :key="tier.id"
-                @click="editingComp.gama = tier.id"
-                class="flex flex-col items-center gap-2 p-3 rounded-xl border transition-all duration-150"
-                :class="editingComp.gama === tier.id
-                  ? `${tier.activeBorder} ${tier.activeBg} ${tier.activeText}`
-                  : 'border-dark-border text-text-muted hover:border-accent/40 hover:text-text-primary'"
-              >
-                <span class="text-xl">{{ tier.icon }}</span>
-                <span class="text-xs font-semibold">{{ tier.label }}</span>
-                <span class="text-xs opacity-70 text-center leading-tight">{{ tier.desc }}</span>
-              </button>
-            </div>
+          
+          <div class="p-3 bg-accent/5 border border-accent/20 rounded-lg mt-4">
+            <p class="text-xs theme-text-muted">Las especificaciones técnicas solo pueden ser modificadas por un Administrador desde el Catálogo Maestro.</p>
           </div>
 
           <p v-if="editError" class="text-xs text-red-400 bg-red-500/10 border border-red-500/20 rounded-lg px-4 py-2.5">{{ editError }}</p>
@@ -396,11 +376,14 @@
 </template>
 
 <script setup>
+import { useTheme } from '../composables/useTheme'
+const { isDark, toggleTheme } = useTheme()
 import { useRouter } from 'vue-router'
 import { useAuth } from '../composables/useAuth'
+import { useToast } from '../composables/useToast'
 import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
 
-const API = 'http://127.0.0.1:8000/api'
+const API = '/api'
 
 const router = useRouter()
 const { logout, getToken, user } = useAuth()
@@ -442,6 +425,13 @@ const loadingComponents = ref(false)
 const filterSearch = ref('')
 const filterCategory = ref('')
 
+const showAdvancedFilters = ref(false)
+const filterGama = ref('')
+const filterEnfoque = ref('')
+const filterNucleos = ref('')
+const filterHilos = ref('')
+const filterFrecuenciaMin = ref('')
+
 const filteredComponents = computed(() => {
   let result = [...myComponents.value]
   if (filterCategory.value) result = result.filter(c => c.categoria === filterCategory.value)
@@ -449,11 +439,41 @@ const filteredComponents = computed(() => {
     const q = filterSearch.value.toLowerCase()
     result = result.filter(c => c.nombre.toLowerCase().includes(q) || c.especificacion?.toLowerCase().includes(q))
   }
+  if (filterGama.value) result = result.filter(c => c.gama === filterGama.value)
+  if (filterEnfoque.value) result = result.filter(c => c.enfoque_uso === filterEnfoque.value)
+  if (filterNucleos.value) result = result.filter(c => c.nucleos == filterNucleos.value)
+  if (filterHilos.value) result = result.filter(c => c.hilos == filterHilos.value)
+  if (filterFrecuenciaMin.value) result = result.filter(c => c.frecuencia_hz >= Number(filterFrecuenciaMin.value))
   return result
 })
 
 const totalStock = computed(() => myComponents.value.reduce((sum, c) => sum + Number(c.stock), 0))
 const stockAlerts = computed(() => myComponents.value.filter(c => c.stock <= 3))
+
+// ── Ajuste rápido de stock ────────────────────────────────
+const stockQty = ref({})
+
+async function quickAdjust(comp, operacion, cantidad) {
+  comp._adjusting = true
+  try {
+    const res = await fetch(`${API}/componentes/stock`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+      body: JSON.stringify({ id: comp.id, cantidad, operacion })
+    })
+    const data = await res.json()
+    if (!res.ok) {
+      toast.error(data.message ?? 'Error al ajustar stock')
+      return
+    }
+    comp.stock = data.nuevo_stock
+    toast.success(`Stock ${operacion === 'incrementar' ? 'aumentado' : 'reducido'} (${operacion === 'incrementar' ? '+' : '-'}${cantidad})`)
+  } catch (e) {
+    toast.error('Error de conexión')
+  } finally {
+    comp._adjusting = false
+  }
+}
 
 async function fetchComponents() {
   loadingComponents.value = true
@@ -480,6 +500,7 @@ const productosFiltrados = computed(() => {
   const q = productoSearch.value.toLowerCase()
   return catalogo.value.filter(p =>
     p.nombre.toLowerCase().includes(q) ||
+    p.especificacion?.toLowerCase().includes(q) ||
     p.categoria.toLowerCase().includes(q)
   ).slice(0, 10)
 })
@@ -488,16 +509,17 @@ async function fetchCatalogo() {
   try {
     const res = await fetch(`${API}/catalogo`)
     const data = await res.json()
-    if (res.ok) catalogo.value = data.productos
+    if (res.ok) catalogo.value = data.componentes
   } catch (e) {
     console.error(e)
   }
 }
 
 function selectProducto(prod) {
-  newComp.value.producto_id = prod.id
-  newComp.value.categoria   = prod.categoria
-  productoSearch.value      = prod.nombre
+  newComp.value.master_component_id = prod.id
+  newComp.value.nombre = prod.nombre
+  newComp.value.especificacion = prod.especificacion
+  productoSearch.value = prod.nombre
   showProductoDropdown.value = false
 }
 
@@ -510,10 +532,10 @@ function handleClickOutside(e) {
 const showAddModal = ref(false)
 const addError = ref('')
 const savingAdd = ref(false)
-const newComp = ref({ producto_id: null, categoria: '', especificacion: '', gama: 'media', precio: '', stock: '' })
+const newComp = ref({ master_component_id: null, nombre: '', especificacion: '', precio: '', stock: '' })
 
 function openAddModal() {
-  newComp.value = { producto_id: null, categoria: '', especificacion: '', gama: 'media', precio: '', stock: '' }
+  newComp.value = { master_component_id: null, nombre: '', especificacion: '', precio: '', stock: '' }
   productoSearch.value = ''
   addError.value = ''
   showAddModal.value = true
@@ -526,10 +548,11 @@ function closeAddModal() {
 
 async function saveNewComp() {
   addError.value = ''
-  if (!newComp.value.producto_id) return addError.value = 'Selecciona un producto del catálogo'
-  if (!newComp.value.gama)        return addError.value = 'Selecciona una gama'
+  if (!newComp.value.master_component_id) return addError.value = 'Selecciona un componente del catálogo'
   if (!newComp.value.precio || Number(newComp.value.precio) <= 0) return addError.value = 'El precio debe ser mayor a 0'
-  if (newComp.value.stock !== '' && Number(newComp.value.stock) < 0) return addError.value = 'El stock no puede ser negativo'
+  if (newComp.value.stock === '' || newComp.value.stock === null || newComp.value.stock === undefined) return addError.value = 'El stock inicial es obligatorio'
+  if (!Number.isInteger(Number(newComp.value.stock))) return addError.value = 'El stock debe ser un número entero sin decimales'
+  if (Number(newComp.value.stock) < 0) return addError.value = 'El stock no puede ser negativo'
 
   savingAdd.value = true
   try {
@@ -537,19 +560,23 @@ async function saveNewComp() {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getToken()}` },
       body: JSON.stringify({
-        producto_id:    newComp.value.producto_id,
-        especificacion: newComp.value.especificacion,
-        gama:           newComp.value.gama,
-        precio:         newComp.value.precio,
-        stock:          newComp.value.stock || 0,
+        master_component_id: newComp.value.master_component_id,
+        precio:              newComp.value.precio,
+        stock:               Number(newComp.value.stock),
       })
     })
     const data = await res.json()
-    if (!res.ok) return addError.value = data.error ?? 'Error al guardar'
+    if (!res.ok) {
+      const msg = data.message ?? 'Error al guardar el componente'
+      toast.error(msg)
+      return addError.value = msg
+    }
     await fetchComponents()
     closeAddModal()
+    toast.success('Componente añadido exitosamente')
   } catch (e) {
-    addError.value = 'Error de conexión'
+    toast.error('Error de conexión con el servidor')
+    addError.value = 'Error de conexión con el servidor'
   } finally {
     savingAdd.value = false
   }
@@ -573,6 +600,9 @@ async function saveEditComp() {
   if (editingComp.value.precio !== undefined && Number(editingComp.value.precio) <= 0) {
     return editError.value = 'El precio debe ser mayor a 0'
   }
+  if (editingComp.value.stock !== undefined && editingComp.value.stock !== '' && !Number.isInteger(Number(editingComp.value.stock))) {
+    return editError.value = 'El stock debe ser un número entero sin decimales'
+  }
   if (editingComp.value.stock !== undefined && Number(editingComp.value.stock) < 0) {
     return editError.value = 'El stock no puede ser negativo'
   }
@@ -584,18 +614,22 @@ async function saveEditComp() {
       headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getToken()}` },
       body: JSON.stringify({
         id:             editingComp.value.id,
-        especificacion: editingComp.value.especificacion,
-        gama:           editingComp.value.gama,
         precio:         editingComp.value.precio,
         stock:          editingComp.value.stock,
       })
     })
     const data = await res.json()
-    if (!res.ok) return editError.value = data.error ?? 'Error al guardar'
+    if (!res.ok) {
+      const msg = data.message ?? 'Error al guardar los cambios'
+      toast.error(msg)
+      return editError.value = msg
+    }
     await fetchComponents()
     showEditModal.value = false
+    toast.success('Componente actualizado exitosamente')
   } catch (e) {
-    editError.value = 'Error de conexión'
+    toast.error('Error de conexión con el servidor')
+    editError.value = 'Error de conexión con el servidor'
   } finally {
     savingEdit.value = false
   }
@@ -646,4 +680,18 @@ onMounted(() => {
 onBeforeUnmount(() => {
   document.removeEventListener('click', handleClickOutside)
 })
+
+// Bloquear caracteres no numéricos en inputs de precio (permite punto decimal)
+function blockInvalidChars(e) {
+  if (['e', 'E', '+', '-'].includes(e.key)) {
+    e.preventDefault()
+  }
+}
+
+// Bloquear caracteres no numéricos en inputs de stock (solo enteros)
+function blockInvalidCharsStock(e) {
+  if (['e', 'E', '+', '-', '.', ','].includes(e.key)) {
+    e.preventDefault()
+  }
+}
 </script>

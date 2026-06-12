@@ -30,4 +30,33 @@ class CatalogoController extends Controller
             'productos' => $productos
         ]);
     }
+
+    /**
+     * Crear un nuevo producto base (catálogo)
+     */
+    public function store(Request $request)
+    {
+        $user = $request->user();
+        if (!$user || !in_array($user->rol, ['admin', 'superadmin'])) {
+            return response()->json(['success' => false, 'message' => 'No autorizado'], 403);
+        }
+
+        $request->validate([
+            'nombre' => 'required|string|max:255',
+            'categoria' => 'required|string|max:100'
+        ]);
+
+        $id = DB::table('productos_catalogo')->insertGetId([
+            'nombre' => $request->input('nombre'),
+            'categoria' => $request->input('categoria')
+        ]);
+
+        $producto = DB::table('productos_catalogo')->where('id', $id)->first();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Producto base creado',
+            'producto' => $producto
+        ], 201);
+    }
 }
