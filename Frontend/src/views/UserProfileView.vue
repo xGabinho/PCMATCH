@@ -1,8 +1,8 @@
 <template>
-  <main class="min-h-screen bg-dark-bg">
+  <main class="min-h-screen theme-bg">
 
     <!-- Header Banner -->
-    <section class="relative overflow-hidden border-b border-dark-border">
+    <section class="relative overflow-hidden border-b theme-border">
       <div class="absolute inset-0 opacity-[0.03]"
         style="background-image: linear-gradient(#3B82F6 1px, transparent 1px), linear-gradient(90deg, #3B82F6 1px, transparent 1px); background-size: 60px 60px;">
       </div>
@@ -15,8 +15,8 @@
             {{ initials }}
           </div>
           <div>
-            <h1 class="text-2xl font-bold text-text-primary tracking-tight">Mi Perfil</h1>
-            <p class="text-text-muted text-sm mt-1">
+            <h1 class="text-2xl font-bold theme-text tracking-tight">Mi Perfil</h1>
+            <p class="theme-text-muted text-sm mt-1">
               Gestiona tu información personal · <span class="text-accent capitalize">{{ rolLabel }}</span>
             </p>
           </div>
@@ -26,7 +26,7 @@
 
     <!-- Loading State -->
     <div v-if="loadingProfile" class="max-w-3xl mx-auto px-6 py-20 text-center">
-      <div class="inline-flex items-center gap-3 text-text-muted text-sm">
+      <div class="inline-flex items-center gap-3 theme-text-muted text-sm">
         <svg class="animate-spin h-5 w-5 text-accent" viewBox="0 0 24 24" fill="none">
           <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
           <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
@@ -40,21 +40,21 @@
       <form @submit.prevent="handleSave" class="space-y-8">
 
         <!-- Personal Info Card -->
-        <div class="card-dark rounded-2xl p-6 md:p-8">
-          <h2 class="text-lg font-semibold text-text-primary mb-6 flex items-center gap-2">
+        <div class="card-dark rounded-2xl p-5 md:p-8">
+          <h2 class="text-lg font-semibold theme-text mb-6 flex items-center gap-2">
             <span class="text-accent">●</span> Información Personal
           </h2>
 
           <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
             <!-- Nombre -->
             <div>
-              <label for="profile-nombre" class="block text-sm font-medium text-text-muted mb-2">Nombre</label>
+              <label for="profile-nombre" class="block text-sm font-medium theme-text-muted mb-2">Nombre</label>
               <input
                 id="profile-nombre"
                 v-model="form.nombre"
                 type="text"
-                class="w-full bg-dark-bg border rounded-xl px-4 py-3 text-sm text-text-primary placeholder-text-muted focus:outline-none transition-colors"
-                :class="fieldErrors.nombre ? 'border-red-500/50 focus:border-red-500' : 'border-dark-border focus:border-accent'"
+                class="theme-input"
+                :class="fieldErrors.nombre ? 'border-red-500 focus:border-red-500' : ''"
                 placeholder="Tu nombre"
               />
               <p v-if="fieldErrors.nombre" class="text-red-400 text-xs mt-1.5">{{ fieldErrors.nombre[0] }}</p>
@@ -62,25 +62,25 @@
 
             <!-- Apellido (solo Usuario) -->
             <div v-if="tipo === 'usuario'">
-              <label for="profile-apellido" class="block text-sm font-medium text-text-muted mb-2">Apellido</label>
+              <label for="profile-apellido" class="block text-sm font-medium theme-text-muted mb-2">Apellido</label>
               <input
                 id="profile-apellido"
                 v-model="form.apellido"
                 type="text"
-                class="w-full bg-dark-bg border border-dark-border rounded-xl px-4 py-3 text-sm text-text-primary placeholder-text-muted focus:outline-none focus:border-accent transition-colors"
+                class="theme-input"
                 placeholder="Tu apellido"
               />
             </div>
 
             <!-- Correo -->
             <div>
-              <label for="profile-correo" class="block text-sm font-medium text-text-muted mb-2">Correo electrónico</label>
+              <label for="profile-correo" class="block text-sm font-medium theme-text-muted mb-2">Correo electrónico</label>
               <input
                 id="profile-correo"
                 v-model="form.correo"
                 type="email"
-                class="w-full bg-dark-bg border rounded-xl px-4 py-3 text-sm text-text-primary placeholder-text-muted focus:outline-none transition-colors"
-                :class="fieldErrors.correo ? 'border-red-500/50 focus:border-red-500' : 'border-dark-border focus:border-accent'"
+                class="theme-input"
+                :class="fieldErrors.correo ? 'border-red-500 focus:border-red-500' : ''"
                 placeholder="correo@ejemplo.com"
               />
               <p v-if="fieldErrors.correo" class="text-red-400 text-xs mt-1.5">{{ fieldErrors.correo[0] }}</p>
@@ -88,12 +88,12 @@
 
             <!-- Teléfono (Usuario o Bodega) -->
             <div v-if="tipo !== 'proveedor'">
-              <label for="profile-telefono" class="block text-sm font-medium text-text-muted mb-2">Teléfono</label>
+              <label for="profile-telefono" class="block text-sm font-medium theme-text-muted mb-2">Teléfono</label>
               <input
                 id="profile-telefono"
                 v-model="form.telefono"
                 type="text"
-                class="w-full bg-dark-bg border border-dark-border rounded-xl px-4 py-3 text-sm text-text-primary placeholder-text-muted focus:outline-none focus:border-accent transition-colors"
+                class="theme-input"
                 placeholder="+57 300 123 4567"
               />
             </div>
@@ -101,17 +101,17 @@
         </div>
 
         <!-- Password Change Card -->
-        <div class="card-dark rounded-2xl p-6 md:p-8">
+        <div class="card-dark rounded-2xl p-5 md:p-8">
           <button
             type="button"
             @click="showPasswordSection = !showPasswordSection"
             class="w-full flex items-center justify-between text-left group"
           >
-            <h2 class="text-lg font-semibold text-text-primary flex items-center gap-2">
+            <h2 class="text-lg font-semibold theme-text flex items-center gap-2">
               <span class="text-accent">●</span> Cambiar Contraseña
             </h2>
             <svg
-              class="w-5 h-5 text-text-muted transition-transform duration-200"
+              class="w-5 h-5 theme-text-muted transition-transform duration-200"
               :class="{ 'rotate-180': showPasswordSection }"
               fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"
             >
@@ -128,17 +128,17 @@
             leave-to-class="opacity-0 max-h-0"
           >
             <div v-if="showPasswordSection" class="mt-6 space-y-5 overflow-hidden">
-              <p class="text-text-muted text-sm">Deja estos campos vacíos si no deseas cambiar tu contraseña.</p>
+              <p class="theme-text-muted text-sm">Deja estos campos vacíos si no deseas cambiar tu contraseña.</p>
 
               <!-- Contraseña actual -->
               <div>
-                <label for="profile-password-actual" class="block text-sm font-medium text-text-muted mb-2">Contraseña actual</label>
+                <label for="profile-password-actual" class="block text-sm font-medium theme-text-muted mb-2">Contraseña actual</label>
                 <input
                   id="profile-password-actual"
                   v-model="form.password_actual"
                   type="password"
-                  class="w-full bg-dark-bg border rounded-xl px-4 py-3 text-sm text-text-primary placeholder-text-muted focus:outline-none transition-colors"
-                  :class="fieldErrors.password_actual ? 'border-red-500/50 focus:border-red-500' : 'border-dark-border focus:border-accent'"
+                  class="theme-input"
+                  :class="fieldErrors.password_actual ? 'border-red-500 focus:border-red-500' : ''"
                   placeholder="••••••••"
                   autocomplete="current-password"
                 />
@@ -148,13 +148,13 @@
               <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
                 <!-- Nueva contraseña -->
                 <div>
-                  <label for="profile-password-new" class="block text-sm font-medium text-text-muted mb-2">Nueva contraseña</label>
+                  <label for="profile-password-new" class="block text-sm font-medium theme-text-muted mb-2">Nueva contraseña</label>
                   <input
                     id="profile-password-new"
                     v-model="form.password"
                     type="password"
-                    class="w-full bg-dark-bg border rounded-xl px-4 py-3 text-sm text-text-primary placeholder-text-muted focus:outline-none transition-colors"
-                    :class="fieldErrors.password ? 'border-red-500/50 focus:border-red-500' : 'border-dark-border focus:border-accent'"
+                    class="theme-input"
+                    :class="fieldErrors.password ? 'border-red-500 focus:border-red-500' : ''"
                     placeholder="Mínimo 8 caracteres"
                     autocomplete="new-password"
                   />
@@ -163,13 +163,13 @@
 
                 <!-- Confirmar contraseña -->
                 <div>
-                  <label for="profile-password-confirm" class="block text-sm font-medium text-text-muted mb-2">Confirmar contraseña</label>
+                  <label for="profile-password-confirm" class="block text-sm font-medium theme-text-muted mb-2">Confirmar contraseña</label>
                   <input
                     id="profile-password-confirm"
                     v-model="form.password_confirm"
                     type="password"
-                    class="w-full bg-dark-bg border rounded-xl px-4 py-3 text-sm text-text-primary placeholder-text-muted focus:outline-none transition-colors"
-                    :class="passwordMismatch ? 'border-red-500/50 focus:border-red-500' : 'border-dark-border focus:border-accent'"
+                    class="theme-input"
+                    :class="passwordMismatch ? 'border-red-500 focus:border-red-500' : ''"
                     placeholder="Repite la contraseña"
                     autocomplete="new-password"
                   />
@@ -181,17 +181,17 @@
         </div>
 
         <!-- Actions -->
-        <div class="flex items-center justify-between pt-2">
+        <div class="flex flex-col-reverse sm:flex-row items-center justify-between gap-4 pt-2 pb-10">
           <router-link
             :to="backRoute"
-            class="btn-ghost text-sm px-5 py-2.5"
+            class="btn-ghost text-sm px-5 py-2.5 w-full sm:w-auto text-center"
           >
             ← Volver
           </router-link>
 
           <button
             type="submit"
-            class="btn-primary text-sm px-8 py-3 flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+            class="btn-primary text-sm px-8 py-3 w-full sm:w-auto flex justify-center items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
             :disabled="saving || passwordMismatch"
           >
             <svg v-if="saving" class="animate-spin h-4 w-4" viewBox="0 0 24 24" fill="none">

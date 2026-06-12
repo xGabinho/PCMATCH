@@ -512,9 +512,12 @@ class ComponenteController extends Controller
                         $viejoLabel = $viejo ? 'Activo' : 'Inactivo';
                         $nuevoLabel = $nuevo ? 'Activo' : 'Inactivo';
                         $cambios[] = "{$label}: {$viejoLabel} → {$nuevoLabel}";
+                        $data[$campo] = (bool) $nuevo; // Explicitly cast to boolean to avoid PostgreSQL integer error
                     } else {
                         $cambios[] = "{$label}: '{$viejo}' → '{$nuevo}'";
                     }
+                } else if ($campo === 'activo') {
+                    $data[$campo] = (bool) $nuevo; // Make sure it's boolean even if unchanged, if included in data
                 }
             }
         }

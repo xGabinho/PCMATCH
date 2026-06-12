@@ -39,11 +39,11 @@ class ProveedorController extends Controller
             ->groupBy('p.id', 'p.nombre', 'p.correo', 'p.activo', 'p.created_at', 'p.identificacion_legal', 'p.razon_social', 'p.estado_aprobacion', 'p.documento_soporte')
             ->select('p.id', 'p.nombre', 'p.correo', 'p.activo', 'p.created_at', 'p.identificacion_legal', 'p.razon_social', 'p.estado_aprobacion', 'p.documento_soporte', DB::raw('COUNT(b.id) AS total_bodegas'))
             ->orderBy('p.created_at', 'DESC')
-            ->get();
+            ->paginate(15);
 
         // Convert the relative path of documents to full URLs
-        foreach ($proveedores as $prov) {
-            if ($prov->documento_soporte) {
+        foreach ($proveedores->items() as $prov) {
+            if (isset($prov->documento_soporte) && $prov->documento_soporte) {
                 $prov->documento_soporte_url = url('storage/' . $prov->documento_soporte);
             } else {
                 $prov->documento_soporte_url = null;

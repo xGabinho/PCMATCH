@@ -1,5 +1,5 @@
 <template>
-  <div class="flex min-h-[calc(100vh-4rem)]">
+  <div class="flex flex-col lg:flex-row min-h-[calc(100vh-4rem)] theme-bg relative">
 
     <!-- Main Content -->
     <div class="flex-1 overflow-auto">
@@ -21,7 +21,7 @@
                   ? 'bg-green-500/10 text-green-400 border border-green-500/20'
                   : index < activeStep
                     ? 'bg-red-500/10 text-red-400 border border-red-500/20'
-                    : 'text-text-muted border border-dark-border hover:border-accent/40 hover:text-text-primary'"
+                    : 'theme-text-muted border theme-border hover:border-accent/40 hover:text-accent'"
             >
               <span v-if="selectedItems[steps[index].id] && index !== activeStep" class="text-xs">✓</span>
               <span v-else-if="!selectedItems[steps[index].id] && index < activeStep" class="text-xs">✗</span>
@@ -29,110 +29,110 @@
               <span class="hidden sm:inline">{{ step.label }}</span>
               <span class="sm:hidden">{{ step.short }}</span>
             </button>
-            <span v-if="index < steps.length - 1" class="text-dark-border text-sm flex-shrink-0">→</span>
+            <span v-if="index < steps.length - 1" class="theme-text-muted text-sm flex-shrink-0">→</span>
           </div>
         </div>
 
         <!-- Step Header -->
-        <div class="flex items-start justify-between gap-4 mb-6">
+        <div class="flex flex-col sm:flex-row sm:items-start justify-between gap-4 mb-6">
           <div>
             <div class="flex items-center gap-3 mb-1">
               <span class="text-2xl">{{ steps[activeStep].icon }}</span>
-              <h1 class="text-2xl font-bold text-text-primary">{{ steps[activeStep].label }}</h1>
-              <span v-if="selectedItems[steps[activeStep].id]" class="badge text-xs bg-green-500/10 text-green-400 border border-green-500/20">
+              <h1 class="text-2xl font-bold theme-text">{{ steps[activeStep].label }}</h1>
+              <span v-if="selectedItems[steps[activeStep].id]" class="badge bg-green-500/10 text-green-600 dark:text-green-400 border border-green-500/20">
                 ✓ Seleccionado
               </span>
             </div>
-            <p class="text-text-muted text-sm">{{ steps[activeStep].hint }}</p>
+            <p class="theme-text-muted text-sm">{{ steps[activeStep].hint }}</p>
           </div>
-          <span class="text-xs text-text-muted flex-shrink-0 mt-1">
+          <span class="text-xs theme-text-muted flex-shrink-0 sm:mt-1">
             Paso {{ activeStep + 1 }} de {{ steps.length }}
           </span>
         </div>
 
         <!-- Search + Sort + Filters -->
         <div class="flex flex-col gap-3 mb-6">
-          <div class="flex items-center gap-3">
+          <div class="flex flex-col sm:flex-row gap-3">
             <div class="relative flex-1">
-              <span class="absolute left-3.5 top-1/2 -translate-y-1/2 text-text-muted text-sm">🔍</span>
+              <span class="absolute left-3.5 top-1/2 -translate-y-1/2 theme-text-muted text-sm">🔍</span>
               <input
                 v-model="stepSearch"
                 type="text"
                 :placeholder="`Buscar ${steps[activeStep].label.toLowerCase()}...`"
-                class="w-full bg-dark-card border border-dark-border rounded-xl pl-10 pr-4 py-2.5 text-sm text-text-primary placeholder-text-muted focus:outline-none focus:border-accent transition-colors"
+                class="theme-input pl-10"
               />
               <button
                 v-if="stepSearch"
                 @click="stepSearch = ''"
-                class="absolute right-3.5 top-1/2 -translate-y-1/2 text-text-muted hover:text-text-primary text-lg leading-none"
+                class="absolute right-3.5 top-1/2 -translate-y-1/2 theme-text-muted hover:theme-text text-lg leading-none"
               >×</button>
             </div>
             <select
               v-model="stepSort"
-              class="bg-dark-card border border-dark-border rounded-xl px-4 py-2.5 text-sm text-text-primary focus:outline-none focus:border-accent transition-colors flex-shrink-0"
+              class="theme-card border theme-border shadow-sm rounded-xl px-4 py-3 text-sm theme-text focus:outline-none focus:border-accent transition-colors flex-shrink-0"
             >
-              <option value="default" class="bg-dark-bg">Relevancia</option>
-              <option value="price-asc" class="bg-dark-bg">Precio: menor a mayor</option>
-              <option value="price-desc" class="bg-dark-bg">Precio: mayor a menor</option>
-              <option value="name" class="bg-dark-bg">Nombre A-Z</option>
+              <option value="default" class="theme-bg">Relevancia</option>
+              <option value="price-asc" class="theme-bg">Precio: menor a mayor</option>
+              <option value="price-desc" class="theme-bg">Precio: mayor a menor</option>
+              <option value="name" class="theme-bg">Nombre A-Z</option>
             </select>
           </div>
           
-          <div class="flex items-center gap-3 flex-wrap">
-            <select v-model="filterGama" class="bg-dark-card border border-dark-border rounded-xl px-4 py-2.5 text-sm text-text-primary focus:outline-none focus:border-accent transition-colors">
+          <div class="flex flex-col sm:flex-row gap-3 flex-wrap">
+            <select v-model="filterGama" class="theme-card border theme-border shadow-sm rounded-xl px-4 py-3 text-sm theme-text focus:outline-none focus:border-accent transition-colors">
               <option value="">Cualquier Gama</option>
               <option value="alta">Gama Alta</option>
               <option value="media">Gama Media</option>
               <option value="baja">Gama Baja</option>
             </select>
-            <select v-model="filterEnfoque" class="bg-dark-card border border-dark-border rounded-xl px-4 py-2.5 text-sm text-text-primary focus:outline-none focus:border-accent transition-colors">
+            <select v-model="filterEnfoque" class="theme-card border theme-border shadow-sm rounded-xl px-4 py-3 text-sm theme-text focus:outline-none focus:border-accent transition-colors">
               <option value="">Cualquier Enfoque</option>
               <option value="gaming">Gaming</option>
               <option value="diseño">Diseño</option>
               <option value="oficina">Oficina</option>
               <option value="estudio">Estudio</option>
             </select>
-            <button @click="showAdvancedFilters = !showAdvancedFilters" class="btn-secondary text-sm px-4 py-2.5 flex items-center gap-2">
+            <button @click="showAdvancedFilters = !showAdvancedFilters" class="btn-secondary text-sm px-4 py-3 flex items-center justify-center gap-2">
               <span>⚙️</span> Más filtros
             </button>
-            <button v-if="filterGama || filterEnfoque || filterNucleos || filterHilos || filterFrecuenciaMin" @click="clearFilters" class="text-sm text-text-muted hover:text-accent transition-colors">
+            <button v-if="filterGama || filterEnfoque || filterNucleos || filterHilos || filterFrecuenciaMin" @click="clearFilters" class="text-sm theme-text-muted hover:text-accent transition-colors text-center w-full sm:w-auto">
               Limpiar filtros
             </button>
           </div>
 
           <!-- Advanced Filters Panel -->
-          <div v-if="showAdvancedFilters" class="p-4 bg-dark-card border border-dark-border rounded-xl grid grid-cols-1 md:grid-cols-3 gap-4 animate-fade-in mt-2">
+          <div v-if="showAdvancedFilters" class="p-4 theme-card border theme-border shadow-sm rounded-xl grid grid-cols-1 md:grid-cols-3 gap-4 animate-fade-in mt-2">
             <div>
-              <label class="block text-xs font-medium text-text-muted mb-1.5">Mínimo de Núcleos</label>
-              <input v-model="filterNucleos" type="number" min="1" placeholder="Ej: 6" class="w-full bg-dark-bg border border-dark-border rounded-lg px-3 py-2 text-sm text-text-primary focus:outline-none focus:border-accent transition-colors" />
+              <label class="block text-xs font-medium theme-text-muted mb-1.5">Mínimo de Núcleos</label>
+              <input v-model="filterNucleos" type="number" min="1" placeholder="Ej: 6" class="theme-input" />
             </div>
             <div>
-              <label class="block text-xs font-medium text-text-muted mb-1.5">Mínimo de Hilos</label>
-              <input v-model="filterHilos" type="number" min="1" placeholder="Ej: 12" class="w-full bg-dark-bg border border-dark-border rounded-lg px-3 py-2 text-sm text-text-primary focus:outline-none focus:border-accent transition-colors" />
+              <label class="block text-xs font-medium theme-text-muted mb-1.5">Mínimo de Hilos</label>
+              <input v-model="filterHilos" type="number" min="1" placeholder="Ej: 12" class="theme-input" />
             </div>
             <div>
-              <label class="block text-xs font-medium text-text-muted mb-1.5">Frecuencia Mín. (GHz)</label>
-              <input v-model="filterFrecuenciaMin" type="number" step="0.1" min="0" placeholder="Ej: 3.5" class="w-full bg-dark-bg border border-dark-border rounded-lg px-3 py-2 text-sm text-text-primary focus:outline-none focus:border-accent transition-colors" />
+              <label class="block text-xs font-medium theme-text-muted mb-1.5">Frecuencia Mín. (GHz)</label>
+              <input v-model="filterFrecuenciaMin" type="number" step="0.1" min="0" placeholder="Ej: 3.5" class="theme-input" />
             </div>
           </div>
         </div>
 
         <!-- Results count -->
-        <p v-if="stepSearch" class="text-xs text-text-muted mb-4">
+        <p v-if="stepSearch" class="text-xs theme-text-muted mb-4">
           {{ filteredItems.length }} resultado{{ filteredItems.length !== 1 ? 's' : '' }} para
           "<span class="text-accent">{{ stepSearch }}</span>"
         </p>
 
         <!-- Loading -->
-        <div v-if="loading" class="text-center py-16 card-dark rounded-xl text-text-muted text-sm">
+        <div v-if="loading" class="text-center py-16 theme-card border theme-border shadow-sm rounded-xl theme-text-muted text-sm">
           Cargando componentes...
         </div>
 
         <!-- Empty state -->
-        <div v-else-if="filteredItems.length === 0" class="text-center py-16 card-dark rounded-xl">
+        <div v-else-if="filteredItems.length === 0" class="text-center py-16 theme-card border theme-border shadow-sm rounded-xl">
           <div class="text-4xl mb-3">🔍</div>
-          <p class="text-text-primary font-medium mb-1">Sin resultados</p>
-          <p class="text-text-muted text-sm">
+          <p class="theme-text font-medium mb-1">Sin resultados</p>
+          <p class="theme-text-muted text-sm">
             <span v-if="stepSearch">No hay componentes para "<span class="text-accent">{{ stepSearch }}</span>"</span>
             <span v-else>No hay componentes disponibles para esta categoría</span>
           </p>
@@ -157,17 +157,17 @@
         </div>
 
         <!-- Navigation -->
-        <div class="flex items-center justify-between pt-6 border-t border-dark-border">
+        <div class="flex flex-col-reverse sm:flex-row items-center justify-between gap-4 pt-6 border-t theme-border pb-24 lg:pb-0">
           <button
             @click="activeStep = Math.max(0, activeStep - 1); stepSearch = ''"
-            class="btn-secondary text-sm"
+            class="btn-secondary text-sm w-full sm:w-auto"
             :disabled="activeStep === 0"
             :class="{ 'opacity-40 cursor-not-allowed': activeStep === 0 }"
           >
             ← Anterior
           </button>
 
-          <div class="flex items-center gap-1.5">
+          <div class="flex items-center gap-1.5 hidden sm:flex">
             <div
               v-for="(_, i) in steps"
               :key="i"
@@ -176,18 +176,18 @@
                 ? 'w-5 h-1.5 bg-accent'
                 : selectedItems[steps[i].id]
                   ? 'w-1.5 h-1.5 bg-green-500'
-                  : 'w-1.5 h-1.5 bg-dark-border'"
+                  : 'w-1.5 h-1.5 bg-gray-300 dark:bg-dark-border'"
             ></div>
           </div>
 
           <button
             v-if="activeStep < steps.length - 1"
             @click="activeStep = Math.min(steps.length - 1, activeStep + 1); stepSearch = ''"
-            class="btn-primary text-sm"
+            class="btn-primary text-sm w-full sm:w-auto"
           >
             Siguiente →
           </button>
-          <router-link v-else to="/cotizacion" class="btn-primary text-sm">
+          <router-link v-else to="/cotizacion" class="btn-primary text-sm w-full sm:w-auto text-center">
             Ver cotización →
           </router-link>
         </div>
@@ -195,80 +195,100 @@
       </div>
     </div>
 
+    <!-- Mobile Sidebar Trigger -->
+    <div class="lg:hidden fixed bottom-0 left-0 right-0 theme-card border-t theme-border p-4 z-40 shadow-[0_-10px_40px_rgba(0,0,0,0.1)] flex items-center justify-between">
+      <div>
+        <p class="text-xs theme-text-muted">{{ Object.keys(selectedComponents).length }} de {{ steps.length }} comp.</p>
+        <p class="text-accent font-bold font-mono">${{ totalPrice.toLocaleString() }}</p>
+      </div>
+      <button @click="mobileSidebarOpen = true" class="btn-primary text-sm px-4 py-2.5">
+        Ver resumen ↑
+      </button>
+    </div>
+
+    <!-- Sidebar Overlay (Mobile) -->
+    <div v-if="mobileSidebarOpen" class="sidebar-overlay lg:hidden" @click="mobileSidebarOpen = false"></div>
+
     <!-- Sidebar -->
-    <aside class="w-80 border-l border-dark-border bg-dark-card flex-shrink-0 flex flex-col sticky top-16 h-[calc(100vh-4rem)] overflow-auto">
-      <div class="p-6 border-b border-dark-border">
-        <h2 class="font-semibold text-text-primary">Resumen de tu PC</h2>
-        <div class="flex items-center gap-2 mt-1">
-          <span class="text-xs text-text-muted">{{ Object.keys(selectedComponents).length }} / {{ steps.length }} componentes</span>
-          <div class="flex-1 h-1 bg-dark-bg rounded-full overflow-hidden">
-            <div
-              class="h-full bg-accent rounded-full transition-all duration-300"
-              :style="{ width: `${(Object.keys(selectedComponents).length / steps.length) * 100}%` }"
-            ></div>
+    <aside
+      class="fixed inset-y-0 right-0 w-full sm:w-96 lg:w-80 border-l theme-border theme-card flex-shrink-0 flex flex-col z-50 lg:z-auto transition-transform duration-300 ease-in-out lg:static lg:translate-x-0"
+      :class="mobileSidebarOpen ? 'translate-x-0' : 'translate-x-full'"
+    >
+      <div class="p-4 sm:p-6 border-b theme-border flex items-center justify-between">
+        <div class="flex-1">
+          <h2 class="font-semibold theme-text">Resumen de tu PC</h2>
+          <div class="flex items-center gap-2 mt-1">
+            <span class="text-xs theme-text-muted">{{ Object.keys(selectedComponents).length }} / {{ steps.length }}</span>
+            <div class="flex-1 h-1 bg-gray-200 dark:bg-dark-bg rounded-full overflow-hidden">
+              <div
+                class="h-full bg-accent rounded-full transition-all duration-300"
+                :style="{ width: `${(Object.keys(selectedComponents).length / steps.length) * 100}%` }"
+              ></div>
+            </div>
           </div>
         </div>
+        <button @click="mobileSidebarOpen = false" class="lg:hidden p-2 theme-text-muted hover:theme-text rounded-lg bg-gray-100 dark:bg-dark-bg ml-4">✕</button>
       </div>
 
       <!-- Selected Items -->
-      <div class="flex-1 p-4 space-y-2 overflow-auto">
+      <div class="flex-1 p-4 space-y-2 overflow-y-auto bg-gray-50/50 dark:bg-transparent">
         <div v-if="Object.keys(selectedComponents).length === 0" class="text-center py-10">
           <div class="text-3xl mb-3">🖥️</div>
-          <p class="text-text-muted text-sm">Aún no has seleccionado componentes</p>
+          <p class="theme-text-muted text-sm">Aún no has seleccionado componentes</p>
         </div>
 
         <template v-for="step in steps" :key="step.id">
           <div
             v-if="selectedComponents[step.id]"
-            class="flex items-start justify-between gap-3 p-3 rounded-lg bg-dark-bg border border-dark-border group"
+            class="flex items-start justify-between gap-3 p-3 rounded-xl theme-bg border theme-border shadow-sm group"
           >
             <div class="flex items-start gap-2 flex-1 min-w-0">
               <span class="text-base flex-shrink-0 mt-0.5">{{ step.icon }}</span>
               <div class="flex-1 min-w-0">
-                <p class="text-xs text-text-muted uppercase tracking-wide mb-0.5">{{ step.label }}</p>
-                <p class="text-sm text-text-primary font-medium leading-tight truncate">{{ selectedComponents[step.id].nombre }}</p>
-                <p class="text-xs text-text-muted mt-0.5">{{ selectedComponents[step.id].bodega }}</p>
+                <p class="text-xs theme-text-muted uppercase tracking-wide mb-0.5">{{ step.label }}</p>
+                <p class="text-sm theme-text font-medium leading-tight truncate">{{ selectedComponents[step.id].nombre }}</p>
+                <p class="text-xs theme-text-muted mt-0.5">{{ selectedComponents[step.id].bodega }}</p>
               </div>
             </div>
             <div class="flex flex-col items-end gap-1 flex-shrink-0">
               <button
                 @click="removeItem(step.id)"
-                class="text-text-muted hover:text-red-400 transition-colors opacity-0 group-hover:opacity-100 text-xs leading-none"
+                class="theme-text-muted hover:text-red-500 transition-colors opacity-100 lg:opacity-0 lg:group-hover:opacity-100 text-xs leading-none p-1 -mr-1"
                 title="Quitar componente"
               >✕</button>
               <div class="flex items-center gap-1">
                 <button
                   @click="updateQuantity(step.id, (selectedComponents[step.id].cantidad || 1) - 1)"
                   :disabled="(selectedComponents[step.id].cantidad || 1) <= 1"
-                  class="w-5 h-5 rounded border border-dark-border text-text-muted hover:text-red-400 hover:border-red-500/40 transition-colors flex items-center justify-center text-[10px] font-bold disabled:opacity-30 disabled:cursor-not-allowed"
+                  class="w-6 h-6 rounded border theme-border theme-text-muted hover:text-red-500 hover:border-red-500/40 bg-white dark:bg-dark-bg transition-colors flex items-center justify-center text-xs font-bold disabled:opacity-30 disabled:cursor-not-allowed"
                 >−</button>
-                <span class="text-xs font-mono text-text-primary w-4 text-center">{{ selectedComponents[step.id].cantidad || 1 }}</span>
+                <span class="text-xs font-mono theme-text w-4 text-center">{{ selectedComponents[step.id].cantidad || 1 }}</span>
                 <button
                   @click="updateQuantity(step.id, (selectedComponents[step.id].cantidad || 1) + 1)"
                   :disabled="(selectedComponents[step.id].cantidad || 1) >= (selectedComponents[step.id].stock || 999)"
-                  class="w-5 h-5 rounded border border-dark-border text-text-muted hover:text-green-400 hover:border-green-500/40 transition-colors flex items-center justify-center text-[10px] font-bold disabled:opacity-30 disabled:cursor-not-allowed"
+                  class="w-6 h-6 rounded border theme-border theme-text-muted hover:text-green-500 hover:border-green-500/40 bg-white dark:bg-dark-bg transition-colors flex items-center justify-center text-xs font-bold disabled:opacity-30 disabled:cursor-not-allowed"
                 >+</button>
               </div>
-              <p class="text-accent text-sm font-semibold font-mono">${{ (Number(selectedComponents[step.id].precio) * (selectedComponents[step.id].cantidad || 1)).toLocaleString() }}</p>
+              <p class="text-accent text-sm font-semibold font-mono mt-1">${{ (Number(selectedComponents[step.id].precio) * (selectedComponents[step.id].cantidad || 1)).toLocaleString() }}</p>
             </div>
           </div>
           <div
             v-else
-            class="flex items-center gap-2 p-3 rounded-lg border border-dashed border-dark-border"
+            class="flex items-center gap-2 p-3 rounded-xl border border-dashed theme-border bg-white/50 dark:bg-transparent"
           >
-            <span class="text-sm opacity-40">{{ step.icon }}</span>
-            <p class="text-xs text-text-muted">{{ step.label }} sin seleccionar</p>
+            <span class="text-sm opacity-40 grayscale">{{ step.icon }}</span>
+            <p class="text-xs theme-text-muted">{{ step.label }} sin seleccionar</p>
           </div>
         </template>
       </div>
 
       <!-- Total -->
-      <div class="p-6 border-t border-dark-border space-y-4">
+      <div class="p-6 border-t theme-border space-y-4">
         <div class="flex items-center justify-between">
-          <span class="text-text-muted text-sm">Total estimado</span>
+          <span class="theme-text-muted text-sm">Total estimado</span>
           <span class="text-accent text-2xl font-bold font-mono">${{ totalPrice.toLocaleString() }}</span>
         </div>
-        <router-link to="/cotizacion" class="btn-primary w-full text-sm text-center block">
+        <router-link to="/cotizacion" class="btn-primary w-full text-sm text-center block py-3.5">
           Ver cotización →
         </router-link>
       </div>
@@ -288,6 +308,7 @@ const router = useRouter()
 const { steps, selectedItems, selectedComponents, totalPrice, selectItem, removeItem, updateQuantity } = useBuilder()
 
 const activeStep    = ref(0)
+const mobileSidebarOpen = ref(false)
 const stepSearch    = ref('')
 const stepSort      = ref('default')
 const filterGama    = ref('')

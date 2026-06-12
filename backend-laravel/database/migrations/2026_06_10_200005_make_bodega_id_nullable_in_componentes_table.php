@@ -11,11 +11,22 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('componentes', function (Blueprint $table) {
-            $table->dropForeign('componentes_ibfk_1');
-            $table->integer('bodega_id')->nullable()->change();
-            $table->foreign('bodega_id', 'componentes_ibfk_1')->references('id')->on('bodegas')->onDelete('restrict');
-        });
+        try {
+            Schema::table('componentes', function (Blueprint $table) {
+                $table->dropForeign('componentes_ibfk_1');
+            });
+        } catch (\Exception $e) {
+            // Foreign key may not exist or have a different name
+        }
+
+        try {
+            Schema::table('componentes', function (Blueprint $table) {
+                $table->integer('bodega_id')->nullable()->change();
+                $table->foreign('bodega_id', 'componentes_ibfk_1')->references('id')->on('bodegas')->onDelete('restrict');
+            });
+        } catch (\Exception $e) {
+            // Column may already be nullable or FK already exists
+        }
     }
 
     /**

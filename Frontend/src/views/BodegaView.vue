@@ -1,13 +1,13 @@
 <template>
-  <div class="flex h-screen overflow-hidden bg-dark-bg">
+  <div class="flex h-screen overflow-hidden theme-bg">
 
     <!-- Sidebar -->
-    <aside class="w-60 border-r border-dark-border flex-shrink-0 flex flex-col h-screen overflow-y-auto sticky top-0">
-      <div class="h-16 px-5 flex items-center border-b border-dark-border gap-2.5">
+    <aside class="w-60 border-r theme-border flex-shrink-0 flex flex-col h-screen overflow-y-auto sticky top-0">
+      <div class="h-16 px-5 flex items-center border-b theme-border gap-2.5">
         <div class="w-7 h-7 rounded-lg bg-yellow-500 flex items-center justify-center text-white font-bold text-xs">🏪</div>
         <div>
-          <p class="text-text-primary font-semibold text-sm leading-none">{{ bodegaNombre }}</p>
-          <p class="text-text-muted text-xs mt-0.5">Gestor de bodega</p>
+          <p class="theme-text font-semibold text-sm leading-none">{{ bodegaNombre }}</p>
+          <p class="theme-text-muted text-xs mt-0.5">Gestor de bodega</p>
         </div>
       </div>
 
@@ -19,7 +19,7 @@
           class="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-150 text-left"
           :class="activeSection === section.id
             ? 'bg-accent/10 text-accent border border-accent/20'
-            : 'text-text-muted hover:text-text-primary hover:bg-dark-card'"
+            : 'theme-text-muted hover:theme-text hover:theme-card'"
         >
           <span>{{ section.icon }}</span>
           {{ section.label }}
@@ -27,12 +27,16 @@
         </button>
       </nav>
 
-      <div class="p-3 border-t border-dark-border space-y-1">
-        <div class="px-3 py-2.5 rounded-lg bg-dark-card border border-dark-border">
-          <p class="text-xs text-text-muted">Sesión activa</p>
-          <p class="text-sm font-medium text-text-primary mt-0.5">{{ bodegaCorreo }}</p>
+      <div class="p-3 border-t theme-border space-y-1">
+        <div class="px-3 py-2.5 rounded-lg theme-card border theme-border">
+          <p class="text-xs theme-text-muted">Sesión activa</p>
+          <p class="text-sm font-medium theme-text mt-0.5">{{ bodegaCorreo }}</p>
         </div>
-        <button @click="handleLogout" class="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-text-muted hover:text-text-primary hover:bg-dark-card transition-all duration-150">
+        <button @click="toggleTheme" class="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm theme-text-muted hover:theme-text hover:theme-card transition-all duration-150">
+          <span v-if="isDark">☀️ Modo claro</span>
+          <span v-else>🌙 Modo oscuro</span>
+        </button>
+        <button @click="handleLogout" class="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm theme-text-muted hover:theme-text hover:theme-card transition-all duration-150">
           ← Cerrar sesión
         </button>
       </div>
@@ -42,10 +46,10 @@
     <main class="flex-1 overflow-auto">
 
       <!-- Topbar -->
-      <div class="h-16 border-b border-dark-border px-8 flex items-center justify-between sticky top-0 bg-dark-bg/90 backdrop-blur z-10">
+      <div class="h-16 border-b theme-border px-8 flex items-center justify-between sticky top-0 bg-light-bg/90 dark:bg-dark-bg/90 backdrop-blur z-10">
         <div>
-          <h1 class="font-semibold text-text-primary">{{ currentSection.label }}</h1>
-          <p class="text-xs text-text-muted mt-0.5">{{ currentSection.description }}</p>
+          <h1 class="font-semibold theme-text">{{ currentSection.label }}</h1>
+          <p class="text-xs theme-text-muted mt-0.5">{{ currentSection.description }}</p>
         </div>
         <button v-if="activeSection === 'componentes'" @click="openAddModal" class="btn-primary text-sm">
           + Añadir componente
@@ -58,40 +62,40 @@
         <template v-if="activeSection === 'dashboard'">
           <div class="grid grid-cols-3 gap-4 mb-8">
             <div class="card-dark rounded-xl p-5">
-              <p class="text-text-muted text-xs uppercase tracking-wider mb-2">Componentes activos</p>
-              <p class="text-3xl font-bold font-mono text-text-primary">{{ myComponents.length }}</p>
-              <p class="text-xs text-text-muted mt-1">En catálogo de cotizaciones</p>
+              <p class="theme-text-muted text-xs uppercase tracking-wider mb-2">Componentes activos</p>
+              <p class="text-3xl font-bold font-mono theme-text">{{ myComponents.length }}</p>
+              <p class="text-xs theme-text-muted mt-1">En catálogo de cotizaciones</p>
             </div>
             <div class="card-dark rounded-xl p-5">
-              <p class="text-text-muted text-xs uppercase tracking-wider mb-2">Stock total</p>
+              <p class="theme-text-muted text-xs uppercase tracking-wider mb-2">Stock total</p>
               <p class="text-3xl font-bold font-mono text-accent">{{ totalStock }}</p>
-              <p class="text-xs text-text-muted mt-1">Unidades disponibles</p>
+              <p class="text-xs theme-text-muted mt-1">Unidades disponibles</p>
             </div>
             <div class="card-dark rounded-xl p-5">
-              <p class="text-text-muted text-xs uppercase tracking-wider mb-2">Alertas de stock</p>
+              <p class="theme-text-muted text-xs uppercase tracking-wider mb-2">Alertas de stock</p>
               <p class="text-3xl font-bold font-mono text-yellow-400">{{ stockAlerts.length }}</p>
-              <p class="text-xs text-text-muted mt-1">Requieren atención</p>
+              <p class="text-xs theme-text-muted mt-1">Requieren atención</p>
             </div>
           </div>
 
           <!-- Stock alerts -->
           <div class="card-dark rounded-xl overflow-hidden mb-6">
-            <div class="px-6 py-4 border-b border-dark-border flex items-center gap-3">
+            <div class="px-6 py-4 border-b theme-border flex items-center gap-3">
               <span class="text-yellow-400">⚠️</span>
-              <h2 class="font-semibold text-text-primary">Alertas de stock bajo</h2>
+              <h2 class="font-semibold theme-text">Alertas de stock bajo</h2>
             </div>
-            <div v-if="stockAlerts.length === 0" class="px-6 py-8 text-center text-text-muted text-sm">
+            <div v-if="stockAlerts.length === 0" class="px-6 py-8 text-center theme-text-muted text-sm">
               Sin alertas de stock
             </div>
             <div v-else class="divide-y divide-dark-border">
               <div v-for="alert in stockAlerts" :key="alert.id" class="px-6 py-4 flex items-center justify-between">
                 <div class="flex items-center gap-3">
                   <span class="badge text-xs bg-accent/10 text-accent border border-accent/20">{{ alert.categoria }}</span>
-                  <span class="text-sm text-text-primary">{{ alert.nombre }}</span>
+                  <span class="text-sm theme-text">{{ alert.nombre }}</span>
                 </div>
                 <div class="flex items-center gap-6">
                   <div class="text-right">
-                    <p class="text-xs text-text-muted">Stock actual</p>
+                    <p class="text-xs theme-text-muted">Stock actual</p>
                     <p class="text-sm font-mono font-semibold text-yellow-400">{{ alert.stock }} unid.</p>
                   </div>
                   <button @click="openEditComp(alert)" class="btn-secondary text-xs px-3 py-1.5">
@@ -113,14 +117,14 @@
                 v-model="filterSearch"
                 type="text"
                 placeholder="Buscar componente..."
-                class="bg-dark-card border border-dark-border rounded-lg px-4 py-2.5 text-sm text-text-primary placeholder-text-muted focus:outline-none focus:border-accent transition-colors flex-1 max-w-xs"
+                class="theme-card border theme-border rounded-lg px-4 py-2.5 text-sm theme-text placeholder-text-muted focus:outline-none focus:border-accent transition-colors flex-1 max-w-xs"
               />
               <select
                 v-model="filterCategory"
-                class="bg-dark-card border border-dark-border rounded-lg px-4 py-2.5 text-sm text-text-primary focus:outline-none focus:border-accent transition-colors"
+                class="theme-card border theme-border rounded-lg px-4 py-2.5 text-sm theme-text focus:outline-none focus:border-accent transition-colors"
               >
-                <option value="" class="bg-dark-bg">Todas las categorías</option>
-                <option v-for="cat in categories" :key="cat" :value="cat" class="bg-dark-bg">{{ cat }}</option>
+                <option value="" class="theme-bg">Todas las categorías</option>
+                <option v-for="cat in categories" :key="cat" :value="cat" class="theme-bg">{{ cat }}</option>
               </select>
               <button @click="showAdvancedFilters = !showAdvancedFilters" class="btn-secondary text-sm px-4 py-2.5 flex items-center gap-2">
                 <span>⚙️</span> Filtros avanzados
@@ -128,10 +132,10 @@
             </div>
             
             <!-- Advanced Filters Panel -->
-            <div v-if="showAdvancedFilters" class="p-4 bg-dark-card border border-dark-border rounded-xl grid grid-cols-2 md:grid-cols-5 gap-4 animate-fade-in">
+            <div v-if="showAdvancedFilters" class="p-4 theme-card border theme-border rounded-xl grid grid-cols-2 md:grid-cols-5 gap-4 animate-fade-in">
               <div>
-                <label class="block text-xs font-medium text-text-muted mb-1.5">Gama</label>
-                <select v-model="filterGama" class="w-full bg-dark-bg border border-dark-border rounded-lg px-3 py-2 text-sm text-text-primary focus:outline-none focus:border-accent transition-colors">
+                <label class="block text-xs font-medium theme-text-muted mb-1.5">Gama</label>
+                <select v-model="filterGama" class="w-full theme-bg border theme-border rounded-lg px-3 py-2 text-sm theme-text focus:outline-none focus:border-accent transition-colors">
                   <option value="">Todas</option>
                   <option value="alta">Alta</option>
                   <option value="media">Media</option>
@@ -139,8 +143,8 @@
                 </select>
               </div>
               <div>
-                <label class="block text-xs font-medium text-text-muted mb-1.5">Enfoque</label>
-                <select v-model="filterEnfoque" class="w-full bg-dark-bg border border-dark-border rounded-lg px-3 py-2 text-sm text-text-primary focus:outline-none focus:border-accent transition-colors">
+                <label class="block text-xs font-medium theme-text-muted mb-1.5">Enfoque</label>
+                <select v-model="filterEnfoque" class="w-full theme-bg border theme-border rounded-lg px-3 py-2 text-sm theme-text focus:outline-none focus:border-accent transition-colors">
                   <option value="">Todos</option>
                   <option value="gaming">Gaming</option>
                   <option value="diseño">Diseño</option>
@@ -149,46 +153,46 @@
                 </select>
               </div>
               <div>
-                <label class="block text-xs font-medium text-text-muted mb-1.5">Núcleos</label>
-                <input v-model="filterNucleos" type="number" min="1" placeholder="Ej: 6" class="w-full bg-dark-bg border border-dark-border rounded-lg px-3 py-2 text-sm text-text-primary focus:outline-none focus:border-accent transition-colors" />
+                <label class="block text-xs font-medium theme-text-muted mb-1.5">Núcleos</label>
+                <input v-model="filterNucleos" type="number" min="1" placeholder="Ej: 6" class="w-full theme-bg border theme-border rounded-lg px-3 py-2 text-sm theme-text focus:outline-none focus:border-accent transition-colors" />
               </div>
               <div>
-                <label class="block text-xs font-medium text-text-muted mb-1.5">Hilos</label>
-                <input v-model="filterHilos" type="number" min="1" placeholder="Ej: 12" class="w-full bg-dark-bg border border-dark-border rounded-lg px-3 py-2 text-sm text-text-primary focus:outline-none focus:border-accent transition-colors" />
+                <label class="block text-xs font-medium theme-text-muted mb-1.5">Hilos</label>
+                <input v-model="filterHilos" type="number" min="1" placeholder="Ej: 12" class="w-full theme-bg border theme-border rounded-lg px-3 py-2 text-sm theme-text focus:outline-none focus:border-accent transition-colors" />
               </div>
               <div>
-                <label class="block text-xs font-medium text-text-muted mb-1.5">Frec. mínima (GHz)</label>
-                <input v-model="filterFrecuenciaMin" type="number" step="0.1" min="0" placeholder="Ej: 3.5" class="w-full bg-dark-bg border border-dark-border rounded-lg px-3 py-2 text-sm text-text-primary focus:outline-none focus:border-accent transition-colors" />
+                <label class="block text-xs font-medium theme-text-muted mb-1.5">Frec. mínima (GHz)</label>
+                <input v-model="filterFrecuenciaMin" type="number" step="0.1" min="0" placeholder="Ej: 3.5" class="w-full theme-bg border theme-border rounded-lg px-3 py-2 text-sm theme-text focus:outline-none focus:border-accent transition-colors" />
               </div>
             </div>
           </div>
 
           <!-- Loading -->
-          <div v-if="loadingComponents" class="text-center py-16 text-text-muted text-sm">
+          <div v-if="loadingComponents" class="text-center py-16 theme-text-muted text-sm">
             Cargando componentes...
           </div>
 
           <!-- Table -->
           <div v-else class="card-dark rounded-xl overflow-hidden overflow-x-auto">
             <table class="w-full min-w-[640px]">
-              <thead class="border-b border-dark-border">
+              <thead class="border-b theme-border">
                 <tr>
                   <th v-for="h in ['Componente', 'Categoría', 'Especificación', 'Gama', 'Precio', 'Stock', 'Estado', 'Acciones']"
-                    :key="h" class="px-6 py-3 text-left text-xs text-text-muted uppercase tracking-wider font-medium">
+                    :key="h" class="px-6 py-3 text-left text-xs theme-text-muted uppercase tracking-wider font-medium">
                     {{ h }}
                   </th>
                 </tr>
               </thead>
               <tbody class="divide-y divide-dark-border">
                 <tr v-if="filteredComponents.length === 0">
-                  <td colspan="8" class="px-6 py-12 text-center text-text-muted text-sm">Sin componentes</td>
+                  <td colspan="8" class="px-6 py-12 text-center theme-text-muted text-sm">Sin componentes</td>
                 </tr>
-                <tr v-for="comp in filteredComponents" :key="comp.id" class="hover:bg-dark-bg/50 transition-colors">
-                  <td class="px-6 py-4 text-sm font-medium text-text-primary">{{ comp.nombre }}</td>
+                <tr v-for="comp in filteredComponents" :key="comp.id" class="hover:bg-gray-100 dark:bg-dark-bg/50 transition-colors">
+                  <td class="px-6 py-4 text-sm font-medium theme-text">{{ comp.nombre }}</td>
                   <td class="px-6 py-4">
                     <span class="badge text-xs bg-accent/10 text-accent border border-accent/20">{{ comp.categoria }}</span>
                   </td>
-                  <td class="px-6 py-4 text-sm text-text-muted max-w-48 truncate">{{ comp.especificacion }}</td>
+                  <td class="px-6 py-4 text-sm theme-text-muted max-w-48 truncate">{{ comp.especificacion }}</td>
                   <td class="px-6 py-4">
                     <span class="text-xs px-2 py-0.5 rounded-full font-medium border" :class="tierStyles[comp.gama]">
                       {{ comp.gama }}
@@ -197,20 +201,16 @@
                   <td class="px-6 py-4 text-sm text-accent font-mono font-semibold">${{ Number(comp.precio).toLocaleString() }}</td>
                   <td class="px-6 py-4">
                     <div class="flex items-center gap-1.5">
-                      <button @click="quickAdjust(comp, 'decrementar', 1)" :disabled="comp.stock <= 0 || comp._adjusting" class="w-7 h-7 rounded-lg border border-dark-border bg-dark-bg text-text-muted hover:text-red-400 hover:border-red-500/40 transition-colors flex items-center justify-center text-sm font-bold disabled:opacity-30 disabled:cursor-not-allowed">−</button>
+                      <button @click="quickAdjust(comp, 'decrementar', stockQty[comp.id] ?? 1)" :disabled="comp.stock < (stockQty[comp.id] ?? 1) || comp._adjusting" class="w-7 h-7 rounded-lg border theme-border theme-bg theme-text-muted hover:text-red-400 hover:border-red-500/40 transition-colors flex items-center justify-center text-sm font-bold disabled:opacity-30 disabled:cursor-not-allowed">−</button>
                       <input
                         type="number"
                         :value="stockQty[comp.id] ?? 1"
                         @input="stockQty[comp.id] = Math.max(1, parseInt($event.target.value) || 1)"
                         min="1"
-                        class="w-12 h-7 bg-dark-bg border border-dark-border rounded-lg text-center text-xs font-mono text-text-primary focus:outline-none focus:border-accent transition-colors [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                        class="w-12 h-7 theme-bg border theme-border rounded-lg text-center text-xs font-mono theme-text focus:outline-none focus:border-accent transition-colors [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                       />
-                      <button @click="quickAdjust(comp, 'incrementar', 1)" :disabled="comp._adjusting" class="w-7 h-7 rounded-lg border border-dark-border bg-dark-bg text-text-muted hover:text-green-400 hover:border-green-500/40 transition-colors flex items-center justify-center text-sm font-bold disabled:opacity-30 disabled:cursor-not-allowed">+</button>
-                      <span class="text-sm font-mono font-semibold ml-1" :class="comp.stock <= 3 ? 'text-yellow-400' : 'text-accent'">{{ comp.stock }}</span>
-                      <div class="flex gap-0.5 ml-1">
-                        <button @click="quickAdjust(comp, 'incrementar', stockQty[comp.id] ?? 1)" :disabled="comp._adjusting" class="px-1.5 py-0.5 rounded text-[10px] font-medium bg-green-500/10 text-green-400 border border-green-500/20 hover:bg-green-500/20 transition-colors disabled:opacity-30" title="Agregar cantidad">+{{ stockQty[comp.id] ?? 1 }}</button>
-                        <button @click="quickAdjust(comp, 'decrementar', stockQty[comp.id] ?? 1)" :disabled="comp.stock < (stockQty[comp.id] ?? 1) || comp._adjusting" class="px-1.5 py-0.5 rounded text-[10px] font-medium bg-red-500/10 text-red-400 border border-red-500/20 hover:bg-red-500/20 transition-colors disabled:opacity-30" title="Retirar cantidad">−{{ stockQty[comp.id] ?? 1 }}</button>
-                      </div>
+                      <button @click="quickAdjust(comp, 'incrementar', stockQty[comp.id] ?? 1)" :disabled="comp._adjusting" class="w-7 h-7 rounded-lg border theme-border theme-bg theme-text-muted hover:text-green-400 hover:border-green-500/40 transition-colors flex items-center justify-center text-sm font-bold disabled:opacity-30 disabled:cursor-not-allowed">+</button>
+                      <span class="text-sm font-mono font-semibold ml-1.5" :class="comp.stock <= 3 ? 'text-yellow-400' : 'text-accent'">{{ comp.stock }}</span>
                     </div>
                   </td>
                   <td class="px-6 py-4">
@@ -225,8 +225,8 @@
                   </td>
                   <td class="px-6 py-4">
                     <div class="flex items-center gap-2">
-                      <button @click="openEditComp(comp)" class="text-xs text-text-muted hover:text-yellow-400 px-2 py-1 rounded hover:bg-yellow-400/10 transition-colors">Editar</button>
-                      <button @click="openDeleteComp(comp)" class="text-xs text-text-muted hover:text-red-400 px-2 py-1 rounded hover:bg-red-400/10 transition-colors">Eliminar</button>
+                      <button @click="openEditComp(comp)" class="text-xs theme-text-muted hover:text-yellow-400 px-2 py-1 rounded hover:bg-yellow-400/10 transition-colors">Editar</button>
+                      <button @click="openDeleteComp(comp)" class="text-xs theme-text-muted hover:text-red-400 px-2 py-1 rounded hover:bg-red-400/10 transition-colors">Eliminar</button>
                     </div>
                   </td>
                 </tr>
@@ -245,17 +245,17 @@
 
         <div class="flex items-center justify-between mb-6">
           <div>
-            <h2 class="text-lg font-bold text-text-primary">Añadir componente al inventario</h2>
-            <p class="text-xs text-text-muted mt-0.5">Selecciona un componente del catálogo maestro</p>
+            <h2 class="text-lg font-bold theme-text">Añadir componente al inventario</h2>
+            <p class="text-xs theme-text-muted mt-0.5">Selecciona un componente del catálogo maestro</p>
           </div>
-          <button @click="closeAddModal" class="text-text-muted hover:text-text-primary transition-colors text-2xl leading-none w-8 h-8 flex items-center justify-center rounded-lg hover:bg-dark-bg">×</button>
+          <button @click="closeAddModal" class="theme-text-muted hover:theme-text transition-colors text-2xl leading-none w-8 h-8 flex items-center justify-center rounded-lg hover:theme-bg">×</button>
         </div>
 
         <div class="space-y-5">
 
           <!-- Select buscable de producto maestro -->
           <div>
-            <label class="block text-sm font-medium text-text-primary mb-2">Componente maestro</label>
+            <label class="block text-sm font-medium theme-text mb-2">Componente maestro</label>
             <div class="relative">
               <input
                 v-model="productoSearch"
@@ -263,24 +263,24 @@
                 @focus="showProductoDropdown = true"
                 type="text"
                 placeholder="Buscar componente (ej: Ryzen 5)..."
-                class="w-full bg-dark-bg border border-dark-border rounded-lg px-4 py-3 text-sm text-text-primary placeholder-text-muted focus:outline-none focus:border-accent transition-colors"
+                class="w-full theme-bg border theme-border rounded-lg px-4 py-3 text-sm theme-text placeholder-text-muted focus:outline-none focus:border-accent transition-colors"
                 :class="{ 'border-accent': newComp.master_component_id }"
                 autocomplete="off"
               />
               <!-- Dropdown -->
               <div
                 v-if="showProductoDropdown && productosFiltrados.length > 0"
-                class="absolute top-full left-0 right-0 mt-1 bg-dark-card border border-dark-border rounded-lg shadow-xl z-20 max-h-52 overflow-y-auto"
+                class="absolute top-full left-0 right-0 mt-1 theme-card border theme-border rounded-lg shadow-xl z-20 max-h-52 overflow-y-auto"
               >
                 <button
                   v-for="prod in productosFiltrados"
                   :key="prod.id"
                   @click="selectProducto(prod)"
-                  class="w-full flex items-center justify-between px-4 py-2.5 text-sm hover:bg-dark-bg transition-colors text-left"
+                  class="w-full flex items-center justify-between px-4 py-2.5 text-sm hover:theme-bg transition-colors text-left"
                 >
                   <div class="flex-1 overflow-hidden pr-2">
-                    <span class="text-text-primary block truncate">{{ prod.nombre }}</span>
-                    <span class="text-xs text-text-muted block mt-0.5 truncate">{{ prod.especificacion }}</span>
+                    <span class="theme-text block truncate">{{ prod.nombre }}</span>
+                    <span class="text-xs theme-text-muted block mt-0.5 truncate">{{ prod.especificacion }}</span>
                   </div>
                   <span class="text-xs text-accent ml-2 flex-shrink-0">{{ prod.categoria }}</span>
                 </button>
@@ -288,15 +288,15 @@
               <!-- Sin resultados -->
               <div
                 v-if="showProductoDropdown && productoSearch.length > 0 && productosFiltrados.length === 0"
-                class="absolute top-full left-0 right-0 mt-1 bg-dark-card border border-dark-border rounded-lg shadow-xl z-20 px-4 py-3 text-sm text-text-muted"
+                class="absolute top-full left-0 right-0 mt-1 theme-card border theme-border rounded-lg shadow-xl z-20 px-4 py-3 text-sm theme-text-muted"
               >
                 No se encontraron componentes
               </div>
             </div>
             <!-- Selección actual -->
-            <div v-if="newComp.master_component_id" class="mt-2 p-3 bg-dark-card border border-dark-border rounded-lg flex flex-col gap-1">
-              <span class="text-sm font-medium text-text-primary flex items-center gap-2"><span class="text-accent text-xs">✓</span> {{ newComp.nombre }}</span>
-              <span class="text-xs text-text-muted">{{ newComp.especificacion }}</span>
+            <div v-if="newComp.master_component_id" class="mt-2 p-3 theme-card border theme-border rounded-lg flex flex-col gap-1">
+              <span class="text-sm font-medium theme-text flex items-center gap-2"><span class="text-accent text-xs">✓</span> {{ newComp.nombre }}</span>
+              <span class="text-xs theme-text-muted">{{ newComp.especificacion }}</span>
             </div>
           </div>
 
@@ -319,26 +319,26 @@
 
         <div class="flex items-center justify-between mb-6">
           <div>
-            <h2 class="text-lg font-bold text-text-primary">Editar componente</h2>
-            <p class="text-xs text-text-muted mt-0.5">{{ editingComp.nombre }}</p>
+            <h2 class="text-lg font-bold theme-text">Editar componente</h2>
+            <p class="text-xs theme-text-muted mt-0.5">{{ editingComp.nombre }}</p>
           </div>
-          <button @click="showEditModal = false" class="text-text-muted hover:text-text-primary transition-colors text-2xl leading-none w-8 h-8 flex items-center justify-center rounded-lg hover:bg-dark-bg">×</button>
+          <button @click="showEditModal = false" class="theme-text-muted hover:theme-text transition-colors text-2xl leading-none w-8 h-8 flex items-center justify-center rounded-lg hover:theme-bg">×</button>
         </div>
 
         <div class="space-y-5">
           <div class="grid grid-cols-2 gap-4">
             <div>
-              <label class="block text-sm font-medium text-text-primary mb-2">Precio ($)</label>
-              <input v-model="editingComp.precio" type="number" class="w-full bg-dark-bg border border-dark-border rounded-lg px-4 py-3 text-sm text-text-primary focus:outline-none focus:border-accent transition-colors" />
+              <label class="block text-sm font-medium theme-text mb-2">Precio ($)</label>
+              <input v-model="editingComp.precio" type="number" class="w-full theme-bg border theme-border rounded-lg px-4 py-3 text-sm theme-text focus:outline-none focus:border-accent transition-colors" />
             </div>
             <div>
-              <label class="block text-sm font-medium text-text-primary mb-2">Stock</label>
-              <input v-model="editingComp.stock" type="number" min="0" class="w-full bg-dark-bg border border-dark-border rounded-lg px-4 py-3 text-sm text-text-primary focus:outline-none focus:border-accent transition-colors" />
+              <label class="block text-sm font-medium theme-text mb-2">Stock</label>
+              <input v-model="editingComp.stock" type="number" min="0" class="w-full theme-bg border theme-border rounded-lg px-4 py-3 text-sm theme-text focus:outline-none focus:border-accent transition-colors" />
             </div>
           </div>
           
           <div class="p-3 bg-accent/5 border border-accent/20 rounded-lg mt-4">
-            <p class="text-xs text-text-muted">Las especificaciones técnicas solo pueden ser modificadas por un Administrador desde el Catálogo Maestro.</p>
+            <p class="text-xs theme-text-muted">Las especificaciones técnicas solo pueden ser modificadas por un Administrador desde el Catálogo Maestro.</p>
           </div>
 
           <p v-if="editError" class="text-xs text-red-400 bg-red-500/10 border border-red-500/20 rounded-lg px-4 py-2.5">{{ editError }}</p>
@@ -358,10 +358,10 @@
       <div class="fixed inset-0 bg-black/60 backdrop-blur-sm" @click="showDeleteModal = false"></div>
       <div class="relative card-dark rounded-2xl p-6 w-full max-w-sm my-auto shadow-2xl text-center">
         <div class="w-14 h-14 rounded-full bg-red-500/10 border border-red-500/20 flex items-center justify-center mx-auto mb-4 text-2xl">🗑️</div>
-        <h2 class="text-lg font-bold text-text-primary mb-2">Eliminar componente</h2>
-        <p class="text-text-muted text-sm mb-1">¿Estás seguro de que deseas eliminar</p>
-        <p class="text-text-primary font-semibold mb-2">{{ deletingComp?.nombre }}?</p>
-        <p class="text-xs text-text-muted mb-6 px-4">Este componente dejará de aparecer en el catálogo de cotizaciones.</p>
+        <h2 class="text-lg font-bold theme-text mb-2">Eliminar componente</h2>
+        <p class="theme-text-muted text-sm mb-1">¿Estás seguro de que deseas eliminar</p>
+        <p class="theme-text font-semibold mb-2">{{ deletingComp?.nombre }}?</p>
+        <p class="text-xs theme-text-muted mb-6 px-4">Este componente dejará de aparecer en el catálogo de cotizaciones.</p>
         <div class="flex gap-3">
           <button @click="confirmDelete" :disabled="savingDelete" class="flex-1 py-3 rounded-lg text-sm font-medium bg-red-500/10 text-red-400 border border-red-500/20 hover:bg-red-500/20 transition-colors">
             {{ savingDelete ? 'Eliminando...' : 'Sí, eliminar' }}
@@ -375,6 +375,8 @@
 </template>
 
 <script setup>
+import { useTheme } from '../composables/useTheme'
+const { isDark, toggleTheme } = useTheme()
 import { useRouter } from 'vue-router'
 import { useAuth } from '../composables/useAuth'
 import { useToast } from '../composables/useToast'

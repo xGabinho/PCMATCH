@@ -85,7 +85,7 @@ class PerfilController extends Controller
         $denied = $this->checkAdmin($request);
         if ($denied) return $denied;
 
-        $perfiles = Perfil::with('permisos')->orderBy('created_at', 'desc')->get();
+        $perfiles = Perfil::with('permisos')->withCount('usuarios')->orderBy('created_at', 'desc')->get();
 
         $resultado = $perfiles->map(function ($perfil) {
             return [
@@ -94,7 +94,7 @@ class PerfilController extends Controller
                 'descripcion' => $perfil->descripcion,
                 'activo'      => $perfil->activo,
                 'permisos'    => $perfil->permisos->pluck('permiso')->toArray(),
-                'usuarios_count' => Usuario::where('perfil_id', $perfil->id)->count(),
+                'usuarios_count' => $perfil->usuarios_count,
                 'created_at'  => $perfil->created_at,
             ];
         });

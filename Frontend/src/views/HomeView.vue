@@ -18,31 +18,31 @@
           </div>
 
           <!-- Title -->
-          <h1 class="text-5xl lg:text-6xl font-bold text-text-primary leading-[1.1] tracking-tight mb-6">
+          <h1 class="text-4xl sm:text-5xl lg:text-6xl font-bold theme-text leading-[1.1] tracking-tight mb-6">
             Arma tu PC ideal<br/>
             <span class="text-accent">sin complicaciones</span>
           </h1>
 
           <!-- Description -->
-          <p class="text-xl text-text-muted leading-relaxed mb-10 max-w-xl">
+          <p class="text-lg sm:text-xl theme-text-muted leading-relaxed mb-10 max-w-xl">
             Selecciona tu perfil de uso, elige componentes compatibles y obtén una cotización lista en minutos. Sin conocimientos técnicos requeridos.
           </p>
 
           <!-- CTAs -->
-          <div class="flex items-center gap-4">
-            <router-link to="/login" class="btn-primary text-base px-8 py-4">
+          <div class="flex flex-col sm:flex-row items-center gap-4 w-full sm:w-auto">
+            <router-link to="/login" class="btn-primary text-base px-8 py-4 w-full sm:w-auto text-center">
               Armar mi PC →
             </router-link>
-            <router-link to="/cotizacion" class="btn-secondary text-base px-8 py-4">
+            <router-link to="/cotizacion" class="btn-secondary text-base px-8 py-4 w-full sm:w-auto text-center">
               Ver ejemplo
             </router-link>
           </div>
 
           <!-- Stats -->
-          <div class="flex items-center gap-10 mt-16 pt-8 border-t border-dark-border">
+          <div class="flex flex-wrap items-center gap-6 sm:gap-10 mt-16 pt-8 border-t theme-border">
             <div v-for="stat in stats" :key="stat.label">
-              <p class="text-2xl font-bold text-text-primary font-mono">{{ stat.value }}</p>
-              <p class="text-sm text-text-muted mt-0.5">{{ stat.label }}</p>
+              <p class="text-2xl font-bold theme-text font-mono">{{ stat.value }}</p>
+              <p class="text-sm theme-text-muted mt-0.5">{{ stat.label }}</p>
             </div>
           </div>
         </div>
@@ -50,7 +50,7 @@
     </section>
 
     <!-- Features strip -->
-    <section class="border-t border-dark-border py-16">
+    <section class="border-t theme-border py-16">
       <div class="max-w-7xl mx-auto px-6">
         <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
           <div v-for="feature in features" :key="feature.title" class="flex items-start gap-4">
@@ -58,8 +58,8 @@
               {{ feature.icon }}
             </div>
             <div>
-              <h3 class="font-semibold text-text-primary mb-1">{{ feature.title }}</h3>
-              <p class="text-sm text-text-muted leading-relaxed">{{ feature.desc }}</p>
+              <h3 class="font-semibold theme-text mb-1">{{ feature.title }}</h3>
+              <p class="text-sm theme-text-muted leading-relaxed">{{ feature.desc }}</p>
             </div>
           </div>
         </div>

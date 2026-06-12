@@ -12,6 +12,10 @@ class Bodega extends Authenticatable
     protected $table = 'bodegas';
     public $timestamps = false;
 
+    protected $casts = [
+        'activa' => 'boolean',
+    ];
+
     protected $fillable = [
         'nombre',
         'telefono',

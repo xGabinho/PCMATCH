@@ -25,7 +25,7 @@ class HistorialController extends Controller
         }
 
         // Obtener historial ordenado del mas reciente al mas antiguo
-        $historial = HistorialAccion::orderBy('created_at', 'desc')->get();
+        $historial = HistorialAccion::orderBy('created_at', 'desc')->paginate(15);
 
         return response()->json([
             'success' => true,

@@ -11,9 +11,21 @@ class Perfil extends Model
 
     protected $fillable = ['nombre', 'descripcion', 'activo'];
 
+    protected $casts = [
+        'activo' => 'boolean',
+    ];
+
     public function permisos()
     {
         return $this->hasMany(PerfilPermiso::class, 'perfil_id');
+    }
+
+    /**
+     * Relación con los usuarios que tienen este perfil.
+     */
+    public function usuarios()
+    {
+        return $this->hasMany(Usuario::class, 'perfil_id');
     }
 
     /**

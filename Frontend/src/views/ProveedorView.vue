@@ -1,13 +1,13 @@
 <template>
-  <div class="flex h-screen overflow-hidden bg-dark-bg">
+  <div class="flex h-screen overflow-hidden theme-bg">
 
     <!-- Sidebar -->
-    <aside class="w-60 border-r border-dark-border flex-shrink-0 flex flex-col h-screen overflow-y-auto sticky top-0">
-      <div class="h-16 px-5 flex items-center border-b border-dark-border gap-2.5">
+    <aside class="w-60 border-r theme-border flex-shrink-0 flex flex-col h-screen overflow-y-auto sticky top-0">
+      <div class="h-16 px-5 flex items-center border-b theme-border gap-2.5">
         <div class="w-7 h-7 rounded-lg bg-accent flex items-center justify-center text-white font-bold text-xs">PC</div>
         <div>
-          <p class="text-text-primary font-semibold text-sm leading-none">PCMATCH</p>
-          <p class="text-text-muted text-xs mt-0.5">Proveedor</p>
+          <p class="theme-text font-semibold text-sm leading-none">PCMATCH</p>
+          <p class="theme-text-muted text-xs mt-0.5">Proveedor</p>
         </div>
       </div>
 
@@ -19,7 +19,7 @@
           class="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-150 text-left"
           :class="activeSection === section.id
             ? 'bg-accent/10 text-accent border border-accent/20'
-            : 'text-text-muted hover:text-text-primary hover:bg-dark-card'"
+            : 'theme-text-muted hover:theme-text hover:theme-card'"
         >
           <span>{{ section.icon }}</span>
           {{ section.label }}
@@ -28,12 +28,16 @@
       </nav>
 
       <!-- Info proveedor -->
-      <div class="p-4 border-t border-dark-border">
+      <div class="p-4 border-t theme-border space-y-1">
         <div class="px-3 py-2.5 mb-1">
-          <p class="text-text-primary text-sm font-medium truncate">{{ user?.nombre }}</p>
-          <p class="text-text-muted text-xs truncate">{{ user?.correo }}</p>
+          <p class="theme-text text-sm font-medium truncate">{{ user?.nombre }}</p>
+          <p class="theme-text-muted text-xs truncate">{{ user?.correo }}</p>
         </div>
-        <button @click="handleLogout" class="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-text-muted hover:text-text-primary hover:bg-dark-card transition-all duration-150">
+        <button @click="toggleTheme" class="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm theme-text-muted hover:theme-text hover:theme-card transition-all duration-150">
+          <span v-if="isDark">☀️ Modo claro</span>
+          <span v-else>🌙 Modo oscuro</span>
+        </button>
+        <button @click="handleLogout" class="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm theme-text-muted hover:theme-text hover:theme-card transition-all duration-150">
           ← Cerrar sesión
         </button>
       </div>
@@ -43,10 +47,10 @@
     <main class="flex-1 overflow-auto">
 
       <!-- Topbar -->
-      <div class="h-16 border-b border-dark-border px-8 flex items-center justify-between sticky top-0 bg-dark-bg/90 backdrop-blur z-10">
+      <div class="h-16 border-b theme-border px-8 flex items-center justify-between sticky top-0 bg-light-bg/90 dark:bg-dark-bg/90 backdrop-blur z-10">
         <div>
-          <h1 class="font-semibold text-text-primary">{{ currentSection.label }}</h1>
-          <p class="text-xs text-text-muted mt-0.5">{{ currentSection.description }}</p>
+          <h1 class="font-semibold theme-text">{{ currentSection.label }}</h1>
+          <p class="text-xs theme-text-muted mt-0.5">{{ currentSection.description }}</p>
         </div>
         <button v-if="currentSection.cta" @click="handleCta" class="btn-primary text-sm">
           {{ currentSection.cta }}
@@ -59,26 +63,26 @@
         <template v-if="activeSection === 'dashboard'">
           <div class="grid grid-cols-3 gap-4 mb-8">
             <div class="card-dark rounded-xl p-5">
-              <p class="text-text-muted text-xs uppercase tracking-wider mb-2">Mis bodegas</p>
-              <p class="text-3xl font-bold text-text-primary font-mono">{{ bodegas.length }}</p>
+              <p class="theme-text-muted text-xs uppercase tracking-wider mb-2">Mis bodegas</p>
+              <p class="text-3xl font-bold theme-text font-mono">{{ bodegas.length }}</p>
             </div>
             <div class="card-dark rounded-xl p-5">
-              <p class="text-text-muted text-xs uppercase tracking-wider mb-2">Bodegas activas</p>
+              <p class="theme-text-muted text-xs uppercase tracking-wider mb-2">Bodegas activas</p>
               <p class="text-3xl font-bold text-green-400 font-mono">{{ bodegas.filter(b => b.activa == 1).length }}</p>
             </div>
             <div class="card-dark rounded-xl p-5">
-              <p class="text-text-muted text-xs uppercase tracking-wider mb-2">Total componentes</p>
+              <p class="theme-text-muted text-xs uppercase tracking-wider mb-2">Total componentes</p>
               <p class="text-3xl font-bold text-accent font-mono">{{ bodegas.reduce((s, b) => s + Number(b.total_componentes), 0) }}</p>
             </div>
           </div>
 
           <!-- Resumen de bodegas -->
           <div class="card-dark rounded-xl overflow-hidden">
-            <div class="px-6 py-4 border-b border-dark-border">
-              <h2 class="font-semibold text-text-primary">Mis bodegas</h2>
+            <div class="px-6 py-4 border-b theme-border">
+              <h2 class="font-semibold theme-text">Mis bodegas</h2>
             </div>
-            <div v-if="loadingBodegas" class="px-6 py-12 text-center text-text-muted text-sm">Cargando...</div>
-            <div v-else-if="bodegas.length === 0" class="px-6 py-12 text-center text-text-muted text-sm">
+            <div v-if="loadingBodegas" class="px-6 py-12 text-center theme-text-muted text-sm">Cargando...</div>
+            <div v-else-if="bodegas.length === 0" class="px-6 py-12 text-center theme-text-muted text-sm">
               No tienes bodegas asignadas aún
             </div>
             <div v-else class="divide-y divide-dark-border">
@@ -86,14 +90,14 @@
                 <div class="flex items-center gap-3">
                   <div class="w-9 h-9 rounded-lg bg-accent/10 border border-accent/20 flex items-center justify-center text-accent text-sm">🏪</div>
                   <div>
-                    <p class="text-sm font-medium text-text-primary">{{ b.nombre }}</p>
-                    <p class="text-xs text-text-muted">{{ b.correo }}</p>
+                    <p class="text-sm font-medium theme-text">{{ b.nombre }}</p>
+                    <p class="text-xs theme-text-muted">{{ b.correo }}</p>
                   </div>
                 </div>
                 <div class="flex items-center gap-4">
                   <div class="text-right">
-                    <p class="text-sm font-mono text-text-primary">{{ b.total_componentes }}</p>
-                    <p class="text-xs text-text-muted">componentes</p>
+                    <p class="text-sm font-mono theme-text">{{ b.total_componentes }}</p>
+                    <p class="text-xs theme-text-muted">componentes</p>
                   </div>
                   <span class="badge text-xs px-2.5 py-1" :class="b.activa == 1 ? 'bg-green-500/10 text-green-400 border border-green-500/20' : 'bg-red-500/10 text-red-400 border border-red-500/20'">
                     {{ b.activa == 1 ? 'Activa' : 'Inactiva' }}
@@ -107,22 +111,22 @@
         <!-- ===== MIS BODEGAS ===== -->
         <template v-if="activeSection === 'bodegas'">
           <div class="card-dark rounded-xl overflow-hidden overflow-x-auto">
-            <div class="px-6 py-4 border-b border-dark-border flex items-center justify-between">
-              <h2 class="font-semibold text-text-primary">Mis bodegas</h2>
-              <input v-model="filterBodega" type="text" placeholder="Buscar..." class="bg-dark-bg border border-dark-border rounded-lg px-4 py-2 text-sm text-text-primary placeholder-text-muted focus:outline-none focus:border-accent transition-colors w-48" />
+            <div class="px-6 py-4 border-b theme-border flex items-center justify-between">
+              <h2 class="font-semibold theme-text">Mis bodegas</h2>
+              <input v-model="filterBodega" type="text" placeholder="Buscar..." class="theme-bg border theme-border rounded-lg px-4 py-2 text-sm theme-text placeholder-text-muted focus:outline-none focus:border-accent transition-colors w-48" />
             </div>
-            <div v-if="loadingBodegas" class="px-6 py-12 text-center text-text-muted text-sm">Cargando bodegas...</div>
+            <div v-if="loadingBodegas" class="px-6 py-12 text-center theme-text-muted text-sm">Cargando bodegas...</div>
             <table v-else class="w-full min-w-[640px]">
-              <thead class="border-b border-dark-border">
-                <tr><th v-for="h in ['Nombre','Teléfono','Correo','Componentes','Estado','Acciones']" :key="h" class="px-6 py-3 text-left text-xs text-text-muted uppercase tracking-wider font-medium">{{ h }}</th></tr>
+              <thead class="border-b theme-border">
+                <tr><th v-for="h in ['Nombre','Teléfono','Correo','Componentes','Estado','Acciones']" :key="h" class="px-6 py-3 text-left text-xs theme-text-muted uppercase tracking-wider font-medium">{{ h }}</th></tr>
               </thead>
               <tbody class="divide-y divide-dark-border">
-                <tr v-if="filteredBodegas.length === 0"><td colspan="6" class="px-6 py-12 text-center text-text-muted text-sm">Sin bodegas asignadas</td></tr>
-                <tr v-for="b in filteredBodegas" :key="b.id" class="hover:bg-dark-bg/50 transition-colors">
-                  <td class="px-6 py-4 text-sm font-medium text-text-primary">{{ b.nombre }}</td>
-                  <td class="px-6 py-4 text-sm text-text-muted">{{ b.telefono || '—' }}</td>
-                  <td class="px-6 py-4 text-sm text-text-muted">{{ b.correo }}</td>
-                  <td class="px-6 py-4 text-sm font-mono text-text-primary">{{ b.total_componentes }}</td>
+                <tr v-if="filteredBodegas.length === 0"><td colspan="6" class="px-6 py-12 text-center theme-text-muted text-sm">Sin bodegas asignadas</td></tr>
+                <tr v-for="b in filteredBodegas" :key="b.id" class="hover:bg-gray-100 dark:bg-dark-bg/50 transition-colors">
+                  <td class="px-6 py-4 text-sm font-medium theme-text">{{ b.nombre }}</td>
+                  <td class="px-6 py-4 text-sm theme-text-muted">{{ b.telefono || '—' }}</td>
+                  <td class="px-6 py-4 text-sm theme-text-muted">{{ b.correo }}</td>
+                  <td class="px-6 py-4 text-sm font-mono theme-text">{{ b.total_componentes }}</td>
                   <td class="px-6 py-4">
                     <span class="badge text-xs px-2.5 py-1" :class="b.activa == 1 ? 'bg-green-500/10 text-green-400 border border-green-500/20' : 'bg-red-500/10 text-red-400 border border-red-500/20'">
                       {{ b.activa == 1 ? 'Activa' : 'Inactiva' }}
@@ -130,11 +134,11 @@
                   </td>
                   <td class="px-6 py-4">
                     <div class="flex gap-2">
-                        <button @click="toggleActivoBodega(b)" class="text-xs text-text-muted hover:text-green-400 px-2 py-1 rounded hover:bg-green-400/10 transition-colors">
+                        <button @click="toggleActivoBodega(b)" class="text-xs theme-text-muted hover:text-green-400 px-2 py-1 rounded hover:bg-green-400/10 transition-colors">
                            {{ b.activa == 1 ? 'Desactivar' : 'Activar' }}
                         </button>
-                      <button @click="openEditBodega(b)" class="text-xs text-text-muted hover:text-accent px-2 py-1 rounded hover:bg-accent/10 transition-colors">Editar</button>
-                      <button @click="openDeleteBodega(b)" class="text-xs text-text-muted hover:text-red-400 px-2 py-1 rounded hover:bg-red-400/10 transition-colors">Eliminar</button>
+                      <button @click="openEditBodega(b)" class="text-xs theme-text-muted hover:text-accent px-2 py-1 rounded hover:bg-accent/10 transition-colors">Editar</button>
+                      <button @click="openDeleteBodega(b)" class="text-xs theme-text-muted hover:text-red-400 px-2 py-1 rounded hover:bg-red-400/10 transition-colors">Eliminar</button>
                     </div>
                   </td>
                 </tr>
@@ -146,23 +150,23 @@
         <!-- ===== COTIZACIONES ===== -->
         <template v-if="activeSection === 'cotizaciones'">
           <div class="card-dark rounded-xl overflow-hidden overflow-x-auto">
-            <div class="px-6 py-4 border-b border-dark-border">
-              <h2 class="font-semibold text-text-primary">Cotizaciones de mis bodegas</h2>
+            <div class="px-6 py-4 border-b theme-border">
+              <h2 class="font-semibold theme-text">Cotizaciones de mis bodegas</h2>
             </div>
-            <div v-if="loadingCotizaciones" class="px-6 py-12 text-center text-text-muted text-sm">Cargando...</div>
-            <div v-else-if="cotizaciones.length === 0" class="px-6 py-12 text-center text-text-muted text-sm">Sin cotizaciones aún</div>
+            <div v-if="loadingCotizaciones" class="px-6 py-12 text-center theme-text-muted text-sm">Cargando...</div>
+            <div v-else-if="cotizaciones.length === 0" class="px-6 py-12 text-center theme-text-muted text-sm">Sin cotizaciones aún</div>
             <table v-else class="w-full min-w-[640px]">
-              <thead class="border-b border-dark-border">
-                <tr><th v-for="h in ['#','Cliente','Perfil','Componentes','Total','Fecha']" :key="h" class="px-6 py-3 text-left text-xs text-text-muted uppercase tracking-wider font-medium">{{ h }}</th></tr>
+              <thead class="border-b theme-border">
+                <tr><th v-for="h in ['#','Cliente','Perfil','Componentes','Total','Fecha']" :key="h" class="px-6 py-3 text-left text-xs theme-text-muted uppercase tracking-wider font-medium">{{ h }}</th></tr>
               </thead>
               <tbody class="divide-y divide-dark-border">
-                <tr v-for="c in cotizaciones" :key="c.id" class="hover:bg-dark-bg/50 transition-colors">
-                  <td class="px-6 py-4 text-sm font-mono text-text-muted">#{{ c.id }}</td>
-                  <td class="px-6 py-4 text-sm text-text-primary">{{ c.nombre }} {{ c.apellido }}</td>
-                  <td class="px-6 py-4 text-sm text-text-muted">{{ perfilLabel(c.perfil) }}</td>
-                  <td class="px-6 py-4 text-sm font-mono text-text-primary">{{ c.total_items }}</td>
+                <tr v-for="c in cotizaciones" :key="c.id" class="hover:bg-gray-100 dark:bg-dark-bg/50 transition-colors">
+                  <td class="px-6 py-4 text-sm font-mono theme-text-muted">#{{ c.id }}</td>
+                  <td class="px-6 py-4 text-sm theme-text">{{ c.nombre }} {{ c.apellido }}</td>
+                  <td class="px-6 py-4 text-sm theme-text-muted">{{ perfilLabel(c.perfil) }}</td>
+                  <td class="px-6 py-4 text-sm font-mono theme-text">{{ c.total_items }}</td>
                   <td class="px-6 py-4 text-sm font-mono text-accent font-medium">${{ Number(c.total).toLocaleString() }}</td>
-                  <td class="px-6 py-4 text-sm text-text-muted">{{ formatDate(c.created_at) }}</td>
+                  <td class="px-6 py-4 text-sm theme-text-muted">{{ formatDate(c.created_at) }}</td>
                 </tr>
               </tbody>
             </table>
@@ -172,11 +176,11 @@
         <!-- ===== COMPONENTES ===== -->
         <template v-if="activeSection === 'componentes'">
           <div class="card-dark rounded-xl overflow-hidden overflow-x-auto">
-            <div class="px-6 py-4 border-b border-dark-border">
+            <div class="px-6 py-4 border-b theme-border">
               <div class="flex items-center justify-between">
-                <h2 class="font-semibold text-text-primary">Componentes de mis bodegas</h2>
+                <h2 class="font-semibold theme-text">Componentes de mis bodegas</h2>
                 <div class="flex items-center gap-3">
-                  <input v-model="filterComponente" type="text" placeholder="Buscar..." class="bg-dark-bg border border-dark-border rounded-lg px-4 py-2 text-sm text-text-primary placeholder-text-muted focus:outline-none focus:border-accent transition-colors w-48" />
+                  <input v-model="filterComponente" type="text" placeholder="Buscar..." class="theme-bg border theme-border rounded-lg px-4 py-2 text-sm theme-text placeholder-text-muted focus:outline-none focus:border-accent transition-colors w-48" />
                   <button @click="showAdvancedFilters = !showAdvancedFilters" class="btn-secondary text-sm px-4 py-2 flex items-center gap-2">
                     <span>⚙️</span> Filtros
                   </button>
@@ -184,10 +188,10 @@
               </div>
               
               <!-- Advanced Filters Panel -->
-              <div v-if="showAdvancedFilters" class="p-4 bg-dark-bg border border-dark-border rounded-xl grid grid-cols-2 md:grid-cols-5 gap-4 animate-fade-in mt-4">
+              <div v-if="showAdvancedFilters" class="p-4 theme-bg border theme-border rounded-xl grid grid-cols-2 md:grid-cols-5 gap-4 animate-fade-in mt-4">
                 <div>
-                  <label class="block text-xs font-medium text-text-muted mb-1.5">Gama</label>
-                  <select v-model="filterGama" class="w-full bg-dark-card border border-dark-border rounded-lg px-3 py-2 text-sm text-text-primary focus:outline-none focus:border-accent transition-colors">
+                  <label class="block text-xs font-medium theme-text-muted mb-1.5">Gama</label>
+                  <select v-model="filterGama" class="w-full theme-card border theme-border rounded-lg px-3 py-2 text-sm theme-text focus:outline-none focus:border-accent transition-colors">
                     <option value="">Todas</option>
                     <option value="alta">Alta</option>
                     <option value="media">Media</option>
@@ -195,8 +199,8 @@
                   </select>
                 </div>
                 <div>
-                  <label class="block text-xs font-medium text-text-muted mb-1.5">Enfoque</label>
-                  <select v-model="filterEnfoque" class="w-full bg-dark-card border border-dark-border rounded-lg px-3 py-2 text-sm text-text-primary focus:outline-none focus:border-accent transition-colors">
+                  <label class="block text-xs font-medium theme-text-muted mb-1.5">Enfoque</label>
+                  <select v-model="filterEnfoque" class="w-full theme-card border theme-border rounded-lg px-3 py-2 text-sm theme-text focus:outline-none focus:border-accent transition-colors">
                     <option value="">Todos</option>
                     <option value="gaming">Gaming</option>
                     <option value="diseño">Diseño</option>
@@ -205,34 +209,34 @@
                   </select>
                 </div>
                 <div>
-                  <label class="block text-xs font-medium text-text-muted mb-1.5">Núcleos</label>
-                  <input v-model="filterNucleos" type="number" min="1" placeholder="Ej: 6" class="w-full bg-dark-card border border-dark-border rounded-lg px-3 py-2 text-sm text-text-primary focus:outline-none focus:border-accent transition-colors" />
+                  <label class="block text-xs font-medium theme-text-muted mb-1.5">Núcleos</label>
+                  <input v-model="filterNucleos" type="number" min="1" placeholder="Ej: 6" class="w-full theme-card border theme-border rounded-lg px-3 py-2 text-sm theme-text focus:outline-none focus:border-accent transition-colors" />
                 </div>
                 <div>
-                  <label class="block text-xs font-medium text-text-muted mb-1.5">Hilos</label>
-                  <input v-model="filterHilos" type="number" min="1" placeholder="Ej: 12" class="w-full bg-dark-card border border-dark-border rounded-lg px-3 py-2 text-sm text-text-primary focus:outline-none focus:border-accent transition-colors" />
+                  <label class="block text-xs font-medium theme-text-muted mb-1.5">Hilos</label>
+                  <input v-model="filterHilos" type="number" min="1" placeholder="Ej: 12" class="w-full theme-card border theme-border rounded-lg px-3 py-2 text-sm theme-text focus:outline-none focus:border-accent transition-colors" />
                 </div>
                 <div>
-                  <label class="block text-xs font-medium text-text-muted mb-1.5">Frec. mínima (GHz)</label>
-                  <input v-model="filterFrecuenciaMin" type="number" step="0.1" min="0" placeholder="Ej: 3.5" class="w-full bg-dark-card border border-dark-border rounded-lg px-3 py-2 text-sm text-text-primary focus:outline-none focus:border-accent transition-colors" />
+                  <label class="block text-xs font-medium theme-text-muted mb-1.5">Frec. mínima (GHz)</label>
+                  <input v-model="filterFrecuenciaMin" type="number" step="0.1" min="0" placeholder="Ej: 3.5" class="w-full theme-card border theme-border rounded-lg px-3 py-2 text-sm theme-text focus:outline-none focus:border-accent transition-colors" />
                 </div>
               </div>
             </div>
-            <div v-if="loadingComponentes" class="px-6 py-12 text-center text-text-muted text-sm">Cargando componentes...</div>
+            <div v-if="loadingComponentes" class="px-6 py-12 text-center theme-text-muted text-sm">Cargando componentes...</div>
             <table v-else class="w-full min-w-[640px]">
-              <thead class="border-b border-dark-border">
-                <tr><th v-for="h in ['Componente','Categoría','Gama','Precio','Stock','Acciones']" :key="h" class="px-6 py-3 text-left text-xs text-text-muted uppercase tracking-wider font-medium">{{ h }}</th></tr>
+              <thead class="border-b theme-border">
+                <tr><th v-for="h in ['Componente','Categoría','Gama','Precio','Stock','Acciones']" :key="h" class="px-6 py-3 text-left text-xs theme-text-muted uppercase tracking-wider font-medium">{{ h }}</th></tr>
               </thead>
               <tbody class="divide-y divide-dark-border">
-                <tr v-if="filteredComponentes.length === 0"><td colspan="6" class="px-6 py-12 text-center text-text-muted text-sm">Sin componentes</td></tr>
-                <tr v-for="c in filteredComponentes" :key="c.id" class="hover:bg-dark-bg/50 transition-colors">
-                  <td class="px-6 py-4 text-sm font-medium text-text-primary">{{ c.nombre }}</td>
+                <tr v-if="filteredComponentes.length === 0"><td colspan="6" class="px-6 py-12 text-center theme-text-muted text-sm">Sin componentes</td></tr>
+                <tr v-for="c in filteredComponentes" :key="c.id" class="hover:bg-gray-100 dark:bg-dark-bg/50 transition-colors">
+                  <td class="px-6 py-4 text-sm font-medium theme-text">{{ c.nombre }}</td>
                   <td class="px-6 py-4"><span class="badge text-xs bg-accent/10 text-accent border border-accent/20">{{ c.categoria }}</span></td>
                   <td class="px-6 py-4"><span class="text-xs px-2 py-0.5 rounded-full font-medium border" :class="tierStyles[c.gama]">{{ c.gama }}</span></td>
                   <td class="px-6 py-4 text-sm text-accent font-mono font-medium">${{ Number(c.precio).toLocaleString() }}</td>
-                  <td class="px-6 py-4 text-sm font-mono" :class="c.stock <= 3 ? 'text-yellow-400' : 'text-text-primary'">{{ c.stock }}</td>
+                  <td class="px-6 py-4 text-sm font-mono" :class="c.stock <= 3 ? 'text-yellow-400' : 'theme-text'">{{ c.stock }}</td>
                   <td class="px-6 py-4">
-                    <button @click="openEditComp(c)" class="text-xs text-text-muted hover:text-accent px-2 py-1 rounded hover:bg-accent/10 transition-colors">Editar</button>
+                    <button @click="openEditComp(c)" class="text-xs theme-text-muted hover:text-accent px-2 py-1 rounded hover:bg-accent/10 transition-colors">Editar</button>
                   </td>
                 </tr>
               </tbody>
@@ -246,17 +250,17 @@
           <div class="relative card-dark rounded-2xl p-6 w-full max-w-lg my-auto shadow-2xl">
             <div class="flex items-center justify-between mb-6">
               <div>
-                <h2 class="text-lg font-bold text-text-primary">Añadir componente</h2>
-                <p class="text-xs text-text-muted mt-0.5">Agrega un nuevo producto a una de tus bodegas</p>
+                <h2 class="text-lg font-bold theme-text">Añadir componente</h2>
+                <p class="text-xs theme-text-muted mt-0.5">Agrega un nuevo producto a una de tus bodegas</p>
               </div>
-              <button @click="closeAddModal" class="text-text-muted hover:text-text-primary transition-colors text-2xl leading-none w-8 h-8 flex items-center justify-center rounded-lg hover:bg-dark-bg">×</button>
+              <button @click="closeAddModal" class="theme-text-muted hover:theme-text transition-colors text-2xl leading-none w-8 h-8 flex items-center justify-center rounded-lg hover:theme-bg">×</button>
             </div>
             <div class="space-y-5">
               
               <!-- Select de Bodega destino -->
               <div>
-                <label class="block text-sm font-medium text-text-primary mb-2">Bodega destino <span class="text-red-400">*</span></label>
-                <select v-model="newComp.bodega_id" class="w-full bg-dark-bg border border-dark-border rounded-lg px-4 py-3 text-sm text-text-primary focus:outline-none focus:border-accent transition-colors">
+                <label class="block text-sm font-medium theme-text mb-2">Bodega destino <span class="text-red-400">*</span></label>
+                <select v-model="newComp.bodega_id" class="w-full theme-bg border theme-border rounded-lg px-4 py-3 text-sm theme-text focus:outline-none focus:border-accent transition-colors">
                   <option value="" disabled>Selecciona una bodega...</option>
                   <option v-for="b in bodegas.filter(b => b.activa == 1)" :key="b.id" :value="b.id">{{ b.nombre }}</option>
                 </select>
@@ -265,7 +269,7 @@
 
               <!-- Select buscable de componente maestro -->
               <div>
-                <label class="block text-sm font-medium text-text-primary mb-2">Componente del catálogo maestro <span class="text-red-400">*</span></label>
+                <label class="block text-sm font-medium theme-text mb-2">Componente del catálogo maestro <span class="text-red-400">*</span></label>
                 <div class="relative">
                   <input
                     v-model="productoSearch"
@@ -273,28 +277,28 @@
                     @focus="showProductoDropdown = true"
                     type="text"
                     placeholder="Buscar componente..."
-                    class="w-full bg-dark-bg border border-dark-border rounded-lg px-4 py-3 text-sm text-text-primary placeholder-text-muted focus:outline-none focus:border-accent transition-colors"
+                    class="w-full theme-bg border theme-border rounded-lg px-4 py-3 text-sm theme-text placeholder-text-muted focus:outline-none focus:border-accent transition-colors"
                     :class="{ 'border-accent': newComp.master_component_id }"
                     autocomplete="off"
                   />
-                  <div v-if="showProductoDropdown && productosFiltrados.length > 0" class="absolute top-full left-0 right-0 mt-1 bg-dark-card border border-dark-border rounded-lg shadow-xl z-20 max-h-52 overflow-y-auto">
-                    <button v-for="prod in productosFiltrados" :key="prod.id" @click="selectProducto(prod)" class="w-full flex items-center justify-between px-4 py-2.5 text-sm hover:bg-dark-bg transition-colors text-left">
+                  <div v-if="showProductoDropdown && productosFiltrados.length > 0" class="absolute top-full left-0 right-0 mt-1 theme-card border theme-border rounded-lg shadow-xl z-20 max-h-52 overflow-y-auto">
+                    <button v-for="prod in productosFiltrados" :key="prod.id" @click="selectProducto(prod)" class="w-full flex items-center justify-between px-4 py-2.5 text-sm hover:theme-bg transition-colors text-left">
                       <div class="flex-1 overflow-hidden pr-2">
-                        <span class="text-text-primary block truncate">{{ prod.nombre }}</span>
-                        <span class="text-xs text-text-muted block mt-0.5 truncate">{{ prod.especificacion }}</span>
+                        <span class="theme-text block truncate">{{ prod.nombre }}</span>
+                        <span class="text-xs theme-text-muted block mt-0.5 truncate">{{ prod.especificacion }}</span>
                       </div>
                       <span class="text-xs text-accent ml-2 flex-shrink-0">{{ prod.categoria }}</span>
                     </button>
                   </div>
                   <!-- Sin resultados -->
-                  <div v-if="showProductoDropdown && productoSearch.length > 0 && productosFiltrados.length === 0" class="absolute top-full left-0 right-0 mt-1 bg-dark-card border border-dark-border rounded-lg shadow-xl z-20 px-4 py-3 text-sm text-text-muted">
+                  <div v-if="showProductoDropdown && productoSearch.length > 0 && productosFiltrados.length === 0" class="absolute top-full left-0 right-0 mt-1 theme-card border theme-border rounded-lg shadow-xl z-20 px-4 py-3 text-sm theme-text-muted">
                     No se encontraron componentes
                   </div>
                 </div>
                 <!-- Selección actual -->
-                <div v-if="newComp.master_component_id" class="mt-2 p-3 bg-dark-card border border-dark-border rounded-lg flex flex-col gap-1">
-                  <span class="text-sm font-medium text-text-primary flex items-center gap-2"><span class="text-accent text-xs">✓</span> {{ newComp.nombre }}</span>
-                  <span class="text-xs text-text-muted">{{ newComp.especificacion }}</span>
+                <div v-if="newComp.master_component_id" class="mt-2 p-3 theme-card border theme-border rounded-lg flex flex-col gap-1">
+                  <span class="text-sm font-medium theme-text flex items-center gap-2"><span class="text-accent text-xs">✓</span> {{ newComp.nombre }}</span>
+                  <span class="text-xs theme-text-muted">{{ newComp.especificacion }}</span>
                 </div>
               </div>
 
@@ -303,12 +307,12 @@
               <!-- Precio y Stock -->
               <div class="grid grid-cols-2 gap-4">
                 <div>
-                  <label class="block text-sm font-medium text-text-primary mb-2">Precio ($) <span class="text-red-400">*</span></label>
-                  <input v-model="newComp.precio" type="number" min="0" step="1" @keydown="blockInvalidChars($event)" class="w-full bg-dark-bg border border-dark-border rounded-lg px-4 py-3 text-sm text-text-primary focus:outline-none focus:border-accent transition-colors" />
+                  <label class="block text-sm font-medium theme-text mb-2">Precio ($) <span class="text-red-400">*</span></label>
+                  <input v-model="newComp.precio" type="number" min="0" step="1" @keydown="blockInvalidChars($event)" class="w-full theme-bg border theme-border rounded-lg px-4 py-3 text-sm theme-text focus:outline-none focus:border-accent transition-colors" />
                 </div>
                 <div>
-                  <label class="block text-sm font-medium text-text-primary mb-2">Stock inicial <span class="text-red-400">*</span></label>
-                  <input v-model="newComp.stock" type="number" min="0" step="1" @keydown="blockInvalidCharsStock($event)" class="w-full bg-dark-bg border border-dark-border rounded-lg px-4 py-3 text-sm text-text-primary focus:outline-none focus:border-accent transition-colors" />
+                  <label class="block text-sm font-medium theme-text mb-2">Stock inicial <span class="text-red-400">*</span></label>
+                  <input v-model="newComp.stock" type="number" min="0" step="1" @keydown="blockInvalidCharsStock($event)" class="w-full theme-bg border theme-border rounded-lg px-4 py-3 text-sm theme-text focus:outline-none focus:border-accent transition-colors" />
                 </div>
               </div>
 
@@ -332,27 +336,27 @@
       <div class="relative card-dark rounded-2xl p-6 w-full max-w-md my-auto shadow-2xl">
         <div class="flex items-center justify-between mb-6">
           <div>
-            <h2 class="text-lg font-bold text-text-primary">Agregar bodega</h2>
-            <p class="text-xs text-text-muted mt-0.5">Se asignará automáticamente a tu cuenta</p>
+            <h2 class="text-lg font-bold theme-text">Agregar bodega</h2>
+            <p class="text-xs theme-text-muted mt-0.5">Se asignará automáticamente a tu cuenta</p>
           </div>
-          <button @click="showBodegaModal = false" class="text-text-muted hover:text-text-primary text-2xl leading-none w-8 h-8 flex items-center justify-center rounded-lg hover:bg-dark-bg">×</button>
+          <button @click="showBodegaModal = false" class="theme-text-muted hover:theme-text text-2xl leading-none w-8 h-8 flex items-center justify-center rounded-lg hover:theme-bg">×</button>
         </div>
         <div class="space-y-5">
           <div>
-            <label class="block text-sm font-medium text-text-primary mb-2">Nombre de la bodega</label>
-            <input v-model="newBodega.nombre" type="text" placeholder="Ej: Bodega Norte" class="w-full bg-dark-bg border border-dark-border rounded-lg px-4 py-3 text-sm text-text-primary placeholder-text-muted focus:outline-none focus:border-accent transition-colors" />
+            <label class="block text-sm font-medium theme-text mb-2">Nombre de la bodega</label>
+            <input v-model="newBodega.nombre" type="text" placeholder="Ej: Bodega Norte" class="w-full theme-bg border theme-border rounded-lg px-4 py-3 text-sm theme-text placeholder-text-muted focus:outline-none focus:border-accent transition-colors" />
           </div>
           <div>
-            <label class="block text-sm font-medium text-text-primary mb-2">Correo electrónico</label>
-            <input v-model="newBodega.correo" type="email" placeholder="bodega@email.com" class="w-full bg-dark-bg border border-dark-border rounded-lg px-4 py-3 text-sm text-text-primary placeholder-text-muted focus:outline-none focus:border-accent transition-colors" />
+            <label class="block text-sm font-medium theme-text mb-2">Correo electrónico</label>
+            <input v-model="newBodega.correo" type="email" placeholder="bodega@email.com" class="w-full theme-bg border theme-border rounded-lg px-4 py-3 text-sm theme-text placeholder-text-muted focus:outline-none focus:border-accent transition-colors" />
           </div>
           <div>
-            <label class="block text-sm font-medium text-text-primary mb-2">Teléfono</label>
-            <input v-model="newBodega.telefono" type="tel" placeholder="+57 300 123 4567" class="w-full bg-dark-bg border border-dark-border rounded-lg px-4 py-3 text-sm text-text-primary placeholder-text-muted focus:outline-none focus:border-accent transition-colors" />
+            <label class="block text-sm font-medium theme-text mb-2">Teléfono</label>
+            <input v-model="newBodega.telefono" type="tel" placeholder="+57 300 123 4567" class="w-full theme-bg border theme-border rounded-lg px-4 py-3 text-sm theme-text placeholder-text-muted focus:outline-none focus:border-accent transition-colors" />
           </div>
           <div>
-            <label class="block text-sm font-medium text-text-primary mb-2">Contraseña de acceso</label>
-            <input v-model="newBodega.password" type="password" placeholder="Mínimo 8 caracteres" class="w-full bg-dark-bg border border-dark-border rounded-lg px-4 py-3 text-sm text-text-primary placeholder-text-muted focus:outline-none focus:border-accent transition-colors" />
+            <label class="block text-sm font-medium theme-text mb-2">Contraseña de acceso</label>
+            <input v-model="newBodega.password" type="password" placeholder="Mínimo 8 caracteres" class="w-full theme-bg border theme-border rounded-lg px-4 py-3 text-sm theme-text placeholder-text-muted focus:outline-none focus:border-accent transition-colors" />
           </div>
           <p v-if="bodegaError" class="text-xs text-red-400 bg-red-500/10 border border-red-500/20 rounded-lg px-4 py-2.5">{{ bodegaError }}</p>
         </div>
@@ -368,25 +372,25 @@
       <div class="fixed inset-0 bg-black/60 backdrop-blur-sm" @click="showEditBodegaModal = false"></div>
       <div class="relative card-dark rounded-2xl p-6 w-full max-w-md my-auto shadow-2xl">
         <div class="flex items-center justify-between mb-6">
-          <h2 class="text-lg font-bold text-text-primary">Editar bodega</h2>
-          <button @click="showEditBodegaModal = false" class="text-text-muted hover:text-text-primary text-2xl leading-none w-8 h-8 flex items-center justify-center rounded-lg hover:bg-dark-bg">×</button>
+          <h2 class="text-lg font-bold theme-text">Editar bodega</h2>
+          <button @click="showEditBodegaModal = false" class="theme-text-muted hover:theme-text text-2xl leading-none w-8 h-8 flex items-center justify-center rounded-lg hover:theme-bg">×</button>
         </div>
         <div class="space-y-5">
           <div>
-            <label class="block text-sm font-medium text-text-primary mb-2">Nombre</label>
-            <input v-model="editingBodega.nombre" type="text" class="w-full bg-dark-bg border border-dark-border rounded-lg px-4 py-3 text-sm text-text-primary focus:outline-none focus:border-accent transition-colors" />
+            <label class="block text-sm font-medium theme-text mb-2">Nombre</label>
+            <input v-model="editingBodega.nombre" type="text" class="w-full theme-bg border theme-border rounded-lg px-4 py-3 text-sm theme-text focus:outline-none focus:border-accent transition-colors" />
           </div>
           <div>
-            <label class="block text-sm font-medium text-text-primary mb-2">Teléfono</label>
-            <input v-model="editingBodega.telefono" type="tel" class="w-full bg-dark-bg border border-dark-border rounded-lg px-4 py-3 text-sm text-text-primary focus:outline-none focus:border-accent transition-colors" />
+            <label class="block text-sm font-medium theme-text mb-2">Teléfono</label>
+            <input v-model="editingBodega.telefono" type="tel" class="w-full theme-bg border theme-border rounded-lg px-4 py-3 text-sm theme-text focus:outline-none focus:border-accent transition-colors" />
           </div>
           <div>
-            <label class="block text-sm font-medium text-text-primary mb-2">Estado</label>
+            <label class="block text-sm font-medium theme-text mb-2">Estado</label>
             <div class="grid grid-cols-2 gap-3">
               <button @click="editingBodega.activa = 1" class="py-3 rounded-xl border text-sm font-medium transition-all"
-                :class="editingBodega.activa == 1 ? 'border-green-500/40 bg-green-500/10 text-green-400' : 'border-dark-border text-text-muted hover:border-green-500/30'">✓ Activa</button>
+                :class="editingBodega.activa == 1 ? 'border-green-500/40 bg-green-500/10 text-green-400' : 'theme-border theme-text-muted hover:border-green-500/30'">✓ Activa</button>
               <button @click="editingBodega.activa = 0" class="py-3 rounded-xl border text-sm font-medium transition-all"
-                :class="editingBodega.activa == 0 ? 'border-red-500/40 bg-red-500/10 text-red-400' : 'border-dark-border text-text-muted hover:border-red-500/30'">✕ Inactiva</button>
+                :class="editingBodega.activa == 0 ? 'border-red-500/40 bg-red-500/10 text-red-400' : 'theme-border theme-text-muted hover:border-red-500/30'">✕ Inactiva</button>
             </div>
           </div>
           <p v-if="editBodegaError" class="text-xs text-red-400 bg-red-500/10 border border-red-500/20 rounded-lg px-4 py-2.5">{{ editBodegaError }}</p>
@@ -403,9 +407,9 @@
       <div class="fixed inset-0 bg-black/60 backdrop-blur-sm" @click="showDeleteBodegaModal = false"></div>
       <div class="relative card-dark rounded-2xl p-6 w-full max-w-sm my-auto shadow-2xl text-center">
         <div class="w-14 h-14 rounded-full bg-red-500/10 border border-red-500/20 flex items-center justify-center mx-auto mb-4 text-2xl">🗑️</div>
-        <h2 class="text-lg font-bold text-text-primary mb-2">Eliminar bodega</h2>
-        <p class="text-text-muted text-sm mb-1">¿Eliminar <span class="text-text-primary font-semibold">{{ deletingBodega?.nombre }}</span>?</p>
-        <p class="text-xs text-text-muted mb-6 px-4">Se eliminarán también todos sus componentes.</p>
+        <h2 class="text-lg font-bold theme-text mb-2">Eliminar bodega</h2>
+        <p class="theme-text-muted text-sm mb-1">¿Eliminar <span class="theme-text font-semibold">{{ deletingBodega?.nombre }}</span>?</p>
+        <p class="text-xs theme-text-muted mb-6 px-4">Se eliminarán también todos sus componentes.</p>
         <div class="flex gap-3">
           <button @click="confirmDeleteBodega" :disabled="savingDeleteBodega" class="flex-1 py-3 rounded-lg text-sm font-medium bg-red-500/10 text-red-400 border border-red-500/20 hover:bg-red-500/20 transition-colors">
             {{ savingDeleteBodega ? 'Eliminando...' : 'Sí, eliminar' }}
@@ -421,26 +425,26 @@
       <div class="relative card-dark rounded-2xl p-6 w-full max-w-lg my-auto shadow-2xl">
         <div class="flex items-center justify-between mb-6">
           <div>
-            <h2 class="text-lg font-bold text-text-primary">Editar componente</h2>
-            <p class="text-xs text-text-muted mt-0.5">{{ editingComp.nombre }}</p>
+            <h2 class="text-lg font-bold theme-text">Editar componente</h2>
+            <p class="text-xs theme-text-muted mt-0.5">{{ editingComp.nombre }}</p>
           </div>
-          <button @click="showEditCompModal = false" class="text-text-muted hover:text-text-primary transition-colors text-2xl leading-none w-8 h-8 flex items-center justify-center rounded-lg hover:bg-dark-bg">×</button>
+          <button @click="showEditCompModal = false" class="theme-text-muted hover:theme-text transition-colors text-2xl leading-none w-8 h-8 flex items-center justify-center rounded-lg hover:theme-bg">×</button>
         </div>
 
         <div class="space-y-5">
           <div class="grid grid-cols-2 gap-4">
             <div>
-              <label class="block text-sm font-medium text-text-primary mb-2">Precio ($)</label>
-              <input v-model="editingComp.precio" type="number" class="w-full bg-dark-bg border border-dark-border rounded-lg px-4 py-3 text-sm text-text-primary focus:outline-none focus:border-accent transition-colors" />
+              <label class="block text-sm font-medium theme-text mb-2">Precio ($)</label>
+              <input v-model="editingComp.precio" type="number" class="w-full theme-bg border theme-border rounded-lg px-4 py-3 text-sm theme-text focus:outline-none focus:border-accent transition-colors" />
             </div>
             <div>
-              <label class="block text-sm font-medium text-text-primary mb-2">Stock</label>
-              <input v-model="editingComp.stock" type="number" min="0" class="w-full bg-dark-bg border border-dark-border rounded-lg px-4 py-3 text-sm text-text-primary focus:outline-none focus:border-accent transition-colors" />
+              <label class="block text-sm font-medium theme-text mb-2">Stock</label>
+              <input v-model="editingComp.stock" type="number" min="0" class="w-full theme-bg border theme-border rounded-lg px-4 py-3 text-sm theme-text focus:outline-none focus:border-accent transition-colors" />
             </div>
           </div>
           
           <div class="p-3 bg-accent/5 border border-accent/20 rounded-lg mt-4">
-            <p class="text-xs text-text-muted">Las especificaciones técnicas solo pueden ser modificadas por un Administrador desde el Catálogo Maestro.</p>
+            <p class="text-xs theme-text-muted">Las especificaciones técnicas solo pueden ser modificadas por un Administrador desde el Catálogo Maestro.</p>
           </div>
 
           <p v-if="editCompError" class="text-xs text-red-400 bg-red-500/10 border border-red-500/20 rounded-lg px-4 py-2.5">{{ editCompError }}</p>
@@ -458,6 +462,8 @@
 </template>
 
 <script setup>
+import { useTheme } from '../composables/useTheme'
+const { isDark, toggleTheme } = useTheme()
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuth } from '../composables/useAuth'
@@ -636,7 +642,7 @@ async function fetchCotizaciones() {
   try {
     const res = await fetch(`${API}/cotizaciones`, { headers: { Authorization: `Bearer ${getToken()}` } })
     const data = await res.json()
-    if (res.ok) cotizaciones.value = data.cotizaciones
+    if (res.ok) cotizaciones.value = data.cotizaciones.data || data.cotizaciones
   } catch(e) { console.error(e) } finally { loadingCotizaciones.value = false }
 }
 

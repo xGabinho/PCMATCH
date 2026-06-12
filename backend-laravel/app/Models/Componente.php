@@ -12,6 +12,10 @@ class Componente extends Model
 
     protected $table = 'componentes';
 
+    protected $casts = [
+        'activo' => 'boolean',
+    ];
+
     const CREATED_AT = 'created_at';
     const UPDATED_AT = null; // La tabla original no tiene updated_at
 
