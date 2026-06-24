@@ -1,15 +1,15 @@
 <template>
   <div
     class="card-dark card-hover flex flex-col cursor-pointer overflow-hidden"
-    :class="{ 'border-accent shadow-lg shadow-accent/10': selected }"
+    :class="{ 'border-accent shadow-lg shadow-accent/10 dark:shadow-accent/20': selected }"
   >
     <!-- Image band -->
-    <div class="relative w-full h-36 bg-dark-bg flex items-center justify-center overflow-hidden flex-shrink-0">
+    <div class="relative w-full h-48 theme-bg flex items-center justify-center overflow-hidden flex-shrink-0">
       <img
         v-if="image"
         :src="image"
         :alt="name"
-        class="w-full h-full object-contain p-4"
+        class="w-full h-full object-contain mix-blend-multiply dark:mix-blend-normal drop-shadow-sm"
       />
       <div v-else class="flex flex-col items-center gap-2 opacity-20">
         <span class="text-4xl">{{ categoryIcon }}</span>
@@ -34,18 +34,20 @@
     </div>
 
     <!-- Content -->
-    <div class="p-5 flex flex-col gap-3 flex-1">
+    <div class="p-4 sm:p-5 flex flex-col gap-3 flex-1">
       <div>
-        <p class="text-xs text-text-muted font-medium uppercase tracking-wider mb-1">{{ category }}</p>
-        <h3 class="text-text-primary font-semibold leading-snug">{{ name }}</h3>
+        <p class="text-xs theme-text-muted font-medium uppercase tracking-wider mb-1">{{ category }}</p>
+        <h3 class="theme-text font-semibold leading-snug line-clamp-2">{{ name }}</h3>
       </div>
-      <p class="text-sm text-text-muted leading-relaxed flex-1">{{ spec }}</p>
-      <div class="flex items-center justify-between pt-3 border-t border-dark-border">
+      <p class="text-sm theme-text-muted leading-relaxed flex-1 line-clamp-3">{{ spec }}</p>
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-3 border-t theme-border">
         <div>
           <p class="text-accent font-semibold font-mono text-lg">${{ price.toLocaleString() }}</p>
-          <p class="text-xs text-text-muted mt-0.5">{{ store }}</p>
+          <p class="text-xs theme-text-muted mt-0.5">{{ store }}</p>
         </div>
-        <slot name="action" />
+        <div class="w-full sm:w-auto">
+          <slot name="action" />
+        </div>
       </div>
     </div>
   </div>
@@ -79,9 +81,9 @@ const categoryIcons = {
 const categoryIcon = computed(() => categoryIcons[props.category] ?? '🔧')
 
 const tierStyles = {
-  alta:  'bg-yellow-500/10 text-yellow-400 border-yellow-500/20',
-  media: 'bg-blue-500/10   text-blue-400   border-blue-500/20',
-  baja:  'bg-zinc-500/10   text-zinc-400   border-zinc-500/20',
+  alta:  'bg-yellow-50 dark:bg-yellow-500/10 text-yellow-700 dark:text-yellow-400 border-yellow-200 dark:border-yellow-500/20',
+  media: 'bg-blue-50 dark:bg-blue-500/10 text-blue-700 dark:text-blue-400 border-blue-200 dark:border-blue-500/20',
+  baja:  'bg-gray-50 dark:bg-zinc-500/10 text-gray-700 dark:text-zinc-400 border-gray-200 dark:border-zinc-500/20',
 }
 
 const tierLabel = {

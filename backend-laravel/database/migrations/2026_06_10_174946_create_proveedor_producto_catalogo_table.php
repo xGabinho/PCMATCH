@@ -11,17 +11,19 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('proveedor_producto_catalogo', function (Blueprint $table) {
-            $table->id();
-            $table->integer('proveedor_id');
-            $table->integer('producto_catalogo_id');
-            $table->timestamps();
+        if (!Schema::hasTable('proveedor_producto_catalogo')) {
+            Schema::create('proveedor_producto_catalogo', function (Blueprint $table) {
+                $table->id();
+                $table->integer('proveedor_id');
+                $table->integer('producto_catalogo_id');
+                $table->timestamps();
 
-            $table->foreign('proveedor_id')->references('id')->on('proveedores')->onDelete('cascade');
-            $table->foreign('producto_catalogo_id')->references('id')->on('productos_catalogo')->onDelete('cascade');
+                $table->foreign('proveedor_id')->references('id')->on('proveedores')->onDelete('cascade');
+                $table->foreign('producto_catalogo_id')->references('id')->on('productos_catalogo')->onDelete('cascade');
 
-            $table->unique(['proveedor_id', 'producto_catalogo_id'], 'prov_prod_unique');
-        });
+                $table->unique(['proveedor_id', 'producto_catalogo_id'], 'prov_prod_unique');
+            });
+        }
     }
 
     /**

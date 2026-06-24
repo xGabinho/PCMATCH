@@ -12,10 +12,18 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('proveedores', function (Blueprint $table) {
-            $table->string('identificacion_legal')->nullable()->unique();
-            $table->string('razon_social')->nullable();
-            $table->enum('estado_aprobacion', ['pendiente', 'aprobado', 'rechazado'])->default('pendiente');
-            $table->string('documento_soporte')->nullable();
+            if (!Schema::hasColumn('proveedores', 'identificacion_legal')) {
+                $table->string('identificacion_legal')->nullable()->unique();
+            }
+            if (!Schema::hasColumn('proveedores', 'razon_social')) {
+                $table->string('razon_social')->nullable();
+            }
+            if (!Schema::hasColumn('proveedores', 'estado_aprobacion')) {
+                $table->enum('estado_aprobacion', ['pendiente', 'aprobado', 'rechazado'])->default('pendiente');
+            }
+            if (!Schema::hasColumn('proveedores', 'documento_soporte')) {
+                $table->string('documento_soporte')->nullable();
+            }
         });
     }
 

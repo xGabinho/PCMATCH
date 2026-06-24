@@ -9,14 +9,16 @@ return new class extends Migration
     public function up(): void
     {
         // Crear tabla proveedores (no existía en el SQL legacy)
-        Schema::create('proveedores', function (Blueprint $table) {
-            $table->id();
-            $table->string('nombre', 150);
-            $table->string('correo', 150)->unique();
-            $table->string('password', 255);
-            $table->boolean('activo')->default(1);
-            $table->timestamp('created_at')->useCurrent();
-        });
+        if (!Schema::hasTable('proveedores')) {
+            Schema::create('proveedores', function (Blueprint $table) {
+                $table->id();
+                $table->string('nombre', 150);
+                $table->string('correo', 150)->unique();
+                $table->string('password', 255);
+                $table->boolean('activo')->default(1);
+                $table->timestamp('created_at')->useCurrent();
+            });
+        }
 
         // Agregar columna proveedor_id a bodegas (para la relación)
         if (!Schema::hasColumn('bodegas', 'proveedor_id')) {

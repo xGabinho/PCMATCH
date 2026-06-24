@@ -28,6 +28,7 @@ class Componente extends Model
         'precio',
         'stock',
         'activo',
+        'imagen_url',
     ];
 
     protected $casts = [
@@ -72,7 +73,7 @@ class Componente extends Model
      */
     public function scopeActivo($query)
     {
-        return $query->where('activo', 1);
+        return $query->where('activo', 'true');
     }
 
     /**
@@ -80,7 +81,7 @@ class Componente extends Model
      */
     public function scopeInactivo($query)
     {
-        return $query->where('activo', 0);
+        return $query->where('activo', 'false');
     }
 
     /**

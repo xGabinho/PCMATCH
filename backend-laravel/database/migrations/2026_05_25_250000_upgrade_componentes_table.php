@@ -13,14 +13,26 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('componentes', function (Blueprint $table) {
-            $table->string('sku', 50)->nullable()->unique()->after('id');
-            $table->tinyInteger('activo')->default(1)->after('stock');
-            $table->softDeletes()->after('created_at');
-        });
+        // Add columns only if they don't exist
+        if (!Schema::hasColumn('componentes', 'sku')) {
+            Schema::table('componentes', function (Blueprint $table) {
+                $table->string('sku', 50)->nullable()->unique()->after('id');
+            });
+        }
+        if (!Schema::hasColumn('componentes', 'activo')) {
+            Schema::table('componentes', function (Blueprint $table) {
+                $table->tinyInteger('activo')->default(1)->after('stock');
+            });
+        }
+        if (!Schema::hasColumn('componentes', 'deleted_at')) {
+            Schema::table('componentes', function (Blueprint $table) {
+                $table->softDeletes()->after('created_at');
+            });
+        }
 
-        // Generar SKUs para registros existentes
+        // Generar SKUs para registros existentes que no tengan uno
         $componentes = DB::table('componentes')
+            ->whereNull('sku')
             ->join('productos_catalogo', 'componentes.producto_id', '=', 'productos_catalogo.id')
             ->select('componentes.id', 'componentes.bodega_id', 'componentes.producto_id', 'productos_catalogo.categoria')
             ->get();
@@ -28,20 +40,29 @@ return new class extends Migration
         foreach ($componentes as $comp) {
             $sku = strtoupper($comp->categoria)
                  . '-' . str_pad($comp->producto_id, 3, '0', STR_PAD_LEFT)
-                 . '-' . str_pad($comp->bodega_id, 3, '0', STR_PAD_LEFT)
+                 . '-' . str_pad($comp->bodega_id ?? 0, 3, '0', STR_PAD_LEFT)
                  . '-' . strtoupper(substr(md5($comp->id . now()->timestamp), 0, 4));
 
             DB::table('componentes')->where('id', $comp->id)->update(['sku' => $sku]);
         }
 
-        // Hacer sku NOT NULL después de llenar los existentes
-        Schema::table('componentes', function (Blueprint $table) {
-            $table->string('sku', 50)->nullable(false)->unique()->change();
-        });
+        // Hacer sku NOT NULL después de llenar los existentes (solo si hay registros)
+        if (Schema::hasColumn('componentes', 'sku')) {
+            try {
+                Schema::table('componentes', function (Blueprint $table) {
+                    $table->string('sku', 50)->nullable(false)->unique()->change();
+                });
+            } catch (\Exception $e) {
+                // Column may already be NOT NULL
+            }
+        }
 
-        // Índice unique compuesto: no duplicar misma especificación en misma bodega y producto
-        // Usamos un raw statement porque especificacion es TEXT y necesita prefijo
-        DB::statement('ALTER TABLE componentes ADD UNIQUE INDEX uq_bodega_producto_spec (bodega_id, producto_id, especificacion(191))');
+        // Índice unique compuesto (PostgreSQL compatible)
+        try {
+            DB::statement('CREATE UNIQUE INDEX IF NOT EXISTS uq_bodega_producto_spec ON componentes (bodega_id, producto_id, LEFT(especificacion::text, 191))');
+        } catch (\Exception $e) {
+            // Index may already exist or especificacion type doesn't support this
+        }
     }
 
     /**

@@ -35,6 +35,7 @@ const routes = [
 
   // Bodega / Proveedor
   { path: '/bodega', component: BodegaView, meta: { requiresAuth: true, roles: ['bodega'] } },
+  // Proveedor
   { path: '/proveedor', component: ProveedorView, meta: { requiresAuth: true, roles: ['proveedor'] } },
 ]
 
@@ -58,6 +59,7 @@ router.beforeEach((to) => {
       if (user.value?.rol === 'admin')  return { path: '/admin'  }
       if (user.value?.rol === 'bodega') return { path: '/bodega' }
       if (user.value?.rol === 'proveedor') return { path: '/proveedor' }
+
       return { path: '/inicio' }
     }
   }
@@ -68,6 +70,7 @@ router.beforeEach((to) => {
     if (user.value?.rol === 'admin')  return { path: '/admin'  }
     if (user.value?.rol === 'bodega') return { path: '/bodega' }
     if (user.value?.rol === 'proveedor') return { path: '/proveedor' }
+
     return { path: '/inicio' }
   }
 })

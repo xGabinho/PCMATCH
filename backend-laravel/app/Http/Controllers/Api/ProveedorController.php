@@ -39,11 +39,11 @@ class ProveedorController extends Controller
             ->groupBy('p.id', 'p.nombre', 'p.correo', 'p.activo', 'p.created_at', 'p.identificacion_legal', 'p.razon_social', 'p.estado_aprobacion', 'p.documento_soporte')
             ->select('p.id', 'p.nombre', 'p.correo', 'p.activo', 'p.created_at', 'p.identificacion_legal', 'p.razon_social', 'p.estado_aprobacion', 'p.documento_soporte', DB::raw('COUNT(b.id) AS total_bodegas'))
             ->orderBy('p.created_at', 'DESC')
-            ->get();
+            ->paginate(15);
 
         // Convert the relative path of documents to full URLs
-        foreach ($proveedores as $prov) {
-            if ($prov->documento_soporte) {
+        foreach ($proveedores->items() as $prov) {
+            if (isset($prov->documento_soporte) && $prov->documento_soporte) {
                 $prov->documento_soporte_url = url('storage/' . $prov->documento_soporte);
             } else {
                 $prov->documento_soporte_url = null;
@@ -108,7 +108,7 @@ class ProveedorController extends Controller
 
         $proveedor->save();
 
-        AuditLog::log($request, "Creó el proveedor: {$proveedor->nombre}", 'Proveedores');
+        AuditLog::log($request, "Registró el proveedor «{$proveedor->nombre}» ({$proveedor->razon_social})", 'Proveedores');
 
         return response()->json(['message' => 'Proveedor creado', 'id' => $proveedor->id], 201);
     }
@@ -155,7 +155,7 @@ class ProveedorController extends Controller
             $proveedor->razon_social = $request->input('razon_social');
         }
         if ($request->has('activo')) {
-            $proveedor->activo = (int) $request->input('activo');
+            $proveedor->activo = filter_var($request->input('activo'), FILTER_VALIDATE_BOOLEAN) ? DB::raw('true') : DB::raw('false');
         }
         if ($request->has('estado_aprobacion')) {
             if ($request->user()->rol !== 'superadmin') {
@@ -165,16 +165,10 @@ class ProveedorController extends Controller
         }
 
         $dirty = $proveedor->getDirty();
-        $cambios = [];
-        foreach ($dirty as $campo => $nuevo) {
-            if ($campo === 'updated_at') continue;
-            $viejo = $proveedor->getOriginal($campo);
-            $cambios[] = "{$campo}: '{$viejo}' -> '{$nuevo}'";
-        }
+        $detalles = AuditLog::formatChanges($dirty, $proveedor);
         $proveedor->save();
 
-        $detalles = empty($cambios) ? 'Sin cambios aparentes' : implode(', ', $cambios);
-        AuditLog::log($request, "Modificó el proveedor: {$proveedor->nombre}. Cambios: {$detalles}", 'Proveedores');
+        AuditLog::log($request, "Editó el proveedor «{$proveedor->nombre}» — {$detalles}", 'Proveedores');
 
         return response()->json(['message' => 'Proveedor actualizado']);
     }
@@ -203,7 +197,7 @@ class ProveedorController extends Controller
 
         $proveedor->delete();
 
-        AuditLog::log($request, "Eliminó el proveedor: {$proveedor->nombre}", 'Proveedores');
+        AuditLog::log($request, "Eliminó el proveedor «{$proveedor->nombre}»", 'Proveedores');
 
         return response()->json(['message' => 'Proveedor eliminado']);
     }

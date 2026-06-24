@@ -12,10 +12,18 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('componentes', function (Blueprint $table) {
-            $table->integer('nucleos')->nullable()->after('especificacion');
-            $table->integer('hilos')->nullable()->after('nucleos');
-            $table->decimal('frecuencia_hz', 8, 2)->nullable()->comment('GHz')->after('hilos');
-            $table->enum('enfoque_uso', ['estudio', 'oficina', 'gaming', 'diseño'])->nullable()->after('frecuencia_hz');
+            if (!Schema::hasColumn('componentes', 'nucleos')) {
+                $table->integer('nucleos')->nullable()->after('especificacion');
+            }
+            if (!Schema::hasColumn('componentes', 'hilos')) {
+                $table->integer('hilos')->nullable()->after('nucleos');
+            }
+            if (!Schema::hasColumn('componentes', 'frecuencia_hz')) {
+                $table->decimal('frecuencia_hz', 8, 2)->nullable()->comment('GHz')->after('hilos');
+            }
+            if (!Schema::hasColumn('componentes', 'enfoque_uso')) {
+                $table->enum('enfoque_uso', ['estudio', 'oficina', 'gaming', 'diseño'])->nullable()->after('frecuencia_hz');
+            }
         });
     }
 

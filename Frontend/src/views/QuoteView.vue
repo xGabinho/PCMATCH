@@ -4,22 +4,22 @@
     <!-- Sin componentes -->
     <div v-if="Object.keys(selectedComponents).length === 0" class="text-center py-24">
       <div class="text-5xl mb-4">🖥️</div>
-      <p class="text-text-primary font-semibold text-lg mb-2">No hay componentes seleccionados</p>
-      <p class="text-text-muted text-sm mb-6">Vuelve al armador y selecciona los componentes de tu PC</p>
+      <p class="theme-text font-semibold text-lg mb-2">No hay componentes seleccionados</p>
+      <p class="theme-text-muted text-sm mb-6">Vuelve al armador y selecciona los componentes de tu PC</p>
       <router-link to="/armar" class="btn-primary text-sm">← Ir al armador</router-link>
     </div>
 
     <template v-else>
       <!-- Header -->
-      <div class="flex items-start justify-between mb-10">
+      <div class="flex flex-col sm:flex-row sm:items-start justify-between gap-6 mb-10">
         <div>
           <p class="text-accent text-sm font-medium uppercase tracking-widest mb-2">Cotización</p>
-          <h1 class="text-3xl font-bold text-text-primary">Resumen de tu PC</h1>
-          <p class="text-text-muted mt-2">Generado el {{ today }}</p>
+          <h1 class="text-3xl font-bold theme-text">Resumen de tu PC</h1>
+          <p class="theme-text-muted mt-2">Generado el {{ today }}</p>
         </div>
-        <div class="flex items-center gap-3">
-          <router-link to="/armar" class="btn-secondary text-sm">← Editar build</router-link>
-          <button @click="saveCotizacion" :disabled="saving" class="btn-primary text-sm">
+        <div class="flex items-center gap-3 w-full sm:w-auto">
+          <router-link to="/armar" class="btn-secondary text-sm flex-1 sm:flex-none text-center">← Editar build</router-link>
+          <button @click="saveCotizacion" :disabled="saving" class="btn-primary text-sm flex-1 sm:flex-none">
             {{ saving ? 'Guardando...' : '💾 Guardar cotización' }}
           </button>
         </div>
@@ -33,21 +33,21 @@
         {{ saveError }}
       </div>
 
-      <div class="grid grid-cols-3 gap-6">
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
 
         <!-- Components List -->
-        <div class="col-span-2 space-y-3">
+        <div class="lg:col-span-2 space-y-3">
           <div class="card-dark rounded-xl overflow-hidden">
-            <div class="px-5 py-4 border-b border-dark-border flex items-center justify-between">
-              <h2 class="font-semibold text-text-primary">Componentes seleccionados</h2>
+            <div class="px-5 py-4 border-b theme-border flex items-center justify-between">
+              <h2 class="font-semibold theme-text">Componentes seleccionados</h2>
               <span class="badge bg-accent/10 text-accent border border-accent/20">{{ Object.keys(selectedComponents).length }} componentes</span>
             </div>
 
-            <div class="divide-y divide-dark-border">
+            <div class="divide-y divide-gray-200 dark:divide-dark-border">
               <div
                 v-for="(item, stepId) in selectedComponents"
                 :key="stepId"
-                class="px-5 py-4 flex items-center gap-4 hover:bg-dark-bg/40 transition-colors group"
+                class="px-5 py-4 flex items-center gap-4 hover:bg-black/5 dark:hover:bg-white/5 transition-colors group"
               >
                 <!-- Icon -->
                 <div class="w-9 h-9 rounded-lg bg-accent/10 flex items-center justify-center text-accent text-sm flex-shrink-0">
@@ -56,24 +56,24 @@
 
                 <!-- Info -->
                 <div class="flex-1 min-w-0">
-                  <p class="text-xs text-text-muted uppercase tracking-wide mb-0.5">{{ item.step.label }}</p>
-                  <p class="text-sm font-medium text-text-primary">{{ item.nombre }}</p>
-                  <p class="text-xs text-text-muted mt-0.5">{{ item.especificacion }}</p>
+                  <p class="text-xs theme-text-muted uppercase tracking-wide mb-0.5">{{ item.step.label }}</p>
+                  <p class="text-sm font-medium theme-text">{{ item.nombre }}</p>
+                  <p class="text-xs theme-text-muted mt-0.5">{{ item.especificacion }}</p>
                 </div>
 
                 <!-- Store + Price + Qty + Remove -->
                 <div class="flex-shrink-0 flex flex-col items-end gap-2">
                   <button
                     @click="handleRemove(stepId)"
-                    class="text-text-muted hover:text-red-400 transition-colors opacity-0 group-hover:opacity-100 text-xs"
+                    class="theme-text-muted hover:text-red-500 transition-colors opacity-100 lg:opacity-0 lg:group-hover:opacity-100 text-xs"
                     title="Quitar componente"
                   >✕ quitar</button>
-                  <p class="text-xs text-text-muted">{{ item.bodega }}</p>
+                  <p class="text-xs theme-text-muted">{{ item.bodega }}</p>
                   <div class="flex items-center gap-1.5">
                     <button
                       @click="updateQuantity(stepId, (item.cantidad || 1) - 1)"
                       :disabled="(item.cantidad || 1) <= 1"
-                      class="w-6 h-6 rounded border border-dark-border bg-dark-bg text-text-muted hover:text-red-400 hover:border-red-500/40 transition-colors flex items-center justify-center text-xs font-bold disabled:opacity-30 disabled:cursor-not-allowed"
+                      class="w-6 h-6 rounded border theme-border bg-white dark:bg-dark-bg theme-text-muted hover:text-red-500 hover:border-red-500/40 transition-colors flex items-center justify-center text-xs font-bold disabled:opacity-30 disabled:cursor-not-allowed"
                     >−</button>
                     <input
                       type="number"
@@ -81,16 +81,16 @@
                       @change="updateQuantity(stepId, parseInt($event.target.value) || 1)"
                       min="1"
                       :max="item.stock || 999"
-                      class="w-10 h-6 bg-dark-bg border border-dark-border rounded text-center text-xs font-mono text-text-primary focus:outline-none focus:border-accent transition-colors [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                      class="w-10 h-6 theme-bg border theme-border rounded text-center text-xs font-mono theme-text focus:outline-none focus:border-accent transition-colors [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                     />
                     <button
                       @click="updateQuantity(stepId, (item.cantidad || 1) + 1)"
                       :disabled="(item.cantidad || 1) >= (item.stock || 999)"
-                      class="w-6 h-6 rounded border border-dark-border bg-dark-bg text-text-muted hover:text-green-400 hover:border-green-500/40 transition-colors flex items-center justify-center text-xs font-bold disabled:opacity-30 disabled:cursor-not-allowed"
+                      class="w-6 h-6 rounded border theme-border bg-white dark:bg-dark-bg theme-text-muted hover:text-green-500 hover:border-green-500/40 transition-colors flex items-center justify-center text-xs font-bold disabled:opacity-30 disabled:cursor-not-allowed"
                     >+</button>
                   </div>
                   <p class="text-accent font-semibold font-mono text-sm">${{ (Number(item.precio) * (item.cantidad || 1)).toLocaleString() }}</p>
-                  <p v-if="(item.cantidad || 1) > 1" class="text-[10px] text-text-muted">${{ Number(item.precio).toLocaleString() }} × {{ item.cantidad }}</p>
+                  <p v-if="(item.cantidad || 1) > 1" class="text-[10px] theme-text-muted">${{ Number(item.precio).toLocaleString() }} × {{ item.cantidad }}</p>
                 </div>
               </div>
             </div>
@@ -98,13 +98,13 @@
 
           <!-- Componentes faltantes -->
           <div v-if="missingSteps.length > 0" class="card-dark rounded-xl p-5">
-            <h3 class="font-semibold text-text-muted text-sm mb-3">Sin seleccionar</h3>
+            <h3 class="font-semibold theme-text-muted text-sm mb-3">Sin seleccionar</h3>
             <div class="flex flex-wrap gap-2">
               <button
                 v-for="step in missingSteps"
                 :key="step.id"
                 @click="goToStep(step)"
-                class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-dashed border-dark-border text-text-muted hover:border-accent hover:text-accent transition-all text-xs"
+                class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-dashed theme-border theme-text-muted hover:border-accent hover:text-accent transition-all text-xs bg-white/50 dark:bg-transparent"
               >
                 {{ step.icon }} {{ step.label }} →
               </button>
@@ -113,15 +113,15 @@
 
           <!-- Store breakdown -->
           <div class="card-dark rounded-xl p-5">
-            <h3 class="font-semibold text-text-primary mb-4">Por bodega</h3>
+            <h3 class="font-semibold theme-text mb-4">Por bodega</h3>
             <div class="space-y-3">
               <div v-for="store in storeBreakdown" :key="store.name" class="flex items-center justify-between">
                 <div class="flex items-center gap-3">
                   <div class="w-2 h-2 rounded-full bg-accent"></div>
-                  <span class="text-text-primary text-sm">{{ store.name }}</span>
-                  <span class="text-xs text-text-muted">({{ store.count }} producto{{ store.count > 1 ? 's' : '' }})</span>
+                  <span class="theme-text text-sm">{{ store.name }}</span>
+                  <span class="text-xs theme-text-muted">({{ store.count }} producto{{ store.count > 1 ? 's' : '' }})</span>
                 </div>
-                <span class="text-sm font-medium text-text-primary font-mono">${{ store.total.toLocaleString() }}</span>
+                <span class="text-sm font-medium theme-text font-mono">${{ store.total.toLocaleString() }}</span>
               </div>
             </div>
           </div>
@@ -130,38 +130,42 @@
         <!-- Price Summary -->
         <div class="space-y-4">
           <div class="card-dark rounded-xl p-6">
-            <p class="text-sm text-text-muted mb-1">Total estimado</p>
+            <p class="text-sm theme-text-muted mb-1">Total estimado</p>
             <p class="text-4xl font-bold text-accent font-mono">${{ totalPrice.toLocaleString() }}</p>
-            <p class="text-xs text-text-muted mt-2">Precio referencial · No incluye instalación</p>
+            <p class="text-xs theme-text-muted mt-2">Precio referencial · No incluye instalación</p>
 
-            <div class="mt-4 pt-4 border-t border-dark-border space-y-2">
+            <div class="mt-4 pt-4 border-t theme-border space-y-2">
               <div class="flex justify-between text-sm">
-                <span class="text-text-muted">Componentes</span>
-                <span class="text-text-primary font-mono">{{ Object.keys(selectedComponents).length }} / {{ steps.length }}</span>
+                <span class="theme-text-muted">Componentes</span>
+                <span class="theme-text font-mono">{{ Object.keys(selectedComponents).length }} / {{ steps.length }}</span>
               </div>
               <div class="flex justify-between text-sm">
-                <span class="text-text-muted">Bodegas</span>
-                <span class="text-text-primary font-mono">{{ storeBreakdown.length }}</span>
+                <span class="theme-text-muted">Bodegas</span>
+                <span class="theme-text font-mono">{{ storeBreakdown.length }}</span>
               </div>
             </div>
           </div>
 
           <div class="card-dark rounded-xl p-5 space-y-3">
-            <h3 class="font-semibold text-text-primary text-sm mb-1">Acciones</h3>
-            <button @click="saveCotizacion" :disabled="saving" class="btn-primary w-full text-sm">
+            <h3 class="font-semibold theme-text text-sm mb-1">Acciones</h3>
+            <button @click="saveCotizacion" :disabled="saving" class="btn-primary w-full text-sm py-3 flex items-center justify-center gap-2">
+              <svg v-if="saving" class="animate-spin h-4 w-4 text-white" viewBox="0 0 24 24" fill="none">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
+              </svg>
               {{ saving ? 'Guardando...' : '💾 Guardar cotización' }}
             </button>
             <router-link to="/armar" class="btn-secondary w-full text-sm text-center block">
               ← Volver al armador
             </router-link>
-            <button @click="clearAll(); $router.push('/armar')" class="w-full text-sm py-2 rounded-lg text-text-muted hover:text-red-400 hover:bg-red-400/5 border border-dark-border transition-colors">
+            <button @click="clearAll(); $router.push('/armar')" class="w-full text-sm py-2 rounded-lg theme-text-muted hover:text-red-500 hover:bg-red-500/10 border theme-border transition-colors">
               🗑️ Empezar de nuevo
             </button>
           </div>
 
-          <div class="rounded-xl border border-yellow-500/20 bg-yellow-500/5 p-4">
-            <p class="text-yellow-400 text-xs font-medium mb-1">⚠️ Nota importante</p>
-            <p class="text-text-muted text-xs leading-relaxed">
+          <div class="rounded-xl border border-amber-500/30 bg-amber-50 dark:bg-yellow-500/5 p-4">
+            <p class="text-amber-700 dark:text-yellow-400 text-xs font-medium mb-1">⚠️ Nota importante</p>
+            <p class="text-amber-600/80 dark:text-text-muted text-xs leading-relaxed">
               Los precios son referenciales y pueden variar. Verifica disponibilidad antes de comprar.
             </p>
           </div>

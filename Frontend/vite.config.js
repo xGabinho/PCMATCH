@@ -17,7 +17,7 @@ export default defineConfig({
     },
     proxy: {
       '/api': {
-        target: 'http://webserver:80',
+        target: 'http://webserver',
         changeOrigin: true
       }
     }

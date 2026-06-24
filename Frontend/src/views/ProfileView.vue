@@ -3,14 +3,14 @@
     <!-- Header -->
     <div class="text-center mb-12">
       <p class="text-accent text-sm font-medium uppercase tracking-widest mb-3">Paso 1 de 4</p>
-      <h1 class="text-4xl font-bold text-text-primary mb-4">¿Para qué usarás tu PC?</h1>
-      <p class="text-text-muted text-lg max-w-lg mx-auto">
+      <h1 class="text-4xl font-bold theme-text mb-4">¿Para qué usarás tu PC?</h1>
+      <p class="theme-text-muted text-lg max-w-lg mx-auto">
         Elige el perfil que mejor describe tu uso principal. Esto nos ayuda a recomendarte los componentes ideales.
       </p>
     </div>
 
     <!-- Profile Cards Grid -->
-    <div class="grid grid-cols-2 gap-5 max-w-3xl mx-auto mb-12">
+    <div class="grid grid-cols-1 sm:grid-cols-2 gap-5 max-w-3xl mx-auto mb-12">
       <div
         v-for="profile in profiles"
         :key="profile.id"
@@ -24,20 +24,20 @@
         <div class="text-4xl mb-5">{{ profile.icon }}</div>
 
         <!-- Name -->
-        <h2 class="text-xl font-bold text-text-primary mb-2 group-hover:text-accent transition-colors"
+        <h2 class="text-xl font-bold theme-text mb-2 group-hover:text-accent transition-colors"
           :class="{ 'text-accent': selected === profile.id }">
           {{ profile.name }}
         </h2>
 
         <!-- Description -->
-        <p class="text-text-muted text-sm leading-relaxed mb-4">{{ profile.desc }}</p>
+        <p class="theme-text-muted text-sm leading-relaxed mb-4">{{ profile.desc }}</p>
 
         <!-- Tags -->
         <div class="flex flex-wrap gap-2">
           <span
             v-for="tag in profile.tags"
             :key="tag"
-            class="text-xs px-2.5 py-1 rounded-full bg-dark-bg border border-dark-border text-text-muted"
+            class="text-xs px-2.5 py-1 rounded-full theme-bg border theme-border theme-text-muted"
             :class="{ 'border-accent/30 text-accent bg-accent/5': selected === profile.id }"
           >
             {{ tag }}
@@ -63,7 +63,7 @@
       >
         Continuar →
       </router-link>
-      <p class="text-text-muted text-sm mt-4">
+      <p class="theme-text-muted text-sm mt-4">
         {{ selected ? `Perfil seleccionado: ${profiles.find(p => p.id === selected)?.name}` : 'Selecciona un perfil para continuar' }}
       </p>
     </div>

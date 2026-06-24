@@ -11,11 +11,9 @@ return new class extends Migration
      */
     public function up(): void
     {
-        if (!Schema::hasColumn('usuarios', 'activo')) {
-            Schema::table('usuarios', function (Blueprint $table) {
-                $table->boolean('activo')->default(1)->after('rol');
-            });
-        }
+        Schema::table('componentes', function (Blueprint $table) {
+            $table->string('imagen_url')->nullable();
+        });
     }
 
     /**
@@ -23,8 +21,8 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::table('usuarios', function (Blueprint $table) {
-            $table->dropColumn('activo');
+        Schema::table('componentes', function (Blueprint $table) {
+            $table->dropColumn('imagen_url');
         });
     }
 };
