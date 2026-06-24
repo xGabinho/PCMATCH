@@ -92,6 +92,7 @@
               <input
                 id="profile-telefono"
                 v-model="form.telefono"
+                @input="handleTelefonoInput"
                 type="text"
                 class="theme-input"
                 placeholder="+57 300 123 4567"
@@ -210,7 +211,7 @@
 
 <script setup>
 import { ref, computed, onMounted } from 'vue'
-import { useAuth } from '../composables/UseAuth'
+import { useAuth } from '../composables/useAuth'
 import { useToast } from '../composables/useToast'
 
 const API = '/api'
@@ -260,13 +261,13 @@ const backRoute = computed(() => {
 })
 
 const passwordMismatch = computed(() => {
-  return form.value.password && form.value.password_confirm && form.value.password !== form.value.password_confirm
+  return !!(form.value.password && form.value.password_confirm && form.value.password !== form.value.password_confirm)
 })
 
 async function fetchProfile() {
   loadingProfile.value = true
   try {
-    const res = await fetch(`${API}/authprofile`, {
+    const res = await fetch(`${API}/auth/profile`, {
       headers: {
         Accept: 'application/json',
         Authorization: `Bearer ${getToken()}`
@@ -319,7 +320,7 @@ async function handleSave() {
   }
 
   try {
-    const res = await fetch(`${API}/authprofile`, {
+    const res = await fetch(`${API}/auth/profile`, {
       method: 'PUT',
       headers: {
         'Content-Type': 'application/json',

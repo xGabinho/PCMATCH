@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Facades\Storage;
 use App\Helpers\AuditLog;
 use App\Models\Componente;
 
@@ -115,6 +116,7 @@ class ComponenteController extends Controller
                 'bodega_nombre'  => $c->bodega->nombre ?? '—',
                 'bodega_id'      => $c->bodega_id,
                 'activo'         => $c->activo,
+                'imagen_url'     => $c->imagen_url,
                 'created_at'     => $c->created_at,
             ];
         });
@@ -155,6 +157,7 @@ class ComponenteController extends Controller
                 'frecuencia_hz'  => $c->frecuencia_hz,
                 'enfoque_uso'    => $c->enfoque_uso,
                 'gama'           => $c->gama,
+                'imagen_url'     => $c->imagen_url,
             ];
         });
 
@@ -220,6 +223,7 @@ class ComponenteController extends Controller
                 'stock'          => $c->stock,
                 'bodega_id'      => $c->bodega_id,
                 'activo'         => $c->activo,
+                'imagen_url'     => $c->imagen_url,
             ];
         });
 
@@ -235,7 +239,7 @@ class ComponenteController extends Controller
             ->activo()
             ->conStock()
             ->whereHas('bodega', function ($q) {
-                $q->where('activa', 1);
+                $q->where('activa', 'true');
             });
 
         if ($request->filled('categoria')) {
@@ -259,6 +263,7 @@ class ComponenteController extends Controller
                 'precio'         => $c->precio,
                 'stock'          => $c->stock,
                 'bodega'         => $c->bodega->nombre ?? '—',
+                'imagen_url'     => $c->imagen_url,
             ];
         });
 
@@ -285,55 +290,16 @@ class ComponenteController extends Controller
             return response()->json(['success' => false, 'message' => 'No autorizado para crear componentes'], 403);
         }
 
-        if (in_array($rol, ['admin', 'superadmin'])) {
-            // Admin crea componente maestro (no requiere bodega)
-            $validator = Validator::make($request->all(), [
-                'producto_id'    => 'required|integer|exists:productos_catalogo,id',
-                'especificacion' => 'required|string|max:1000',
-                'nucleos'        => 'nullable|integer|min:1',
-                'hilos'          => 'nullable|integer|min:1',
-                'frecuencia_hz'  => 'nullable|numeric|min:0',
-                'enfoque_uso'    => 'nullable|in:estudio,oficina,gaming,diseño',
-                'gama'           => 'required|in:alta,media,baja',
-            ]);
+        $isFromMaster = $request->has('master_component_id') && $request->input('master_component_id') !== null && $request->input('master_component_id') !== '';
 
-            if ($validator->fails()) {
-                return response()->json(['success' => false, 'message' => $validator->errors()->first()], 400);
-            }
-
-            $sku = Componente::generarSku($request->input('producto_id'), 0); // 0 indica maestro
-
-            $componente = Componente::create([
-                'sku'            => $sku,
-                'bodega_id'      => null, // Maestro
-                'producto_id'    => $request->input('producto_id'),
-                'especificacion' => trim($request->input('especificacion')),
-                'nucleos'        => $request->input('nucleos'),
-                'hilos'          => $request->input('hilos'),
-                'frecuencia_hz'  => $request->input('frecuencia_hz'),
-                'enfoque_uso'    => $request->input('enfoque_uso'),
-                'gama'           => $request->input('gama'),
-                'precio'         => 0,
-                'stock'          => 0,
-                'activo'         => 1,
-            ]);
-
-            $producto = DB::table('productos_catalogo')->where('id', $request->input('producto_id'))->first();
-            $nombreProducto = $producto ? $producto->nombre : "ID {$request->input('producto_id')}";
-            AuditLog::log($request, "Agregó el componente maestro «{$nombreProducto}» (Gama: {$request->input('gama')}, SKU: {$sku})", 'Componentes');
-
-            return response()->json([
-                'message' => 'Componente maestro registrado correctamente',
-                'id'      => $componente->id,
-                'sku'     => $sku,
-            ], 201);
-        } else {
+        if ($isFromMaster) {
             // Bodega/Proveedor asocia un componente maestro a su inventario
             $validator = Validator::make($request->all(), [
                 'master_component_id' => 'required|integer|exists:componentes,id',
-                'bodega_id'           => 'required|integer|exists:bodegas,id',
+                'bodega_id'           => 'nullable|integer|exists:bodegas,id',
                 'precio'              => 'required|numeric|min:0',
                 'stock'               => 'required|integer|min:0',
+                'imagen'              => 'nullable|image|mimes:jpeg,png,jpg,webp|max:2048',
             ]);
 
             if ($validator->fails()) {
@@ -346,13 +312,10 @@ class ComponenteController extends Controller
             }
 
             $bodega_id = $request->input('bodega_id');
-
-            // Si es bodega, se auto-asigna su propio ID
             if ($rol === 'bodega') {
                 $bodega_id = $user->id;
             }
 
-            // Si es proveedor, verificar que la bodega le pertenezca
             if ($rol === 'proveedor') {
                 $bodega = DB::table('bodegas')->where('id', $bodega_id)->where('proveedor_id', $user->id)->first();
                 if (!$bodega) {
@@ -364,19 +327,10 @@ class ComponenteController extends Controller
             if (!$bodega) {
                 return response()->json(['success' => false, 'message' => 'La bodega especificada no existe'], 404);
             }
-
             if (!$bodega->activa) {
                 return response()->json(['success' => false, 'message' => 'No se puede registrar el componente. La bodega está inactiva.'], 403);
             }
 
-            if ($bodega->proveedor_id) {
-                $proveedor = DB::table('proveedores')->where('id', $bodega->proveedor_id)->first();
-                if ($proveedor && (!$proveedor->activo || $proveedor->estado_aprobacion !== 'aprobado')) {
-                    return response()->json(['success' => false, 'message' => 'No se puede registrar el componente. El proveedor no está activo/aprobado.'], 403);
-                }
-            }
-
-            // Verificar duplicado en la misma bodega
             $duplicado = Componente::withTrashed()
                 ->where('bodega_id', $bodega_id)
                 ->where('producto_id', $master->producto_id)
@@ -385,6 +339,14 @@ class ComponenteController extends Controller
 
             if ($duplicado) {
                 return response()->json(['success' => false, 'message' => 'Este componente ya existe en tu inventario.'], 409);
+            }
+
+            $imagenUrl = null;
+            if ($request->hasFile('imagen')) {
+                $path = $request->file('imagen')->store('componentes', 'supabase');
+                $imagenUrl = Storage::disk('supabase')->url($path);
+            } elseif ($master->imagen_url) {
+                $imagenUrl = $master->imagen_url;
             }
 
             $sku = Componente::generarSku($master->producto_id, $bodega_id);
@@ -401,7 +363,8 @@ class ComponenteController extends Controller
                 'gama'           => $master->gama,
                 'precio'         => $request->input('precio'),
                 'stock'          => $request->input('stock'),
-                'activo'         => 1,
+                'activo'         => DB::raw('true'),
+                'imagen_url'     => $imagenUrl,
             ]);
 
             $producto = DB::table('productos_catalogo')->where('id', $master->producto_id)->first();
@@ -412,6 +375,99 @@ class ComponenteController extends Controller
 
             return response()->json([
                 'message' => 'Componente agregado al inventario correctamente',
+                'id'      => $componente->id,
+                'sku'     => $sku,
+            ], 201);
+        } else {
+            // Crear componente desde cero (para admin o bodega/proveedor que crea uno custom)
+            $rules = [
+                'producto_id'    => 'required|integer|exists:productos_catalogo,id',
+                'especificacion' => 'required|string|max:1000',
+                'nucleos'        => 'nullable|integer|min:1',
+                'hilos'          => 'nullable|integer|min:1',
+                'frecuencia_hz'  => 'nullable|numeric|min:0',
+                'enfoque_uso'    => 'nullable|in:estudio,oficina,gaming,diseño',
+                'gama'           => 'required|in:alta,media,baja',
+                'imagen'         => 'nullable|image|mimes:jpeg,png,jpg,webp|max:2048',
+            ];
+
+            if (in_array($rol, ['bodega', 'proveedor'])) {
+                $rules['precio'] = 'required|numeric|min:0';
+                $rules['stock']  = 'required|integer|min:0';
+                if ($rol === 'proveedor') {
+                    $rules['bodega_id'] = 'required|integer|exists:bodegas,id';
+                }
+            }
+
+            $validator = Validator::make($request->all(), $rules);
+
+            if ($validator->fails()) {
+                return response()->json(['success' => false, 'message' => $validator->errors()->first()], 400);
+            }
+
+            $bodega_id = null;
+            $precio = 0;
+            $stock = 0;
+
+            if (in_array($rol, ['bodega', 'proveedor'])) {
+                $bodega_id = $rol === 'bodega' ? $user->id : $request->input('bodega_id');
+                $precio = $request->input('precio');
+                $stock = $request->input('stock');
+
+                $bodega = DB::table('bodegas')->where('id', $bodega_id)->first();
+                if (!$bodega || !$bodega->activa) {
+                    return response()->json(['success' => false, 'message' => 'La bodega está inactiva o no existe.'], 403);
+                }
+                if ($rol === 'proveedor' && $bodega->proveedor_id !== $user->id) {
+                    return response()->json(['success' => false, 'message' => 'Esta bodega no te pertenece'], 403);
+                }
+
+                $duplicado = Componente::withTrashed()
+                    ->where('bodega_id', $bodega_id)
+                    ->where('producto_id', $request->input('producto_id'))
+                    ->where('especificacion', trim($request->input('especificacion')))
+                    ->first();
+
+                if ($duplicado) {
+                    return response()->json(['success' => false, 'message' => 'Este componente ya existe en tu inventario.'], 409);
+                }
+            }
+
+            $sku = Componente::generarSku($request->input('producto_id'), $bodega_id ?? 0);
+
+            $imagenUrl = null;
+            if ($request->hasFile('imagen')) {
+                $path = $request->file('imagen')->store('componentes', 'supabase');
+                $imagenUrl = Storage::disk('supabase')->url($path);
+            }
+
+            $componente = Componente::create([
+                'sku'            => $sku,
+                'bodega_id'      => $bodega_id,
+                'producto_id'    => $request->input('producto_id'),
+                'especificacion' => trim($request->input('especificacion')),
+                'nucleos'        => $request->input('nucleos'),
+                'hilos'          => $request->input('hilos'),
+                'frecuencia_hz'  => $request->input('frecuencia_hz'),
+                'enfoque_uso'    => $request->input('enfoque_uso'),
+                'gama'           => $request->input('gama'),
+                'precio'         => $precio,
+                'stock'          => $stock,
+                'activo'         => DB::raw('true'),
+                'imagen_url'     => $imagenUrl,
+            ]);
+
+            $producto = DB::table('productos_catalogo')->where('id', $request->input('producto_id'))->first();
+            $nombreProducto = $producto ? $producto->nombre : "ID {$request->input('producto_id')}";
+
+            if ($bodega_id) {
+                AuditLog::log($request, "Agregó el componente personalizado «{$nombreProducto}» (Gama: {$request->input('gama')}, SKU: {$sku}) a la bodega ID {$bodega_id}", 'Componentes');
+            } else {
+                AuditLog::log($request, "Agregó el componente maestro «{$nombreProducto}» (Gama: {$request->input('gama')}, SKU: {$sku})", 'Componentes');
+            }
+
+            return response()->json([
+                'message' => $bodega_id ? 'Componente personalizado registrado correctamente' : 'Componente maestro registrado correctamente',
                 'id'      => $componente->id,
                 'sku'     => $sku,
             ], 201);
@@ -474,6 +530,7 @@ class ComponenteController extends Controller
             'precio'         => 'nullable|numeric|gt:0',
             'stock'          => 'nullable|integer|min:0',
             'activo'         => 'nullable|boolean',
+            'imagen'         => 'nullable|image|mimes:jpeg,png,jpg,webp|max:2048',
         ], [
             'gama.in'        => 'La gama debe ser alta, media o baja',
             'precio.gt'      => 'El precio debe ser mayor a cero',
@@ -489,6 +546,19 @@ class ComponenteController extends Controller
         // ── RN03: Registrar cambios con detalle (auditoría) ──────
         $data = [];
         $cambios = [];
+
+        if ($request->hasFile('imagen')) {
+            $path = $request->file('imagen')->store('componentes', 'supabase');
+            $nuevoUrl = Storage::disk('supabase')->url($path);
+            $data['imagen_url'] = $nuevoUrl;
+            $cambios[] = "Imagen actualizada";
+            
+            if ($comp->imagen_url) {
+                $oldPath = 'componentes/' . basename($comp->imagen_url);
+                Storage::disk('supabase')->delete($oldPath);
+            }
+        }
+
         $labels = [
             'especificacion' => 'Especificación',
             'nucleos'        => 'Núcleos',
@@ -510,10 +580,11 @@ class ComponenteController extends Controller
                 if ((string) $viejo !== (string) $nuevo) {
                     $label = $labels[$campo];
                     if ($campo === 'activo') {
+                        $nuevoBool = filter_var($nuevo, FILTER_VALIDATE_BOOLEAN);
                         $viejoLabel = $viejo ? 'Activo' : 'Inactivo';
-                        $nuevoLabel = $nuevo ? 'Activo' : 'Inactivo';
+                        $nuevoLabel = $nuevoBool ? 'Activo' : 'Inactivo';
                         $cambios[] = "{$label}: {$viejoLabel} → {$nuevoLabel}";
-                        $data[$campo] = (bool) $nuevo; // Explicitly cast to boolean to avoid PostgreSQL integer error
+                        $data[$campo] = $nuevoBool;
                     } elseif ($campo === 'precio') {
                         $cambios[] = "{$label}: \$" . number_format((float)$viejo, 0, ',', '.') . " → \$" . number_format((float)$nuevo, 0, ',', '.');
                     } elseif ($campo === 'gama') {
@@ -522,7 +593,7 @@ class ComponenteController extends Controller
                         $cambios[] = "{$label}: '{$viejo}' → '{$nuevo}'";
                     }
                 } else if ($campo === 'activo') {
-                    $data[$campo] = (bool) $nuevo; // Make sure it's boolean even if unchanged, if included in data
+                    $data[$campo] = filter_var($nuevo, FILTER_VALIDATE_BOOLEAN);
                 }
             }
         }
@@ -564,10 +635,10 @@ class ComponenteController extends Controller
         $rol = $this->resolverRol($user);
 
         // ── RN03: Solo admin o superadmin puede eliminar ──────────────────────
-        if (!in_array($rol, ['admin', 'superadmin'])) {
+        if (!in_array($rol, ['admin', 'superadmin', 'bodega', 'proveedor'])) {
             return response()->json([
                 'success' => false,
-                'message' => 'No autorizado. Solo el rol Admin o SuperAdmin puede eliminar componentes.'
+                'message' => 'No autorizado. Solo el rol Admin, SuperAdmin, Bodega o Proveedor puede eliminar componentes.'
             ], 403);
         }
 
@@ -580,6 +651,18 @@ class ComponenteController extends Controller
         $componente = Componente::find($id);
         if (!$componente) {
             return response()->json(['success' => false, 'message' => 'Componente no encontrado'], 404);
+        }
+
+        // Verificar propiedad para bodega/proveedor
+        if ($rol === 'bodega' && $componente->bodega_id != $user->id) {
+            return response()->json(['success' => false, 'message' => 'No puedes eliminar componentes de otra bodega'], 403);
+        }
+
+        if ($rol === 'proveedor') {
+            $bodega = DB::table('bodegas')->where('id', $componente->bodega_id)->where('proveedor_id', $user->id)->first();
+            if (!$bodega) {
+                return response()->json(['success' => false, 'message' => 'No puedes eliminar componentes de bodegas que no te pertenecen'], 403);
+            }
         }
 
         // ── RN02: Protección de integridad ───────────────────────
@@ -602,6 +685,11 @@ class ComponenteController extends Controller
         // ── RN01: Borrado lógico (SoftDelete) ────────────────────
         $producto = DB::table('productos_catalogo')->where('id', $componente->producto_id)->first();
         $nombreProducto = $producto ? $producto->nombre : "ID {$componente->id}";
+
+        if ($componente->imagen_url) {
+            $oldPath = 'componentes/' . basename($componente->imagen_url);
+            Storage::disk('supabase')->delete($oldPath);
+        }
 
         $componente->delete(); // SoftDeletes: llena deleted_at en vez de borrar
 

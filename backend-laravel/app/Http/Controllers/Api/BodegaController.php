@@ -112,7 +112,7 @@ class BodegaController extends Controller
         $bodega->telefono = $request->input('telefono', '');
         $bodega->correo = $request->input('correo');
         $bodega->password = password_hash($request->input('password'), PASSWORD_BCRYPT);
-        $bodega->activa = 1;
+        $bodega->activa = DB::raw('true');
         $bodega->proveedor_id = $proveedor_id;
         $bodega->save();
 
@@ -148,7 +148,7 @@ class BodegaController extends Controller
         $bodega->telefono = $request->input('telefono', $bodega->telefono);
         
         if ($request->has('activa')) {
-            $bodega->activa = (int) $request->input('activa');
+            $bodega->activa = filter_var($request->input('activa'), FILTER_VALIDATE_BOOLEAN) ? DB::raw('true') : DB::raw('false');
         }
 
         // Superadmin puede reasignar proveedor

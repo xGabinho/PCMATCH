@@ -4,12 +4,12 @@
     :class="{ 'border-accent shadow-lg shadow-accent/10 dark:shadow-accent/20': selected }"
   >
     <!-- Image band -->
-    <div class="relative w-full h-36 theme-bg flex items-center justify-center overflow-hidden flex-shrink-0">
+    <div class="relative w-full h-48 theme-bg flex items-center justify-center overflow-hidden flex-shrink-0">
       <img
         v-if="image"
         :src="image"
         :alt="name"
-        class="w-full h-full object-contain p-4 mix-blend-multiply dark:mix-blend-normal"
+        class="w-full h-full object-contain mix-blend-multiply dark:mix-blend-normal drop-shadow-sm"
       />
       <div v-else class="flex flex-col items-center gap-2 opacity-20">
         <span class="text-4xl">{{ categoryIcon }}</span>

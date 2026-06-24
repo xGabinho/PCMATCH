@@ -155,7 +155,7 @@ class ProveedorController extends Controller
             $proveedor->razon_social = $request->input('razon_social');
         }
         if ($request->has('activo')) {
-            $proveedor->activo = (int) $request->input('activo');
+            $proveedor->activo = filter_var($request->input('activo'), FILTER_VALIDATE_BOOLEAN) ? DB::raw('true') : DB::raw('false');
         }
         if ($request->has('estado_aprobacion')) {
             if ($request->user()->rol !== 'superadmin') {

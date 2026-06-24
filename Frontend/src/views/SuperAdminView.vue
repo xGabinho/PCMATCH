@@ -344,8 +344,14 @@
                 <input v-model="newUser.correo" type="email" placeholder="usuario@email.com" class="w-full theme-bg border theme-border rounded-lg px-4 py-3 text-sm theme-text placeholder-text-muted focus:outline-none focus:border-accent transition-colors" />
               </div>
               <div>
-                <label class="block text-sm font-medium theme-text mb-2">Teléfono</label>
-                <input v-model="newUser.telefono" type="tel" placeholder="+57 300 123 4567" class="w-full theme-bg border theme-border rounded-lg px-4 py-3 text-sm theme-text placeholder-text-muted focus:outline-none focus:border-accent transition-colors" />
+                <label class="block text-sm font-medium theme-text mb-2">Número de celular</label>
+                <div class="flex gap-2">
+                  <div class="flex items-center px-3 rounded-lg theme-bg theme-border border theme-text-muted text-sm select-none flex-shrink-0">
+                    🇨🇴 +57
+                  </div>
+                  <input v-model="newUser.telefonoLocal" @input="handleTelefonoInput(newUser, 'telefonoLocal')" type="tel" placeholder="300 123 4567" maxlength="13" class="flex-1 theme-bg border theme-border rounded-lg px-4 py-3 text-sm theme-text placeholder-text-muted focus:outline-none focus:border-accent transition-colors" />
+                </div>
+                <p class="text-xs theme-text-muted mt-1">Debe ser un número colombiano válido (3XX XXX XXXX)</p>
               </div>
               <div>
                 <label class="block text-sm font-medium theme-text mb-2">Contraseña temporal</label>
@@ -635,8 +641,14 @@
             <input v-model="editingBodega.nombre" type="text" class="w-full theme-bg border theme-border rounded-lg px-4 py-3 text-sm theme-text focus:outline-none focus:border-accent transition-colors" />
           </div>
           <div>
-            <label class="block text-sm font-medium theme-text mb-2">Teléfono</label>
-            <input v-model="editingBodega.telefono" type="tel" class="w-full theme-bg border theme-border rounded-lg px-4 py-3 text-sm theme-text focus:outline-none focus:border-accent transition-colors" />
+            <label class="block text-sm font-medium theme-text mb-2">Número de celular</label>
+            <div class="flex gap-2">
+              <div class="flex items-center px-3 rounded-lg theme-bg theme-border border theme-text-muted text-sm select-none flex-shrink-0">
+                🇨🇴 +57
+              </div>
+              <input v-model="editingBodega.telefonoLocal" @input="handleTelefonoInput(editingBodega, 'telefonoLocal')" type="tel" placeholder="300 123 4567" maxlength="13" class="flex-1 theme-bg border theme-border rounded-lg px-4 py-3 text-sm theme-text focus:outline-none focus:border-accent transition-colors" />
+            </div>
+            <p class="text-xs theme-text-muted mt-1">Debe ser un número colombiano válido (3XX XXX XXXX)</p>
           </div>
           <div>
             <label class="block text-sm font-medium theme-text mb-2">Proveedor asignado</label>
@@ -687,8 +699,14 @@
             <input v-model="newBodega.correo" type="email" placeholder="gestor@bodega.com" class="w-full theme-bg border theme-border rounded-lg px-4 py-3 text-sm theme-text placeholder-text-muted focus:outline-none focus:border-accent transition-colors" />
           </div>
           <div>
-            <label class="block text-sm font-medium theme-text mb-2">Número de teléfono</label>
-            <input v-model="newBodega.telefono" type="tel" placeholder="+56 9 1234 5678" class="w-full theme-bg border theme-border rounded-lg px-4 py-3 text-sm theme-text placeholder-text-muted focus:outline-none focus:border-accent transition-colors" />
+            <label class="block text-sm font-medium theme-text mb-2">Número de celular</label>
+            <div class="flex gap-2">
+              <div class="flex items-center px-3 rounded-lg theme-bg theme-border border theme-text-muted text-sm select-none flex-shrink-0">
+                🇨🇴 +57
+              </div>
+              <input v-model="newBodega.telefonoLocal" @input="handleTelefonoInput(newBodega, 'telefonoLocal')" type="tel" placeholder="300 123 4567" maxlength="13" class="flex-1 theme-bg border theme-border rounded-lg px-4 py-3 text-sm theme-text placeholder-text-muted focus:outline-none focus:border-accent transition-colors" />
+            </div>
+            <p class="text-xs theme-text-muted mt-1">Debe ser un número colombiano válido (3XX XXX XXXX)</p>
           </div>
           <div>
             <label class="block text-sm font-medium theme-text mb-2">Contraseña de acceso</label>
@@ -751,8 +769,14 @@
             <input v-model="editingUsuario.correo" type="email" class="w-full theme-bg border theme-border rounded-lg px-4 py-3 text-sm theme-text focus:outline-none focus:border-accent transition-colors" />
           </div>
           <div>
-            <label class="block text-sm font-medium theme-text mb-2">Teléfono</label>
-            <input v-model="editingUsuario.telefono" type="tel" class="w-full theme-bg border theme-border rounded-lg px-4 py-3 text-sm theme-text focus:outline-none focus:border-accent transition-colors" />
+            <label class="block text-sm font-medium theme-text mb-2">Número de celular</label>
+            <div class="flex gap-2">
+              <div class="flex items-center px-3 rounded-lg theme-bg theme-border border theme-text-muted text-sm select-none flex-shrink-0">
+                🇨🇴 +57
+              </div>
+              <input v-model="editingUsuario.telefonoLocal" @input="handleTelefonoInput(editingUsuario, 'telefonoLocal')" type="tel" placeholder="300 123 4567" maxlength="13" class="flex-1 theme-bg border theme-border rounded-lg px-4 py-3 text-sm theme-text focus:outline-none focus:border-accent transition-colors" />
+            </div>
+            <p class="text-xs theme-text-muted mt-1">Debe ser un número colombiano válido (3XX XXX XXXX)</p>
           </div>
           <div>
             <label class="block text-sm font-medium theme-text mb-3">Rol</label>
@@ -886,6 +910,11 @@
             </div>
           </div>
 
+          <div>
+            <label class="block text-sm font-medium theme-text mb-1">Imagen del Componente (Opcional)</label>
+            <input @change="handleCompImageChange" type="file" accept=".jpeg,.png,.jpg,.webp" class="w-full text-sm theme-text-muted file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:theme-bg file:text-accent hover:file:bg-accent/10 transition-colors" />
+          </div>
+
           <p v-if="addCompError" class="text-xs text-red-400 bg-red-500/10 border border-red-500/20 rounded-lg px-4 py-2.5">{{ addCompError }}</p>
         </div>
 
@@ -956,6 +985,11 @@
           </div>
 
           <div>
+            <label class="block text-sm font-medium theme-text mb-1">Actualizar Imagen (Opcional)</label>
+            <input @change="handleEditCompImageChange" type="file" accept=".jpeg,.png,.jpg,.webp" class="w-full text-sm theme-text-muted file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:theme-bg file:text-accent hover:file:bg-accent/10 transition-colors" />
+          </div>
+
+          <div>
             <label class="block text-sm font-medium theme-text mb-3">Gama del componente</label>
             <div class="grid grid-cols-3 gap-3">
               <button v-for="tier in ['alta', 'media', 'baja']" :key="tier" @click="editingComp.gama = tier"
@@ -993,7 +1027,7 @@
         <div class="space-y-4">
           <div>
             <label class="block text-sm font-medium theme-text mb-1">Nombre del producto <span class="text-red-400">*</span></label>
-            <input v-model="newProducto.nombre" type="text" placeholder="Ej: Intel Core i9 14900K" class="w-full theme-bg border theme-border rounded-lg px-4 py-3 text-sm theme-text placeholder-text-muted focus:outline-none focus:border-accent transition-colors" />
+            <input v-model="newProducto.nombre" type="text" placeholder="Ej: Intel Core i9 14900K" class="allow-special w-full theme-bg border theme-border rounded-lg px-4 py-3 text-sm theme-text placeholder-text-muted focus:outline-none focus:border-accent transition-colors" />
           </div>
           <div>
             <label class="block text-sm font-medium theme-text mb-1">Categoría <span class="text-red-400">*</span></label>
@@ -1129,6 +1163,22 @@ import { useRouter } from 'vue-router'
 import { useAuth } from '../composables/useAuth'
 import { useToast } from '../composables/useToast'
 
+function formatTelefonoLocal(val) {
+  if (!val) return ''
+  val = String(val).replace(/[^\d]/g, '')
+  if (val.length > 10) val = val.slice(0, 10)
+  if (val.length > 6) {
+    return val.slice(0, 3) + ' ' + val.slice(3, 6) + ' ' + val.slice(6)
+  } else if (val.length > 3) {
+    return val.slice(0, 3) + ' ' + val.slice(3)
+  }
+  return val
+}
+
+function handleTelefonoInput(obj, key) {
+  obj[key] = formatTelefonoLocal(obj[key])
+}
+
 const API = '/api'
 const { getToken, logout, user } = useAuth()
 const router = useRouter()
@@ -1257,7 +1307,7 @@ async function saveNewProveedor() {
   try {
     const res = await fetch(`${API}/proveedores`, {
       method: 'POST',
-      headers: { Authorization: `Bearer ${getToken()}` },
+      headers: { Accept: 'application/json', Authorization: `Bearer ${getToken()}` },
       body: formData
     })
     const data = await res.json()
@@ -1420,11 +1470,30 @@ async function fetchBodegas() {
   } catch(e) { console.error(e) } finally { loadingBodegas.value = false }
 }
 
-function openEditBodega(b) { editingBodega.value = { ...b }; editBodegaError.value = ''; showEditBodegaModal.value = true }
+function openEditBodega(b) { 
+  editingBodega.value = { ...b }; 
+  if (editingBodega.value.telefono) {
+    let t = editingBodega.value.telefono.replace('+57', '').replace(/\D/g, '');
+    editingBodega.value.telefonoLocal = formatTelefonoLocal(t);
+  } else {
+    editingBodega.value.telefonoLocal = '';
+  }
+  editBodegaError.value = ''; 
+  showEditBodegaModal.value = true 
+}
 
 async function saveEditBodega() {
   editBodegaError.value = ''
   if (!editingBodega.value.nombre) return editBodegaError.value = 'El nombre es requerido'
+  if (editingBodega.value.telefonoLocal) {
+    const digitos = editingBodega.value.telefonoLocal.replace(/\s/g, '')
+    if (digitos.length !== 10 || !digitos.startsWith('3')) {
+      return editBodegaError.value = 'El número debe tener 10 dígitos y empezar por 3 (ej: 300 123 4567)'
+    }
+    editingBodega.value.telefono = '+57' + digitos
+  } else {
+    editingBodega.value.telefono = null
+  }
   savingEditBodega.value = true
   try {
     const res = await fetch(`${API}/bodegas`, {
@@ -1506,6 +1575,10 @@ async function confirmDeleteBodega() {
   } finally { savingDeleteBodega.value = false }
 }
 
+function closeUserModal() {
+  showUserModal.value = false
+}
+
 function closeBodegaModal() {
   showBodegaModal.value = false
   bodegaError.value = ''
@@ -1515,6 +1588,15 @@ async function saveNewBodega() {
   bodegaError.value = ''
   if (!newBodega.value.nombre || !newBodega.value.correo || !newBodega.value.password)
     return bodegaError.value = 'Nombre, correo y contraseña son requeridos'
+  if (newBodega.value.telefonoLocal) {
+    const digitos = newBodega.value.telefonoLocal.replace(/\s/g, '')
+    if (digitos.length !== 10 || !digitos.startsWith('3')) {
+      return bodegaError.value = 'El número debe tener 10 dígitos y empezar por 3 (ej: 300 123 4567)'
+    }
+    newBodega.value.telefono = '+57' + digitos
+  } else {
+    newBodega.value.telefono = null
+  }
   savingBodega.value = true
   try {
     const res = await fetch(`${API}/bodegas`, {
@@ -1549,12 +1631,20 @@ const stockQtyAdmin = ref({})
 
 // Variables para Add Component
 const showAddCompModal = ref(false)
-const newComp = ref({ producto_id: '', nombre: '', categoria: '', especificacion: '', nucleos: '', hilos: '', frecuencia_hz: '', enfoque_uso: '', gama: 'media' })
+const newComp = ref({ producto_id: '', nombre: '', categoria: '', especificacion: '', nucleos: '', hilos: '', frecuencia_hz: '', enfoque_uso: '', gama: 'media', imagen: null })
 const addCompError = ref('')
 const savingAddComp = ref(false)
 const productoSearch = ref('')
 const showProductoDropdown = ref(false)
 const productosCatalogo = ref([])
+
+function handleCompImageChange(e) {
+  if (e.target.files[0]) newComp.value.imagen = e.target.files[0];
+}
+
+function handleEditCompImageChange(e) {
+  if (e.target.files[0]) editingComp.value.imagen = e.target.files[0];
+}
 
 const productosFiltrados = computed(() => {
   if (!productoSearch.value) return productosCatalogo.value
@@ -1571,7 +1661,7 @@ async function fetchProductosCatalogo() {
 }
 
 function openAddModal() {
-  newComp.value = { producto_id: '', nombre: '', categoria: '', especificacion: '', nucleos: '', hilos: '', frecuencia_hz: '', enfoque_uso: '', gama: 'media' }
+  newComp.value = { producto_id: '', nombre: '', categoria: '', especificacion: '', nucleos: '', hilos: '', frecuencia_hz: '', enfoque_uso: '', gama: 'media', imagen: null }
   addCompError.value = ''
   productoSearch.value = ''
   showProductoDropdown.value = false
@@ -1599,19 +1689,22 @@ async function saveNewComp() {
     return addCompError.value = 'El producto, especificación y gama son obligatorios'
   }
   savingAddComp.value = true
+  
+  const formData = new FormData()
+  formData.append('producto_id', c.producto_id)
+  formData.append('especificacion', c.especificacion)
+  formData.append('gama', c.gama)
+  if (c.nucleos) formData.append('nucleos', c.nucleos)
+  if (c.hilos) formData.append('hilos', c.hilos)
+  if (c.frecuencia_hz) formData.append('frecuencia_hz', c.frecuencia_hz)
+  if (c.enfoque_uso) formData.append('enfoque_uso', c.enfoque_uso)
+  if (c.imagen) formData.append('imagen', c.imagen)
+
   try {
     const res = await fetch(`${API}/componentes`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', Accept: 'application/json', Authorization: `Bearer ${getToken()}` },
-      body: JSON.stringify({
-        producto_id: c.producto_id,
-        especificacion: c.especificacion,
-        nucleos: c.nucleos,
-        hilos: c.hilos,
-        frecuencia_hz: c.frecuencia_hz,
-        enfoque_uso: c.enfoque_uso,
-        gama: c.gama
-      })
+      headers: { Accept: 'application/json', Authorization: `Bearer ${getToken()}` },
+      body: formData
     })
     const data = await res.json()
     if (!res.ok) {
@@ -1760,21 +1853,25 @@ async function saveEditComp() {
   }
 
   savingEditComp.value = true
+  
+  const formData = new FormData()
+  formData.append('_method', 'PUT')
+  formData.append('id', editingComp.value.id)
+  if (editingComp.value.especificacion) formData.append('especificacion', editingComp.value.especificacion)
+  if (editingComp.value.nucleos) formData.append('nucleos', editingComp.value.nucleos)
+  if (editingComp.value.hilos) formData.append('hilos', editingComp.value.hilos)
+  if (editingComp.value.frecuencia_hz) formData.append('frecuencia_hz', editingComp.value.frecuencia_hz)
+  if (editingComp.value.enfoque_uso) formData.append('enfoque_uso', editingComp.value.enfoque_uso)
+  if (editingComp.value.gama) formData.append('gama', editingComp.value.gama)
+  if (editingComp.value.precio !== undefined) formData.append('precio', editingComp.value.precio)
+  if (editingComp.value.stock !== undefined) formData.append('stock', editingComp.value.stock)
+  if (editingComp.value.imagen) formData.append('imagen', editingComp.value.imagen)
+
   try {
     const res = await fetch(`${API}/componentes`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getToken()}` },
-      body: JSON.stringify({
-        id:             editingComp.value.id,
-        especificacion: editingComp.value.especificacion,
-        nucleos:        editingComp.value.nucleos,
-        hilos:          editingComp.value.hilos,
-        frecuencia_hz:  editingComp.value.frecuencia_hz,
-        enfoque_uso:    editingComp.value.enfoque_uso,
-        gama:           editingComp.value.gama,
-        precio:         editingComp.value.precio,
-        stock:          editingComp.value.stock,
-      })
+      method: 'POST', // Usamos POST con _method: PUT para que Laravel lea FormData
+      headers: { Accept: 'application/json', Authorization: `Bearer ${getToken()}` },
+      body: formData
     })
     const data = await res.json()
     if (!res.ok) return editCompError.value = data.message ?? 'Error al guardar'
@@ -1888,6 +1985,15 @@ async function saveNewUser() {
   createUserError.value = ''; createUserSuccess.value = ''
   if (!newUser.value.nombre || !newUser.value.correo || !newUser.value.password)
     return createUserError.value = 'Nombre, correo y contraseña son requeridos'
+  if (newUser.value.telefonoLocal) {
+    const digitos = newUser.value.telefonoLocal.replace(/\s/g, '')
+    if (digitos.length !== 10 || !digitos.startsWith('3')) {
+      return createUserError.value = 'El número debe tener 10 dígitos y empezar por 3 (ej: 300 123 4567)'
+    }
+    newUser.value.telefono = '+57' + digitos
+  } else {
+    newUser.value.telefono = null
+  }
   savingUser.value = true
   try {
     const res = await fetch(`${API}/usuarios`, {
@@ -1908,10 +2014,29 @@ async function saveNewUser() {
   } catch(e) { createUserError.value = 'Error de conexión' } finally { savingUser.value = false }
 }
 
-function openEditUsuario(u) { editingUsuario.value = { ...u }; editUsuarioError.value = ''; showEditUsuarioModal.value = true }
+function openEditUsuario(u) { 
+  editingUsuario.value = { ...u }; 
+  if (editingUsuario.value.telefono) {
+    let t = editingUsuario.value.telefono.replace('+57', '').replace(/\D/g, '');
+    editingUsuario.value.telefonoLocal = formatTelefonoLocal(t);
+  } else {
+    editingUsuario.value.telefonoLocal = '';
+  }
+  editUsuarioError.value = ''; 
+  showEditUsuarioModal.value = true 
+}
 
 async function saveEditUsuario() {
   editUsuarioError.value = ''
+  if (editingUsuario.value.telefonoLocal) {
+    const digitos = editingUsuario.value.telefonoLocal.replace(/\s/g, '')
+    if (digitos.length !== 10 || !digitos.startsWith('3')) {
+      return editUsuarioError.value = 'El número debe tener 10 dígitos y empezar por 3 (ej: 300 123 4567)'
+    }
+    editingUsuario.value.telefono = '+57' + digitos
+  } else {
+    editingUsuario.value.telefono = null
+  }
   savingEditUsuario.value = true
   try {
     const res = await fetch(`${API}/usuarios`, {

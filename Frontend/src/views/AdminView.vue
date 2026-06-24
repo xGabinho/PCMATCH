@@ -278,8 +278,14 @@
               </div>
 
               <div>
-                <label class="block text-sm font-medium theme-text mb-2">Teléfono</label>
-                <input v-model="newUser.telefono" type="tel" placeholder="+56 9 1234 5678" class="w-full theme-bg border theme-border rounded-lg px-4 py-3 text-sm theme-text placeholder-text-muted focus:outline-none focus:border-accent transition-colors" />
+                <label class="block text-sm font-medium theme-text mb-2">Número de celular</label>
+                <div class="flex gap-2">
+                  <div class="flex items-center px-3 rounded-lg theme-bg theme-border border theme-text-muted text-sm select-none flex-shrink-0">
+                    🇨🇴 +57
+                  </div>
+                  <input v-model="newUser.telefonoLocal" @input="handleTelefonoInput(newUser, 'telefonoLocal')" type="tel" placeholder="300 123 4567" maxlength="13" class="flex-1 theme-bg border theme-border rounded-lg px-4 py-3 text-sm theme-text placeholder-text-muted focus:outline-none focus:border-accent transition-colors" />
+                </div>
+                <p class="text-xs theme-text-muted mt-1">Debe ser un número colombiano válido (3XX XXX XXXX)</p>
               </div>
 
               <div>
@@ -434,8 +440,14 @@
             <input v-model="editingUser.correo" type="email" class="w-full theme-bg border theme-border rounded-lg px-4 py-3 text-sm theme-text focus:outline-none focus:border-accent transition-colors" />
           </div>
           <div>
-            <label class="block text-sm font-medium theme-text mb-2">Teléfono</label>
-            <input v-model="editingUser.telefono" type="tel" class="w-full theme-bg border theme-border rounded-lg px-4 py-3 text-sm theme-text focus:outline-none focus:border-accent transition-colors" />
+            <label class="block text-sm font-medium theme-text mb-2">Número de celular</label>
+            <div class="flex gap-2">
+              <div class="flex items-center px-3 rounded-lg theme-bg theme-border border theme-text-muted text-sm select-none flex-shrink-0">
+                🇨🇴 +57
+              </div>
+              <input v-model="editingUser.telefonoLocal" @input="handleTelefonoInput(editingUser, 'telefonoLocal')" type="tel" placeholder="300 123 4567" maxlength="13" class="flex-1 theme-bg border theme-border rounded-lg px-4 py-3 text-sm theme-text focus:outline-none focus:border-accent transition-colors" />
+            </div>
+            <p class="text-xs theme-text-muted mt-1">Debe ser un número colombiano válido (3XX XXX XXXX)</p>
           </div>
           <div>
             <label class="block text-sm font-medium theme-text mb-3">Cambiar rol</label>
@@ -539,8 +551,14 @@
             <input v-model="newBodega.correo" type="email" placeholder="gestor@bodega.com" class="w-full theme-bg border theme-border rounded-lg px-4 py-3 text-sm theme-text placeholder-text-muted focus:outline-none focus:border-accent transition-colors" />
           </div>
           <div>
-            <label class="block text-sm font-medium theme-text mb-2">Número de teléfono</label>
-            <input v-model="newBodega.telefono" type="tel" placeholder="+56 9 1234 5678" class="w-full theme-bg border theme-border rounded-lg px-4 py-3 text-sm theme-text placeholder-text-muted focus:outline-none focus:border-accent transition-colors" />
+            <label class="block text-sm font-medium theme-text mb-2">Número de celular</label>
+            <div class="flex gap-2">
+              <div class="flex items-center px-3 rounded-lg theme-bg theme-border border theme-text-muted text-sm select-none flex-shrink-0">
+                🇨🇴 +57
+              </div>
+              <input v-model="newBodega.telefonoLocal" @input="handleTelefonoInput(newBodega, 'telefonoLocal')" type="tel" placeholder="300 123 4567" maxlength="13" class="flex-1 theme-bg border theme-border rounded-lg px-4 py-3 text-sm theme-text placeholder-text-muted focus:outline-none focus:border-accent transition-colors" />
+            </div>
+            <p class="text-xs theme-text-muted mt-1">Debe ser un número colombiano válido (3XX XXX XXXX)</p>
           </div>
           <div>
             <label class="block text-sm font-medium theme-text mb-2">Contraseña de acceso</label>
@@ -575,8 +593,14 @@
             <input v-model="editingBodega.nombre" type="text" class="w-full bg-dark-bg border border-dark-border rounded-lg px-4 py-3 text-sm text-text-primary focus:outline-none focus:border-accent transition-colors" />
           </div>
           <div>
-            <label class="block text-sm font-medium text-text-primary mb-2">Teléfono</label>
-            <input v-model="editingBodega.telefono" type="tel" class="w-full bg-dark-bg border border-dark-border rounded-lg px-4 py-3 text-sm text-text-primary focus:outline-none focus:border-accent transition-colors" />
+            <label class="block text-sm font-medium text-text-primary mb-2">Número de celular</label>
+            <div class="flex gap-2">
+              <div class="flex items-center px-3 rounded-lg bg-dark-bg border border-dark-border text-text-muted text-sm select-none flex-shrink-0">
+                🇨🇴 +57
+              </div>
+              <input v-model="editingBodega.telefonoLocal" @input="handleTelefonoInput(editingBodega, 'telefonoLocal')" type="tel" placeholder="300 123 4567" maxlength="13" class="flex-1 bg-dark-bg border border-dark-border rounded-lg px-4 py-3 text-sm text-text-primary focus:outline-none focus:border-accent transition-colors" />
+            </div>
+            <p class="text-xs text-text-muted mt-1">Debe ser un número colombiano válido (3XX XXX XXXX)</p>
           </div>
           <div>
             <label class="block text-sm font-medium text-text-primary mb-2">Proveedor asignado</label>
@@ -882,6 +906,22 @@ import { useRouter } from 'vue-router'
 import { useAuth } from '../composables/useAuth'
 import { useToast } from '../composables/useToast'
 
+function formatTelefonoLocal(val) {
+  if (!val) return ''
+  val = String(val).replace(/[^\d]/g, '')
+  if (val.length > 10) val = val.slice(0, 10)
+  if (val.length > 6) {
+    return val.slice(0, 3) + ' ' + val.slice(3, 6) + ' ' + val.slice(6)
+  } else if (val.length > 3) {
+    return val.slice(0, 3) + ' ' + val.slice(3)
+  }
+  return val
+}
+
+function handleTelefonoInput(obj, key) {
+  obj[key] = formatTelefonoLocal(obj[key])
+}
+
 const API = '/api'
 const { getToken, logout } = useAuth()
 const router = useRouter()
@@ -1018,6 +1058,15 @@ async function saveNewBodega() {
   bodegaError.value = ''
   if (!newBodega.value.nombre || !newBodega.value.correo || !newBodega.value.password)
     return bodegaError.value = 'Nombre, correo y contraseña son requeridos'
+  if (newBodega.value.telefonoLocal) {
+    const digitos = newBodega.value.telefonoLocal.replace(/\s/g, '')
+    if (digitos.length !== 10 || !digitos.startsWith('3')) {
+      return bodegaError.value = 'El número debe tener 10 dígitos y empezar por 3 (ej: 300 123 4567)'
+    }
+    newBodega.value.telefono = '+57' + digitos
+  } else {
+    newBodega.value.telefono = null
+  }
   savingBodega.value = true
   try {
     const res = await fetch(`${API}/bodegas`, {
@@ -1041,6 +1090,12 @@ async function saveNewBodega() {
 
 function openEditBodega(b) {
   editingBodega.value = { ...b }
+  if (editingBodega.value.telefono) {
+    let t = editingBodega.value.telefono.replace('+57', '').replace(/\D/g, '');
+    editingBodega.value.telefonoLocal = formatTelefonoLocal(t);
+  } else {
+    editingBodega.value.telefonoLocal = '';
+  }
   editBodegaError.value = ''
   showEditBodegaModal.value = true
 }
@@ -1048,6 +1103,15 @@ function openEditBodega(b) {
 async function saveEditBodega() {
   editBodegaError.value = ''
   if (!editingBodega.value.nombre) return editBodegaError.value = 'El nombre es requerido'
+  if (editingBodega.value.telefonoLocal) {
+    const digitos = editingBodega.value.telefonoLocal.replace(/\s/g, '')
+    if (digitos.length !== 10 || !digitos.startsWith('3')) {
+      return editBodegaError.value = 'El número debe tener 10 dígitos y empezar por 3 (ej: 300 123 4567)'
+    }
+    editingBodega.value.telefono = '+57' + digitos
+  } else {
+    editingBodega.value.telefono = null
+  }
   savingEditBodega.value = true
   try {
     const res = await fetch(`${API}/bodegas`, {
@@ -1356,6 +1420,15 @@ async function saveNewUser() {
   createUserSuccess.value = ''
   if (!newUser.value.nombre || !newUser.value.correo || !newUser.value.password)
     return createUserError.value = 'Nombre, correo y contraseña son requeridos'
+  if (newUser.value.telefonoLocal) {
+    const digitos = newUser.value.telefonoLocal.replace(/\s/g, '')
+    if (digitos.length !== 10 || !digitos.startsWith('3')) {
+      return createUserError.value = 'El número debe tener 10 dígitos y empezar por 3 (ej: 300 123 4567)'
+    }
+    newUser.value.telefono = '+57' + digitos
+  } else {
+    newUser.value.telefono = null
+  }
   savingUser.value = true
   try {
     const res = await fetch(`${API}/usuarios`, {
@@ -1380,12 +1453,27 @@ async function saveNewUser() {
 
 function openEditModal(u) {
   editingUser.value = { ...u }
+  if (editingUser.value.telefono) {
+    let t = editingUser.value.telefono.replace('+57', '').replace(/\D/g, '');
+    editingUser.value.telefonoLocal = formatTelefonoLocal(t);
+  } else {
+    editingUser.value.telefonoLocal = '';
+  }
   editUserError.value = ''
   showEditModal.value = true
 }
 
 async function saveEditUser() {
   editUserError.value = ''
+  if (editingUser.value.telefonoLocal) {
+    const digitos = editingUser.value.telefonoLocal.replace(/\s/g, '')
+    if (digitos.length !== 10 || !digitos.startsWith('3')) {
+      return editUserError.value = 'El número debe tener 10 dígitos y empezar por 3 (ej: 300 123 4567)'
+    }
+    editingUser.value.telefono = '+57' + digitos
+  } else {
+    editingUser.value.telefono = null
+  }
   savingEditUser.value = true
   try {
     const res = await fetch(`${API}/usuarios`, {

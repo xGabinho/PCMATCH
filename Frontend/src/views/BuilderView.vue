@@ -150,7 +150,7 @@
             :price="Number(item.precio)"
             :store="item.bodega"
             :tier="item.gama"
-            :image="null"
+            :image="item.imagen_url"
             :selected="selectedItems[steps[activeStep].id]?.id === item.id"
             @click="selectItem(steps[activeStep].id, item)"
           />

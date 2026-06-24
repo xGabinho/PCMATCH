@@ -163,8 +163,13 @@
           class="card-dark rounded-xl flex flex-col card-hover group overflow-hidden"
         >
           <!-- Image band -->
-          <div class="relative w-full h-36 theme-bg flex items-center justify-center overflow-hidden flex-shrink-0">
-            <span class="text-4xl opacity-20">{{ categoryIcons[comp.categoria] ?? '🔧' }}</span>
+          <div class="relative w-full h-48 theme-bg flex items-center justify-center overflow-hidden flex-shrink-0">
+            <template v-if="comp.imagen_url">
+              <img :src="comp.imagen_url" :alt="comp.nombre" class="w-full h-full object-contain drop-shadow-sm" />
+            </template>
+            <template v-else>
+              <span class="text-4xl opacity-20">{{ categoryIcons[comp.categoria] ?? '🔧' }}</span>
+            </template>
 
             <!-- Tier badge -->
             <span class="absolute top-2 left-2 text-xs px-2 py-0.5 rounded-full font-medium border" :class="tierStyles[comp.gama]">
