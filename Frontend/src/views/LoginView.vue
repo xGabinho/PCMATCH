@@ -59,7 +59,7 @@
           <div>
             <div class="flex items-center justify-between mb-2">
               <label class="block text-sm font-medium theme-text">Contraseña</label>
-              <button type="button" class="text-xs text-accent hover:underline">¿Olvidaste tu contraseña?</button>
+              <router-link to="/recuperar-password" class="text-xs text-accent hover:underline">¿Olvidaste tu contraseña?</router-link>
             </div>
             <div class="relative">
               <input

@@ -5,7 +5,11 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Str;
+use Barryvdh\DomPDF\Facade\Pdf;
 use App\Helpers\AuditLog;
+use App\Mail\CotizacionEnviadaMail;
 
 class CotizacionController extends Controller
 {
@@ -104,12 +108,15 @@ class CotizacionController extends Controller
 
         // Usamos una trasacción de base de datos para asegurar integridad
         $cotizacionId = null;
-        DB::transaction(function () use ($user, $perfil, $total, $items, &$cotizacionId) {
+        $codigoUnico = 'COT-' . strtoupper(Str::random(8));
+        
+        DB::transaction(function () use ($user, $perfil, $total, $items, &$cotizacionId, $codigoUnico) {
             // 1. Insertar la cotización madre
             $cotizacionId = DB::table('cotizaciones')->insertGetId([
                 'usuario_id' => $user->id,
                 'perfil' => $perfil,
                 'total' => $total,
+                'codigo' => $codigoUnico,
                 // created_at se setea automáticamente usualmente, pero si en tu DB legacy usabas NOW():
                 'created_at' => now(),
             ]);
@@ -127,9 +134,48 @@ class CotizacionController extends Controller
             DB::table('cotizacion_items')->insert($itemsData);
         });
 
-        AuditLog::log($request, "Creó una nueva cotización (ID: {$cotizacionId}) por {$total}", 'Cotizaciones');
+        // 3. Obtener los datos completos para el PDF
+        $cotizacion = DB::table('cotizaciones')->where('id', $cotizacionId)->first();
+        $cotizacionItems = DB::table('cotizacion_items as ci')
+            ->join('componentes as c', 'ci.componente_id', '=', 'c.id')
+            ->join('productos_catalogo as pc', 'c.producto_id', '=', 'pc.id')
+            ->leftJoin('bodegas as b', 'c.bodega_id', '=', 'b.id')
+            ->leftJoin('proveedores as p', 'b.proveedor_id', '=', 'p.id')
+            ->where('ci.cotizacion_id', $cotizacionId)
+            ->select(
+                'ci.cantidad',
+                'ci.precio_unitario',
+                'pc.nombre as nombre_producto',
+                'pc.categoria',
+                'c.especificacion',
+                'b.nombre as nombre_bodega',
+                'p.nombre as nombre_proveedor'
+            )
+            ->get();
 
-        return response()->json(['message' => 'Cotización guardada', 'id' => $cotizacionId], 201);
+        // 4. Generar el PDF
+        $pdf = Pdf::loadView('pdf.cotizacion', [
+            'cotizacion' => $cotizacion,
+            'items' => $cotizacionItems,
+            'user' => $user
+        ]);
+        
+        $pdfContent = $pdf->output();
+
+        // 5. Enviar el correo
+        try {
+            Mail::to($user->correo)->send(new CotizacionEnviadaMail($cotizacion, $pdfContent, $user));
+        } catch (\Exception $e) {
+            \Log::error('Error enviando cotizacion: ' . $e->getMessage());
+        }
+
+        AuditLog::log($request, "Creó una nueva cotización (ID: {$cotizacionId}, Código: {$codigoUnico}) por {$total}", 'Cotizaciones');
+
+        return response()->json([
+            'message' => 'Cotización guardada y enviada a tu correo.', 
+            'id' => $cotizacionId,
+            'codigo' => $codigoUnico
+        ], 201);
     }
 
     /**

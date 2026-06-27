@@ -3,6 +3,8 @@ import { useAuth } from '../composables/useAuth'
 
 import HomeView       from '../views/HomeView.vue'
 import LoginView      from '../views/LoginView.vue'
+import ForgotPasswordView  from '../views/ForgotPasswordView.vue'
+import ResetPasswordView   from '../views/ResetPasswordView.vue'
 import ClientHomeView from '../views/ClientHomeView.vue'
 import BuilderView    from '../views/BuilderView.vue'
 import QuoteView      from '../views/QuoteView.vue'
@@ -17,6 +19,8 @@ const routes = [
   // Públicas
   { path: '/',       component: HomeView  },
   { path: '/login',  component: LoginView },
+  { path: '/recuperar-password',   component: ForgotPasswordView },
+  { path: '/restablecer-password', component: ResetPasswordView },
 
   // Cliente
   { path: '/inicio',    component: ClientHomeView, meta: { requiresAuth: true, roles: ['cliente'] } },

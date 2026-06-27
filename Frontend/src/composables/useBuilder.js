@@ -1,7 +1,52 @@
-import { ref, computed } from 'vue'
+import { ref, computed, watch } from 'vue'
+import { useAuth } from './useAuth'
+
+const { user } = useAuth()
 
 const selectedItems = ref({})
 const perfil = ref('')
+
+// Load state from localStorage based on user
+function loadState() {
+  if (!user.value || !user.value.id) {
+    selectedItems.value = {}
+    perfil.value = ''
+    return
+  }
+  
+  const saved = localStorage.getItem(`pcmatch_builder_${user.value.id}`)
+  if (saved) {
+    try {
+      const parsed = JSON.parse(saved)
+      selectedItems.value = parsed.items || {}
+      perfil.value = parsed.perfil || ''
+    } catch(e) {
+      selectedItems.value = {}
+      perfil.value = ''
+    }
+  } else {
+    selectedItems.value = {}
+    perfil.value = ''
+  }
+}
+
+// Initial load
+loadState()
+
+// Reload if user changes (e.g. logout -> login)
+watch(() => user.value?.id, () => {
+  loadState()
+})
+
+// Auto-save changes to localStorage
+watch([selectedItems, perfil], () => {
+  if (!user.value || !user.value.id) return
+  
+  localStorage.setItem(`pcmatch_builder_${user.value.id}`, JSON.stringify({
+    items: selectedItems.value,
+    perfil: perfil.value
+  }))
+}, { deep: true })
 
 
 const steps = [

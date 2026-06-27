@@ -27,7 +27,9 @@
 
       <!-- Success -->
       <div v-if="saveSuccess" class="mb-6 px-4 py-3 rounded-lg bg-green-500/10 border border-green-500/20 text-green-400 text-sm">
-        ✓ Cotización guardada correctamente
+        <p class="font-bold mb-1">✓ Cotización guardada correctamente</p>
+        <p>Tu código de cotización es: <strong class="font-mono text-white">{{ generatedCode }}</strong></p>
+        <p class="mt-1 opacity-80">Hemos enviado un correo con el PDF detallado de tu cotización.</p>
       </div>
       <div v-if="saveError" class="mb-6 px-4 py-3 rounded-lg bg-red-500/10 border border-red-500/20 text-red-400 text-sm">
         {{ saveError }}
@@ -190,6 +192,7 @@ const { getToken } = useAuth()
 const saving      = ref(false)
 const saveSuccess = ref(false)
 const saveError   = ref('')
+const generatedCode = ref('')
 
 const today = new Date().toLocaleDateString('es-CL', { day: 'numeric', month: 'long', year: 'numeric' })
 
@@ -236,6 +239,8 @@ const items = Object.values(selectedComponents.value).map(item => ({
     })
     const data = await res.json()
     if (!res.ok) return saveError.value = data.error ?? 'Error al guardar'
+    
+    generatedCode.value = data.codigo
     saveSuccess.value = true
   } catch(e) {
     saveError.value = 'Error de conexión'
