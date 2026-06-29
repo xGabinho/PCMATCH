@@ -303,7 +303,7 @@ import { useRouter } from 'vue-router'
 import ComponentCard from '../components/ComponentCard.vue'
 import { useBuilder } from '../composables/useBuilder'
 
-const API = '/api'
+import { API } from '@/config/api'
 const router = useRouter()
 const { steps, selectedItems, selectedComponents, totalPrice, selectItem, removeItem, updateQuantity } = useBuilder()
 

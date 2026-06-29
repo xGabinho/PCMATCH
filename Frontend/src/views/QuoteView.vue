@@ -184,7 +184,7 @@ import { useRouter } from 'vue-router'
 import { useBuilder } from '../composables/useBuilder'
 import { useAuth } from '../composables/useAuth'
 
-const API = '/api'
+import { API } from '@/config/api'
 const router = useRouter()
 const { steps, selectedComponents, totalPrice, perfil, removeItem, clearAll, updateQuantity } = useBuilder()
 const { getToken } = useAuth()

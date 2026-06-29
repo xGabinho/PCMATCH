@@ -922,7 +922,7 @@ function handleTelefonoInput(obj, key) {
   obj[key] = formatTelefonoLocal(obj[key])
 }
 
-const API = '/api'
+import { API } from '@/config/api'
 const { getToken, logout } = useAuth()
 const router = useRouter()
 const toast = useToast()

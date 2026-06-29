@@ -136,6 +136,7 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+import { API } from '@/config/api'
 
 const route = useRoute()
 const router = useRouter()
@@ -176,7 +177,7 @@ async function handleSubmit() {
 
   loading.value = true
   try {
-    const res = await fetch('/api/auth/reset-password', {
+    const res = await fetch(`${API}/auth/reset-password`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
       body: JSON.stringify({

@@ -80,6 +80,7 @@
 
 <script setup>
 import { ref } from 'vue'
+import { API } from '@/config/api'
 
 const correo = ref('')
 const loading = ref(false)
@@ -95,7 +96,7 @@ async function handleSubmit() {
 
   loading.value = true
   try {
-    const res = await fetch('/api/auth/forgot-password', {
+    const res = await fetch(`${API}/auth/forgot-password`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
       body: JSON.stringify({ correo: correo.value })

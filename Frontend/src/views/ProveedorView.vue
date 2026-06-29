@@ -589,7 +589,7 @@ import { useRouter } from 'vue-router'
 import { useAuth } from '../composables/useAuth'
 import { useToast } from '../composables/useToast'
 
-const API = '/api'
+import { API } from '@/config/api'
 const { getToken, logout, user } = useAuth()
 const router = useRouter()
 const toast = useToast()

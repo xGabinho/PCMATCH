@@ -214,7 +214,7 @@ import { ref, computed, onMounted } from 'vue'
 import { useAuth } from '../composables/useAuth'
 import { useToast } from '../composables/useToast'
 
-const API = '/api'
+import { API } from '@/config/api'
 const { user, getToken, updateUser } = useAuth()
 const toast = useToast()
 

@@ -478,7 +478,7 @@ import { useAuth } from '../composables/useAuth'
 import { useToast } from '../composables/useToast'
 import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
 
-const API = '/api'
+import { API } from '@/config/api'
 
 const router = useRouter()
 const { logout, getToken, user } = useAuth()

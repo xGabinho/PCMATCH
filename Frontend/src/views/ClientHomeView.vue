@@ -250,7 +250,7 @@
 import { ref, computed, onMounted } from 'vue'
 import { useAuth } from '../composables/useAuth'
 
-const API = '/api'
+import { API } from '@/config/api'
 const { user } = useAuth()
 
 const searchQuery    = ref('')
