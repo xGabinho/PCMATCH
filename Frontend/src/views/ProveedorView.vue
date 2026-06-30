@@ -644,11 +644,25 @@ const savingEditBodega   = ref(false)
 const savingDeleteBodega = ref(false)
 const deleteBodegaError  = ref('')
 
+/**
+
+ * Propiedad computada que filtra dinámicamente los registros basándose en los criterios de búsqueda.
+
+ */
+
 const filteredBodegas = computed(() => {
   if (!filterBodega.value.trim()) return bodegas.value
   const q = filterBodega.value.toLowerCase()
   return bodegas.value.filter(b => b.nombre.toLowerCase().includes(q) || b.correo.toLowerCase().includes(q))
 })
+
+/**
+
+ * Obtiene datos desde el backend mediante API.
+
+ * Mantiene sincronizada la vista con la base de datos.
+
+ */
 
 async function fetchBodegas() {
   loadingBodegas.value = true
@@ -658,6 +672,14 @@ async function fetchBodegas() {
     if (res.ok) bodegas.value = data.bodegas
   } catch(e) { console.error(e) } finally { loadingBodegas.value = false }
 }
+
+/**
+
+ * Valida y envía los datos del formulario al backend (POST/PUT).
+
+ * Maneja la lógica de guardado y muestra feedback al usuario.
+
+ */
 
 async function saveNewBodega() {
   bodegaError.value = ''
@@ -686,6 +708,14 @@ async function saveNewBodega() {
 
 function openEditBodega(b) { editingBodega.value = { ...b }; editBodegaError.value = ''; showEditBodegaModal.value = true }
 
+/**
+
+ * Valida y envía los datos del formulario al backend (POST/PUT).
+
+ * Maneja la lógica de guardado y muestra feedback al usuario.
+
+ */
+
 async function saveEditBodega() {
   editBodegaError.value = ''
   if (!editingBodega.value.nombre) return editBodegaError.value = 'El nombre es requerido'
@@ -712,6 +742,12 @@ async function saveEditBodega() {
 
 function openDeleteBodega(b) { deletingBodega.value = b; deleteBodegaError.value = ''; showDeleteBodegaModal.value = true }
 
+/**
+
+ * Confirma y procesa la eliminación de un registro mediante la API.
+
+ */
+
 async function confirmDeleteBodega() {
   deleteBodegaError.value = ''
   savingDeleteBodega.value = true
@@ -734,6 +770,12 @@ async function confirmDeleteBodega() {
     savingDeleteBodega.value = false 
   }
 }
+
+/**
+
+ * Alterna el estado (activo/inactivo) de un elemento en la base de datos.
+
+ */
 
 async function toggleActivoBodega(b) {
   const activaNuevo = b.activa == 1 ? 0 : 1
@@ -763,6 +805,14 @@ async function toggleActivoBodega(b) {
 const cotizaciones        = ref([])
 const loadingCotizaciones = ref(false)
 
+/**
+
+ * Obtiene datos desde el backend mediante API.
+
+ * Mantiene sincronizada la vista con la base de datos.
+
+ */
+
 async function fetchCotizaciones() {
   loadingCotizaciones.value = true
   try {
@@ -787,6 +837,12 @@ const filterEnfoque = ref('')
 const filterNucleos = ref('')
 const filterHilos = ref('')
 const filterFrecuenciaMin = ref('')
+
+/**
+
+ * Propiedad computada que filtra dinámicamente los registros basándose en los criterios de búsqueda.
+
+ */
 
 const filteredComponentes = computed(() => {
   let result = [...componentes.value]
@@ -816,6 +872,12 @@ const categoriasBase = ref([])
 const productoSearch = ref('')
 const showProductoDropdown = ref(false)
 
+/**
+
+ * Propiedad computada que filtra el catálogo de productos disponible en tiempo real.
+
+ */
+
 const productosFiltrados = computed(() => {
   if (!productoSearch.value.trim()) return categoriasBase.value.slice(0, 10)
   const q = productoSearch.value.toLowerCase()
@@ -833,6 +895,14 @@ function selectProducto(prod) {
   showProductoDropdown.value = false
 }
 
+/**
+
+ * Obtiene datos desde el backend mediante API.
+
+ * Mantiene sincronizada la vista con la base de datos.
+
+ */
+
 async function fetchCategoriasBase() {
   try {
     const res = await fetch(`${API}/catalogo`, { headers: { Authorization: `Bearer ${getToken()}` } })
@@ -840,6 +910,12 @@ async function fetchCategoriasBase() {
     if (res.ok) categoriasBase.value = data.productos
   } catch(e) { console.error(e) }
 }
+
+/**
+
+ * Abre el modal correspondiente e inicializa los datos necesarios.
+
+ */
 
 function openAddModal() {
   newComp.value = { bodega_id: '', producto_id: '', especificacion: '', nucleos: '', hilos: '', frecuencia_hz: '', enfoque_uso: '', gama: 'media', precio: '', stock: '' }
@@ -852,6 +928,12 @@ function openAddModal() {
   if (categoriasBase.value.length === 0) fetchCategoriasBase()
   showAddCompModal.value = true
 }
+
+/**
+
+ * Cierra el modal activo y limpia los errores.
+
+ */
 
 function closeAddModal() {
   showAddCompModal.value = false
@@ -873,6 +955,14 @@ function onFileChange(e, type) {
 
 function blockInvalidChars(e) { if (['e', 'E', '+', '-'].includes(e.key)) e.preventDefault() }
 function blockInvalidCharsStock(e) { if (['e', 'E', '+', '-', '.'].includes(e.key)) e.preventDefault() }
+
+/**
+
+ * Valida y envía los datos del formulario al backend (POST/PUT).
+
+ * Maneja la lógica de guardado y muestra feedback al usuario.
+
+ */
 
 async function saveNewComp() {
   addCompError.value = ''
@@ -909,6 +999,14 @@ async function saveNewComp() {
   }
 }
 
+/**
+
+ * Obtiene datos desde el backend mediante API.
+
+ * Mantiene sincronizada la vista con la base de datos.
+
+ */
+
 async function fetchComponentes() {
   loadingComponentes.value = true
   try {
@@ -930,6 +1028,14 @@ function openEditComp(comp) {
   editCompError.value = ''
   showEditCompModal.value = true
 }
+
+/**
+
+ * Valida y envía los datos del formulario al backend (POST/PUT).
+
+ * Maneja la lógica de guardado y muestra feedback al usuario.
+
+ */
 
 async function saveEditComp() {
   editCompError.value = ''
@@ -992,6 +1098,12 @@ function openDeleteComp(comp) {
   deleteError.value = ''
   showDeleteModal.value = true
 }
+
+/**
+
+ * Confirma y procesa la eliminación de un registro mediante la API.
+
+ */
 
 async function confirmDelete() {
   if (!deletingComp.value) return

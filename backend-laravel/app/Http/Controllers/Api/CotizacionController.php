@@ -13,23 +13,15 @@ use App\Mail\CotizacionEnviadaMail;
 
 class CotizacionController extends Controller
 {
+    
     /**
-     * Resuelve el rol string basado en el modelo autenticado
+    
+     * Obtiene una lista de registros o recursos.
+    
+     * Ejecuta la consulta a la base de datos (con posibles filtros/paginación) y retorna los datos en formato JSON.
+    
      */
-    private function getRole(Request $request)
-    {
-        $user = $request->user();
-        $clase = get_class($user);
-        
-        if ($clase === \App\Models\Proveedor::class) return 'proveedor';
-        if ($clase === \App\Models\Bodega::class) return 'bodega';
-        
-        return $user->rol; // 'admin', 'superadmin', 'cliente'
-    }
-
-    /**
-     * Equivalente a GET api/cotizaciones/index.php
-     */
+    
     public function index(Request $request)
     {
         $user = $request->user();
@@ -85,9 +77,19 @@ class CotizacionController extends Controller
         ]);
     }
 
+    
     /**
-     * Equivalente a POST api/cotizaciones/index.php
+
+    
+     * Almacena un nuevo registro en la base de datos.
+
+    
+     * Valida la información recibida en la petición HTTP y crea el nuevo recurso.
+
+    
      */
+
+    
     public function store(Request $request)
     {
         $user = $request->user();
@@ -178,9 +180,19 @@ class CotizacionController extends Controller
         ], 201);
     }
 
+    
     /**
-     * Equivalente a DELETE api/cotizaciones/index.php
+
+    
+     * Elimina un registro de la base de datos.
+
+    
+     * Dependiendo de la lógica, puede ser una eliminación física o lógica (soft delete).
+
+    
      */
+
+    
     public function destroy(Request $request, $id = null)
     {
         $user = $request->user();

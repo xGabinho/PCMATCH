@@ -8,9 +8,15 @@ use Illuminate\Support\Facades\DB;
 
 class CatalogoController extends Controller
 {
+    
     /**
-     * Equivalente a GET api/catalogo/index.php (Público)
+    
+     * Obtiene una lista de registros o recursos.
+    
+     * Ejecuta la consulta a la base de datos (con posibles filtros/paginación) y retorna los datos en formato JSON.
+    
      */
+    
     public function index(Request $request)
     {
         $query = DB::table('productos_catalogo')
@@ -31,9 +37,19 @@ class CatalogoController extends Controller
         ]);
     }
 
+    
     /**
-     * Crear un nuevo producto base (catálogo)
+
+    
+     * Almacena un nuevo registro en la base de datos.
+
+    
+     * Valida la información recibida en la petición HTTP y crea el nuevo recurso.
+
+    
      */
+
+    
     public function store(Request $request)
     {
         $user = $request->user();

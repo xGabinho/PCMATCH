@@ -223,6 +223,14 @@ function goToStep(step) {
   router.push({ path: '/armar', query: { step: index } })
 }
 
+/**
+
+ * Valida y envía los datos del formulario al backend (POST/PUT).
+
+ * Maneja la lógica de guardado y muestra feedback al usuario.
+
+ */
+
 async function saveCotizacion() {
   saveError.value = ''
   saveSuccess.value = false

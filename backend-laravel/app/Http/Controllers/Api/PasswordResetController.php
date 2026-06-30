@@ -17,13 +17,15 @@ use Carbon\Carbon;
 
 class PasswordResetController extends Controller
 {
+    
     /**
-     * POST /api/auth/forgot-password
-     *
-     * Busca el correo en las 3 tablas (usuarios, bodegas, proveedores),
-     * genera un token seguro, lo guarda en password_reset_tokens,
-     * y envía el email con el enlace de restablecimiento.
+    
+     * Endpoint lógico de la API.
+    
+     * Procesa la petición HTTP, interactúa con los modelos y retorna una respuesta JSON.
+    
      */
+    
     public function sendResetLink(Request $request)
     {
         $validator = Validator::make($request->all(), [
@@ -111,12 +113,19 @@ class PasswordResetController extends Controller
         ]);
     }
 
+    
     /**
-     * POST /api/auth/reset-password
-     *
-     * Valida el token, actualiza la contraseña en la tabla correspondiente,
-     * y limpia el token usado.
+
+    
+     * Endpoint lógico de la API.
+
+    
+     * Procesa la petición HTTP, interactúa con los modelos y retorna una respuesta JSON.
+
+    
      */
+
+    
     public function resetPassword(Request $request)
     {
         $validator = Validator::make($request->all(), [

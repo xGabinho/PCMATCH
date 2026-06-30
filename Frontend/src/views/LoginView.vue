@@ -358,6 +358,13 @@ function handleTelefonoInput() {
   registerData.value.telefonoLocal = val
 }
 
+/**
+ * Gestiona el inicio de sesión del usuario.
+ * Llama al composable 'useAuth' para autenticar y luego redirige según el rol.
+ */
+/**
+ * Gestiona el inicio de sesión validando credenciales.
+ */
 async function handleLogin() {
   errorMsg.value = ''
   if (!loginData.value.correo || !loginData.value.password) {
@@ -374,6 +381,13 @@ async function handleLogin() {
   }
 }
 
+/**
+ * Procesa el formulario de registro de nuevos usuarios.
+ * Valida contraseñas, formato del número telefónico y llama a la API.
+ */
+/**
+ * Procesa el registro de un nuevo usuario en la plataforma.
+ */
 async function handleRegister() {
   errorMsg.value = ''
   const { nombre, apellido, correo, telefonoLocal, password, confirmPassword } = registerData.value

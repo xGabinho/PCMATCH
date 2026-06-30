@@ -334,6 +334,12 @@ const currentItems = computed(() => {
   return componentesPorCategoria.value[cat] ?? []
 })
 
+/**
+
+ * Propiedad computada que filtra dinámicamente los registros basándose en los criterios de búsqueda.
+
+ */
+
 const filteredItems = computed(() => {
   let items = [...currentItems.value]
   if (stepSearch.value.trim()) {
@@ -359,6 +365,14 @@ const filteredItems = computed(() => {
   if (stepSort.value === 'name')       items.sort((a, b) => a.nombre.localeCompare(b.nombre))
   return items
 })
+
+/**
+
+ * Obtiene datos desde el backend mediante API.
+
+ * Mantiene sincronizada la vista con la base de datos.
+
+ */
 
 async function fetchTodos() {
   loading.value = true

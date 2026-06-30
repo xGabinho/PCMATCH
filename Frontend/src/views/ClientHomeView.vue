@@ -282,6 +282,12 @@ const filterNucleos = ref('')
 const filterHilos = ref('')
 const filterFrecuenciaMin = ref('')
 
+/**
+
+ * Propiedad computada que filtra dinámicamente los registros basándose en los criterios de búsqueda.
+
+ */
+
 const filteredComponents = computed(() => {
   let result = [...allComponents.value]
 
@@ -311,6 +317,14 @@ const filteredComponents = computed(() => {
 
   return result
 })
+
+/**
+
+ * Obtiene datos desde el backend mediante API.
+
+ * Mantiene sincronizada la vista con la base de datos.
+
+ */
 
 async function fetchComponentes() {
   loading.value = true

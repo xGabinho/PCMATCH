@@ -8,9 +8,15 @@ use App\Models\HistorialAccion;
 
 class HistorialController extends Controller
 {
+    
     /**
-     * Display a listing of the audit logs.
+    
+     * Obtiene una lista de registros o recursos.
+    
+     * Ejecuta la consulta a la base de datos (con posibles filtros/paginación) y retorna los datos en formato JSON.
+    
      */
+    
     public function index(Request $request)
     {
         $user = $request->user();

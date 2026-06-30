@@ -9,9 +9,15 @@ use App\Helpers\AuditLog;
 
 class UsuarioController extends Controller
 {
+    
     /**
-     * Equivalente a GET api/usuarios/index.php
+    
+     * Obtiene una lista de registros o recursos.
+    
+     * Ejecuta la consulta a la base de datos (con posibles filtros/paginación) y retorna los datos en formato JSON.
+    
      */
+    
     public function index(Request $request)
     {
         // 1. Verificación del Rol (emulando requireAuth(['admin']))
@@ -43,9 +49,19 @@ class UsuarioController extends Controller
         ]);
     }
 
+    
     /**
-     * Equivalente a POST api/usuarios/index.php (Crear usuario como Admin)
+
+    
+     * Almacena un nuevo registro en la base de datos.
+
+    
+     * Valida la información recibida en la petición HTTP y crea el nuevo recurso.
+
+    
      */
+
+    
     public function store(Request $request)
     {
         if (!in_array($request->user()->rol, ['admin', 'superadmin'])) {
@@ -95,9 +111,19 @@ class UsuarioController extends Controller
         ], 201);
     }
 
+    
     /**
-     * Equivalente a PUT api/usuarios/index.php (Editar usuario)
+
+    
+     * Actualiza un recurso existente en la base de datos.
+
+    
+     * Valida los nuevos datos y sobrescribe los valores del registro correspondiente.
+
+    
      */
+
+    
     public function update(Request $request)
     {
         if (!in_array($request->user()->rol, ['admin', 'superadmin'])) {
@@ -159,9 +185,19 @@ class UsuarioController extends Controller
         ]);
     }
 
+    
     /**
-     * Equivalente a DELETE api/usuarios/index.php (Eliminar usuario)
+
+    
+     * Elimina un registro de la base de datos.
+
+    
+     * Dependiendo de la lógica, puede ser una eliminación física o lógica (soft delete).
+
+    
      */
+
+    
     public function destroy(Request $request, $id = null)
     {
         if (!in_array($request->user()->rol, ['admin', 'superadmin'])) {

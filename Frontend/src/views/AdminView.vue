@@ -907,6 +907,10 @@ import { useRouter } from 'vue-router'
 import { useAuth } from '../composables/useAuth'
 import { useToast } from '../composables/useToast'
 
+/**
+ * Formatea un número telefónico al formato local de Colombia (ej. 300 123 4567)
+ * Esto mejora la legibilidad en la interfaz de usuario.
+ */
 function formatTelefonoLocal(val) {
   if (!val) return ''
   val = String(val).replace(/[^\d]/g, '')
@@ -943,6 +947,10 @@ function perfilLabel(p) { return ({ office: 'Oficina', gaming: 'Gaming', design:
 // ── Secciones ─────────────────────────────────────────────
 const activeSection = ref('bodegas')
 
+/**
+ * Configuración dinámica de las secciones del menú lateral.
+ * Utiliza 'computed' para mantener reactivos los contadores (ej. cantidad de bodegas).
+ */
 const sections = computed(() => [
   { id: 'bodegas',            icon: markRaw(Store), label: 'Bodegas',            description: `${bodegas.value.length} bodegas registradas`,    cta: '+ Agregar bodega', count: bodegas.value.length    },
   { id: 'componentes',        icon: markRaw(Wrench), label: 'Componentes',        description: `${componentes.value.length} componentes en total`, cta: '+ Nuevo Componente Maestro',               count: componentes.value.length },
@@ -990,6 +998,14 @@ const editBodegaError = ref('')
 const savingEditBodega = ref(false)
 const proveedores = ref([])
 
+/**
+
+ * Obtiene datos desde el backend mediante API.
+
+ * Mantiene sincronizada la vista con la base de datos.
+
+ */
+
 async function fetchProveedores() {
   try {
     const res = await fetch(`${API}/proveedores`, { headers: { Authorization: `Bearer ${getToken()}` } })
@@ -998,12 +1014,27 @@ async function fetchProveedores() {
   } catch(e) { console.error(e) }
 }
 
+/**
+ * Computed property que filtra la lista de bodegas en tiempo real
+ * basado en lo que el usuario escribe en el campo de búsqueda (por nombre o correo).
+ */
+/**
+ * Propiedad computada que filtra dinámicamente los registros basándose en los criterios de búsqueda.
+ */
 const filteredBodegas = computed(() => {
   if (!filterBodega.value.trim()) return bodegas.value
   const q = filterBodega.value.toLowerCase()
   return bodegas.value.filter(b => b.nombre.toLowerCase().includes(q) || b.correo.toLowerCase().includes(q))
 })
 
+/**
+ * Obtiene la lista de bodegas desde el backend a través de la API.
+ * Maneja el estado de carga (loadingBodegas) para mostrar feedback visual al usuario.
+ */
+/**
+ * Obtiene datos desde el backend mediante API.
+ * Mantiene sincronizada la vista con la base de datos.
+ */
 async function fetchBodegas() {
   loadingBodegas.value = true
   try {
@@ -1013,11 +1044,23 @@ async function fetchBodegas() {
   } catch(e) { console.error(e) } finally { loadingBodegas.value = false }
 }
 
+/**
+
+ * Abre el modal correspondiente e inicializa los datos necesarios.
+
+ */
+
 function openBodegaModal() {
   newBodega.value = { nombre: '', correo: '', telefono: '', password: '', proveedor_id: null }
   bodegaError.value = ''
   showBodegaModal.value = true
 }
+
+/**
+
+ * Cierra el modal activo y limpia los errores.
+
+ */
 
 function closeBodegaModal() {
   showBodegaModal.value = false
@@ -1055,6 +1098,14 @@ async function procesarCambioEstado() {
   }
 }
 
+/**
+ * Valida los datos del formulario y envía la petición POST para crear una nueva bodega.
+ * Incluye validación específica para asegurar que el número de teléfono sea válido en Colombia.
+ */
+/**
+ * Valida y envía los datos del formulario al backend (POST/PUT).
+ * Maneja la lógica de guardado y muestra feedback al usuario.
+ */
 async function saveNewBodega() {
   bodegaError.value = ''
   if (!newBodega.value.nombre || !newBodega.value.correo || !newBodega.value.password)
@@ -1101,6 +1152,14 @@ function openEditBodega(b) {
   showEditBodegaModal.value = true
 }
 
+/**
+
+ * Valida y envía los datos del formulario al backend (POST/PUT).
+
+ * Maneja la lógica de guardado y muestra feedback al usuario.
+
+ */
+
 async function saveEditBodega() {
   editBodegaError.value = ''
   if (!editingBodega.value.nombre) return editBodegaError.value = 'El nombre es requerido'
@@ -1127,6 +1186,12 @@ async function saveEditBodega() {
   } catch(e) { editBodegaError.value = 'Error de conexión' } finally { savingEditBodega.value = false }
 }
 
+/**
+
+ * Alterna el estado (activo/inactivo) de un elemento en la base de datos.
+
+ */
+
 async function toggleBodega(b) {
   const activa = b.activa == 1 ? 0 : 1
   await fetch(`${API}/bodegas`, {
@@ -1142,6 +1207,12 @@ function openDeleteBodega(b) {
   deleteBodegaError.value = ''
   showDeleteBodegaModal.value = true
 }
+
+/**
+
+ * Confirma y procesa la eliminación de un registro mediante la API.
+
+ */
 
 async function confirmDeleteBodega() {
   deleteBodegaError.value = ''
@@ -1187,11 +1258,25 @@ const productoSearch = ref('')
 const showProductoDropdown = ref(false)
 const productosCatalogo = ref([])
 
+/**
+
+ * Propiedad computada que filtra el catálogo de productos disponible en tiempo real.
+
+ */
+
 const productosFiltrados = computed(() => {
   if (!productoSearch.value) return productosCatalogo.value
   const q = productoSearch.value.toLowerCase()
   return productosCatalogo.value.filter(p => p.nombre.toLowerCase().includes(q) || p.categoria.toLowerCase().includes(q))
 })
+
+/**
+
+ * Obtiene datos desde el backend mediante API.
+
+ * Mantiene sincronizada la vista con la base de datos.
+
+ */
 
 async function fetchProductosCatalogo() {
   try {
@@ -1201,6 +1286,12 @@ async function fetchProductosCatalogo() {
   } catch(e) { console.error(e) }
 }
 
+/**
+
+ * Abre el modal correspondiente e inicializa los datos necesarios.
+
+ */
+
 function openAddModal() {
   newComp.value = { producto_id: '', nombre: '', categoria: '', especificacion: '', nucleos: '', hilos: '', frecuencia_hz: '', enfoque_uso: '', gama: 'media' }
   addCompError.value = ''
@@ -1209,6 +1300,12 @@ function openAddModal() {
   if (productosCatalogo.value.length === 0) fetchProductosCatalogo()
   showAddCompModal.value = true
 }
+
+/**
+
+ * Cierra el modal activo y limpia los errores.
+
+ */
 
 function closeAddModal() {
   showAddCompModal.value = false
@@ -1223,6 +1320,14 @@ function selectProducto(prod) {
   showProductoDropdown.value = false
 }
 
+/**
+ * Guarda un nuevo componente maestro asociado a un producto del catálogo.
+ * Valida campos obligatorios antes de enviar la petición POST al servidor.
+ */
+/**
+ * Valida y envía los datos del formulario al backend (POST/PUT).
+ * Maneja la lógica de guardado y muestra feedback al usuario.
+ */
 async function saveNewComp() {
   addCompError.value = ''
   const c = newComp.value
@@ -1268,6 +1373,14 @@ const filterNucleos = ref('')
 const filterHilos = ref('')
 const filterFrecuenciaMin = ref('')
 
+/**
+ * Filtrado avanzado de componentes. 
+ * Combina la barra de búsqueda de texto con filtros específicos (gama, núcleos, hilos, frecuencia).
+ * Se actualiza automáticamente cuando cualquier filtro cambia gracias a 'computed'.
+ */
+/**
+ * Propiedad computada que filtra dinámicamente los registros basándose en los criterios de búsqueda.
+ */
 const filteredComponentes = computed(() => {
   let result = componentes.value
   
@@ -1285,6 +1398,14 @@ const filteredComponentes = computed(() => {
   return result
 })
 
+/**
+
+ * Obtiene datos desde el backend mediante API.
+
+ * Mantiene sincronizada la vista con la base de datos.
+
+ */
+
 async function fetchComponentes() {
   loadingComponentes.value = true
   try {
@@ -1299,6 +1420,14 @@ function openEditComp(comp) {
   editCompError.value = ''
   showEditCompModal.value = true
 }
+
+/**
+
+ * Valida y envía los datos del formulario al backend (POST/PUT).
+
+ * Maneja la lógica de guardado y muestra feedback al usuario.
+
+ */
 
 async function saveEditComp() {
   editCompError.value = ''
@@ -1339,6 +1468,12 @@ async function saveEditComp() {
   }
 }
 
+/**
+
+ * Alterna el estado (activo/inactivo) de un elemento en la base de datos.
+
+ */
+
 async function toggleComponente(c) {
   const activo = c.activo == 1 ? 0 : 1
   try {
@@ -1358,6 +1493,12 @@ function openDeleteComp(c) {
   deletingComp.value = c
   showDeleteCompModal.value = true
 }
+
+/**
+
+ * Confirma y procesa la eliminación de un registro mediante la API.
+
+ */
 
 async function confirmDeleteComp() {
   savingDeleteComp.value = true
@@ -1391,6 +1532,12 @@ const savingEditUser = ref(false)
 const savingDeleteUser = ref(false)
 const newUser = ref({ rol: 'cliente', nombre: '', apellido: '', correo: '', telefono: '', password: '' })
 
+/**
+
+ * Propiedad computada que filtra dinámicamente los registros basándose en los criterios de búsqueda.
+
+ */
+
 const filteredUsuarios = computed(() => {
   if (!filterUsuario.value.trim()) return usuarios.value
   const q = filterUsuario.value.toLowerCase()
@@ -1400,6 +1547,14 @@ const filteredUsuarios = computed(() => {
     u.apellido?.toLowerCase().includes(q)
   )
 })
+
+/**
+
+ * Obtiene datos desde el backend mediante API.
+
+ * Mantiene sincronizada la vista con la base de datos.
+
+ */
 
 async function fetchUsuarios() {
   loadingUsuarios.value = true
@@ -1416,6 +1571,14 @@ function resetNewUser() {
   createUserSuccess.value = ''
 }
 
+/**
+ * Procesa la creación de un nuevo usuario desde el panel de administración.
+ * Realiza validación de campos obligatorios y formato de teléfono antes de comunicarse con la API.
+ */
+/**
+ * Valida y envía los datos del formulario al backend (POST/PUT).
+ * Maneja la lógica de guardado y muestra feedback al usuario.
+ */
 async function saveNewUser() {
   createUserError.value = ''
   createUserSuccess.value = ''
@@ -1452,6 +1615,12 @@ async function saveNewUser() {
   } finally { savingUser.value = false }
 }
 
+/**
+
+ * Abre el modal correspondiente e inicializa los datos necesarios.
+
+ */
+
 function openEditModal(u) {
   editingUser.value = { ...u }
   if (editingUser.value.telefono) {
@@ -1463,6 +1632,14 @@ function openEditModal(u) {
   editUserError.value = ''
   showEditModal.value = true
 }
+
+/**
+
+ * Valida y envía los datos del formulario al backend (POST/PUT).
+
+ * Maneja la lógica de guardado y muestra feedback al usuario.
+
+ */
 
 async function saveEditUser() {
   editUserError.value = ''
@@ -1496,11 +1673,24 @@ async function saveEditUser() {
   } finally { savingEditUser.value = false }
 }
 
+/**
+
+ * Abre el modal correspondiente e inicializa los datos necesarios.
+
+ */
+
 function openDeleteModal(u) {
   deletingUser.value = u
   showDeleteModal.value = true
 }
 
+/**
+ * Alterna el estado activo/inactivo de un usuario (Soft Delete).
+ * En lugar de borrar el registro de la base de datos, se deshabilita su acceso.
+ */
+/**
+ * Confirma y procesa la eliminación de un registro mediante la API.
+ */
 async function confirmDeleteUser() {
   savingDeleteUser.value = true
   try {
@@ -1531,6 +1721,14 @@ const savingDeletePerfil = ref(false)
 const perfilError = ref('')
 const availablePermisos = ref({})
 
+/**
+
+ * Obtiene datos desde el backend mediante API.
+
+ * Mantiene sincronizada la vista con la base de datos.
+
+ */
+
 async function fetchPerfiles() {
   loadingPerfiles.value = true
   try {
@@ -1539,6 +1737,14 @@ async function fetchPerfiles() {
     if (res.ok) perfiles.value = data.perfiles || data
   } catch(e) { console.error(e) } finally { loadingPerfiles.value = false }
 }
+
+/**
+
+ * Obtiene datos desde el backend mediante API.
+
+ * Mantiene sincronizada la vista con la base de datos.
+
+ */
 
 async function fetchPermisosDisponibles() {
   try {
@@ -1558,10 +1764,22 @@ function openEditPerfil(p = null) {
   showPerfilModal.value = true
 }
 
+/**
+
+ * Cierra el modal activo y limpia los errores.
+
+ */
+
 function closePerfilModal() {
   showPerfilModal.value = false
   perfilError.value = ''
 }
+
+/**
+
+ * Alterna el estado (activo/inactivo) de un elemento en la base de datos.
+
+ */
 
 function togglePermiso(code) {
   const idx = editingPerfil.value.permisos.indexOf(code)
@@ -1569,6 +1787,15 @@ function togglePermiso(code) {
   else editingPerfil.value.permisos.splice(idx, 1)
 }
 
+/**
+ * Guarda o actualiza un perfil de permisos. 
+ * Determina dinámicamente si debe hacer un POST (nuevo) o PUT (actualización)
+ * dependiendo de si el perfil ya tiene un ID asignado.
+ */
+/**
+ * Valida y envía los datos del formulario al backend (POST/PUT).
+ * Maneja la lógica de guardado y muestra feedback al usuario.
+ */
 async function savePerfil() {
   perfilError.value = ''
   if (!editingPerfil.value.nombre) {
@@ -1599,6 +1826,12 @@ async function savePerfil() {
   }
 }
 
+/**
+
+ * Confirma y procesa la eliminación de un registro mediante la API.
+
+ */
+
 function confirmDeletePerfilAction(p) {
   deletingPerfil.value = p
   showDeletePerfilModal.value = true
@@ -1626,6 +1859,14 @@ async function deletePerfil() {
 // ── Cotizaciones ──────────────────────────────────────────
 const cotizaciones = ref([])
 const loadingCotizaciones = ref(false)
+
+/**
+
+ * Obtiene datos desde el backend mediante API.
+
+ * Mantiene sincronizada la vista con la base de datos.
+
+ */
 
 async function fetchCotizaciones() {
   loadingCotizaciones.value = true

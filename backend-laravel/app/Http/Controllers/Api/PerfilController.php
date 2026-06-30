@@ -12,61 +12,15 @@ use App\Helpers\AuditLog;
 
 class PerfilController extends Controller
 {
+    
     /**
-     * Lista de todos los permisos disponibles en el sistema, agrupados por módulo.
+    
+     * Endpoint lógico de la API.
+    
+     * Procesa la petición HTTP, interactúa con los modelos y retorna una respuesta JSON.
+    
      */
-    private const PERMISOS_DISPONIBLES = [
-        'Usuarios' => [
-            'usuarios.ver'      => 'Ver usuarios',
-            'usuarios.crear'    => 'Crear usuarios',
-            'usuarios.editar'   => 'Editar usuarios',
-            'usuarios.eliminar' => 'Eliminar usuarios',
-        ],
-        'Bodegas' => [
-            'bodegas.ver'      => 'Ver bodegas',
-            'bodegas.crear'    => 'Crear bodegas',
-            'bodegas.editar'   => 'Editar bodegas',
-            'bodegas.eliminar' => 'Eliminar bodegas',
-        ],
-        'Componentes' => [
-            'componentes.ver'      => 'Ver componentes',
-            'componentes.crear'    => 'Crear componentes',
-            'componentes.editar'   => 'Editar componentes',
-            'componentes.eliminar' => 'Eliminar componentes',
-        ],
-        'Proveedores' => [
-            'proveedores.ver'      => 'Ver proveedores',
-            'proveedores.crear'    => 'Crear proveedores',
-            'proveedores.editar'   => 'Editar proveedores',
-            'proveedores.eliminar' => 'Eliminar proveedores',
-        ],
-        'Cotizaciones' => [
-            'cotizaciones.ver'      => 'Ver cotizaciones',
-            'cotizaciones.eliminar' => 'Eliminar cotizaciones',
-        ],
-        'Historial' => [
-            'historial.ver' => 'Ver historial de acciones',
-        ],
-    ];
-
-    /**
-     * Verificar que el usuario es admin o superadmin.
-     */
-    private function checkAdmin(Request $request)
-    {
-        $user = $request->user();
-        if (!$user || !in_array($user->rol ?? '', ['admin', 'superadmin'])) {
-            return response()->json([
-                'success' => false,
-                'message' => 'No autorizado. Se requiere rol de administrador.'
-            ], 403);
-        }
-        return null;
-    }
-
-    /**
-     * GET /api/perfiles/permisos — Lista de permisos disponibles agrupados por módulo
-     */
+    
     public function available(Request $request)
     {
         $denied = $this->checkAdmin($request);
@@ -77,9 +31,19 @@ class PerfilController extends Controller
         ]);
     }
 
+    
     /**
-     * GET /api/perfiles — Listar todos los perfiles con sus permisos
+
+    
+     * Obtiene una lista de registros o recursos.
+
+    
+     * Ejecuta la consulta a la base de datos (con posibles filtros/paginación) y retorna los datos en formato JSON.
+
+    
      */
+
+    
     public function index(Request $request)
     {
         $denied = $this->checkAdmin($request);
@@ -102,9 +66,19 @@ class PerfilController extends Controller
         return response()->json(['perfiles' => $resultado]);
     }
 
+    
     /**
-     * POST /api/perfiles — Crear un nuevo perfil con permisos
+
+    
+     * Almacena un nuevo registro en la base de datos.
+
+    
+     * Valida la información recibida en la petición HTTP y crea el nuevo recurso.
+
+    
      */
+
+    
     public function store(Request $request)
     {
         $denied = $this->checkAdmin($request);
@@ -170,9 +144,19 @@ class PerfilController extends Controller
         ], 201);
     }
 
+    
     /**
-     * PUT /api/perfiles — Actualizar un perfil y sus permisos
+
+    
+     * Actualiza un recurso existente en la base de datos.
+
+    
+     * Valida los nuevos datos y sobrescribe los valores del registro correspondiente.
+
+    
      */
+
+    
     public function update(Request $request)
     {
         $denied = $this->checkAdmin($request);
@@ -233,9 +217,19 @@ class PerfilController extends Controller
         ]);
     }
 
+    
     /**
-     * DELETE /api/perfiles/{id} — Eliminar un perfil
+
+    
+     * Elimina un registro de la base de datos.
+
+    
+     * Dependiendo de la lógica, puede ser una eliminación física o lógica (soft delete).
+
+    
      */
+
+    
     public function destroy(Request $request, $id = null)
     {
         $denied = $this->checkAdmin($request);
@@ -266,9 +260,19 @@ class PerfilController extends Controller
         ]);
     }
 
+    
     /**
-     * PUT /api/perfiles/asignar — Asignar o quitar un perfil a un usuario
+
+    
+     * Endpoint lógico de la API.
+
+    
+     * Procesa la petición HTTP, interactúa con los modelos y retorna una respuesta JSON.
+
+    
      */
+
+    
     public function assign(Request $request)
     {
         $denied = $this->checkAdmin($request);

@@ -528,6 +528,12 @@ const filterNucleos = ref('')
 const filterHilos = ref('')
 const filterFrecuenciaMin = ref('')
 
+/**
+
+ * Propiedad computada que filtra dinámicamente los registros basándose en los criterios de búsqueda.
+
+ */
+
 const filteredComponents = computed(() => {
   let result = [...myComponents.value]
   if (filterCategory.value) result = result.filter(c => c.categoria === filterCategory.value)
@@ -571,6 +577,14 @@ async function quickAdjust(comp, operacion, cantidad) {
   }
 }
 
+/**
+
+ * Obtiene datos desde el backend mediante API.
+
+ * Mantiene sincronizada la vista con la base de datos.
+
+ */
+
 async function fetchComponents() {
   loadingComponents.value = true
   try {
@@ -590,6 +604,12 @@ async function fetchComponents() {
 const catalogo = ref([])
 const productoSearch = ref('')
 const showProductoDropdown = ref(false)
+
+/**
+
+ * Propiedad computada que filtra el catálogo de productos disponible en tiempo real.
+
+ */
 
 const productosFiltrados = computed(() => {
   if (!productoSearch.value.trim()) return categoriasBase.value.slice(0, 10)
@@ -623,6 +643,14 @@ const addFileName = ref('')
 
 const categoriasBase = ref([])
 
+/**
+
+ * Obtiene datos desde el backend mediante API.
+
+ * Mantiene sincronizada la vista con la base de datos.
+
+ */
+
 async function fetchCategoriasBase() {
   try {
     const res = await fetch(`${API}/catalogo`, { headers: { Authorization: `Bearer ${getToken()}` } })
@@ -630,6 +658,12 @@ async function fetchCategoriasBase() {
     if (res.ok) categoriasBase.value = data.productos
   } catch(e) { console.error(e) }
 }
+
+/**
+
+ * Abre el modal correspondiente e inicializa los datos necesarios.
+
+ */
 
 function openAddModal() {
   newComp.value = { producto_id: '', especificacion: '', nucleos: '', hilos: '', frecuencia_hz: '', enfoque_uso: '', gama: 'media', precio: '', stock: '' }
@@ -640,6 +674,12 @@ function openAddModal() {
   if (categoriasBase.value.length === 0) fetchCategoriasBase()
   showAddModal.value = true
 }
+
+/**
+
+ * Cierra el modal activo y limpia los errores.
+
+ */
 
 function closeAddModal() {
   showAddModal.value = false
@@ -658,6 +698,14 @@ function onFileChange(e, type) {
     editImagePreview.value = URL.createObjectURL(file)
   }
 }
+
+/**
+
+ * Valida y envía los datos del formulario al backend (POST/PUT).
+
+ * Maneja la lógica de guardado y muestra feedback al usuario.
+
+ */
 
 async function saveNewComp() {
   addError.value = ''
@@ -708,6 +756,14 @@ function openEditComp(comp) {
   editError.value = ''
   showEditModal.value = true
 }
+
+/**
+
+ * Valida y envía los datos del formulario al backend (POST/PUT).
+
+ * Maneja la lógica de guardado y muestra feedback al usuario.
+
+ */
 
 async function saveEditComp() {
   editError.value = ''
@@ -771,6 +827,12 @@ function openDeleteComp(comp) {
   deleteError.value = ''
   showDeleteModal.value = true
 }
+
+/**
+
+ * Confirma y procesa la eliminación de un registro mediante la API.
+
+ */
 
 async function confirmDelete() {
   deleteError.value = ''

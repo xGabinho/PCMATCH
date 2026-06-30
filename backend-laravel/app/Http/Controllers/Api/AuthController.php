@@ -13,6 +13,15 @@ use App\Helpers\AuditLog;
 
 class AuthController extends Controller
 {
+    
+    /**
+    
+     * Verifica las credenciales del usuario (correo y contraseña).
+    
+     * Si son válidas, genera un token de autenticación (JWT o Sanctum) para su sesión.
+    
+     */
+    
     public function login(Request $request)
     {
         $validator = Validator::make($request->all(), [
@@ -106,6 +115,19 @@ class AuthController extends Controller
         ], 401);
     }
 
+    
+    /**
+
+    
+     * Procesa la creación de un nuevo usuario en la plataforma.
+
+    
+     * Realiza las validaciones de seguridad (como encriptar la contraseña) antes del guardado.
+
+    
+     */
+
+    
     public function register(Request $request)
     {
         // 1. Validaciones
@@ -167,9 +189,19 @@ class AuthController extends Controller
         ], 201);
     }
 
+    
     /**
-     * GET /api/auth/profile — Obtener datos del perfil autenticado
+
+    
+     * Endpoint lógico de la API.
+
+    
+     * Procesa la petición HTTP, interactúa con los modelos y retorna una respuesta JSON.
+
+    
      */
+
+    
     public function profile(Request $request)
     {
         $user = $request->user();
@@ -226,9 +258,19 @@ class AuthController extends Controller
         ]);
     }
 
+    
     /**
-     * PUT /api/auth/profile — Actualizar datos del perfil autenticado
+
+    
+     * Endpoint lógico de la API.
+
+    
+     * Procesa la petición HTTP, interactúa con los modelos y retorna una respuesta JSON.
+
+    
      */
+
+    
     public function updateProfile(Request $request)
     {
         $user = $request->user();

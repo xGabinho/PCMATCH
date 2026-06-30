@@ -29,13 +29,19 @@ class ComponenteController extends Controller
     // RF-16 – Consultar componentes
     // ══════════════════════════════════════════════════════════════
 
+    
     /**
-     * GET /api/componentes/admin
-     * 
-     * RF-16 RN01: Solo admin o superadmin (Inventory_Manager).
-     * RF-16 RN02: Filtros dinámicos (buscar, categoria, estado, rango precio, con_stock, gama).
-     * RF-16 RN03: Data table con relaciones cargadas (with()).
+
+    
+     * Endpoint lógico de la API.
+
+    
+     * Procesa la petición HTTP, interactúa con los modelos y retorna una respuesta JSON.
+
+    
      */
+
+    
     public function indexAdmin(Request $request)
     {
         // ── RN01: Control de acceso ──────────────────────────────
@@ -126,10 +132,19 @@ class ComponenteController extends Controller
         ]);
     }
 
+    
     /**
-     * GET /api/componentes/maestros
-     * Retorna los componentes donde bodega_id es nulo (Maestros)
+
+    
+     * Endpoint lógico de la API.
+
+    
+     * Procesa la petición HTTP, interactúa con los modelos y retorna una respuesta JSON.
+
+    
      */
+
+    
     public function maestros(Request $request)
     {
         $query = Componente::with(['producto:id,nombre,categoria'])
@@ -164,9 +179,19 @@ class ComponenteController extends Controller
         return response()->json(['componentes' => $resultado]);
     }
 
+    
     /**
-     * GET /api/componentes — Lista los componentes de la bodega autenticada
+
+    
+     * Endpoint lógico de la API.
+
+    
+     * Procesa la petición HTTP, interactúa con los modelos y retorna una respuesta JSON.
+
+    
      */
+
+    
     public function indexBodega(Request $request)
     {
         $user = $request->user();
@@ -230,9 +255,19 @@ class ComponenteController extends Controller
         return response()->json(['componentes' => $resultado]);
     }
 
+    
     /**
-     * GET /api/componentes/publico — Catálogo público (sin autenticación)
+
+    
+     * Endpoint lógico de la API.
+
+    
+     * Procesa la petición HTTP, interactúa con los modelos y retorna una respuesta JSON.
+
+    
      */
+
+    
     public function indexPublic(Request $request)
     {
         $query = Componente::with(['producto:id,nombre,categoria', 'bodega:id,nombre'])
@@ -274,13 +309,19 @@ class ComponenteController extends Controller
     // RF-15 – Registrar componente
     // ══════════════════════════════════════════════════════════════
 
+    
     /**
-     * POST /api/componentes — Crear un componente nuevo
-     * 
-     * RN01: Campos obligatorios validados estrictamente.
-     * RN02: Generación de SKU único + unique compuesto (bodega_id, producto_id, especificacion).
-     * RN03: Solo si la bodega/proveedor está activa.
+
+    
+     * Almacena un nuevo registro en la base de datos.
+
+    
+     * Valida la información recibida en la petición HTTP y crea el nuevo recurso.
+
+    
      */
+
+    
     public function store(Request $request)
     {
         $user = $request->user();
@@ -479,14 +520,19 @@ class ComponenteController extends Controller
     // RF-17 – Modificar componente (ya existente, se mantiene)
     // ══════════════════════════════════════════════════════════════
 
+    
     /**
-     * PUT /api/componentes — Editar componente
-     * 
-     * RF-17 – Gestión de Componentes – Modificar componente
-     * RN01: Solo admin, superadmin, bodega o proveedor pueden modificar
-     * RN02: Validación estricta (precio > 0, stock >= 0, gama válida)
-     * RN03: Registro detallado de cambios en historial de auditoría
+
+    
+     * Actualiza un recurso existente en la base de datos.
+
+    
+     * Valida los nuevos datos y sobrescribe los valores del registro correspondiente.
+
+    
      */
+
+    
     public function update(Request $request)
     {
         // ── RN01: Verificar permiso de modificación ──────────────
@@ -622,13 +668,19 @@ class ComponenteController extends Controller
     // RF-18 – Eliminar componente
     // ══════════════════════════════════════════════════════════════
 
+    
     /**
-     * DELETE /api/componentes — Eliminar componente (borrado lógico)
-     * 
-     * RN01: SoftDeletes — el registro se preserva con deleted_at.
-     * RN02: Bloquear si stock > 0 o tiene cotizacion_items activos.
-     * RN03: Solo el rol 'admin' puede ejecutar destroy.
+
+    
+     * Elimina un registro de la base de datos.
+
+    
+     * Dependiendo de la lógica, puede ser una eliminación física o lógica (soft delete).
+
+    
      */
+
+    
     public function destroy(Request $request, $id = null)
     {
         $user = $request->user();
@@ -702,12 +754,19 @@ class ComponenteController extends Controller
     // RF-19 – Ajustar stock por cantidad específica
     // ══════════════════════════════════════════════════════════════
 
+    
     /**
-     * PATCH /api/componentes/stock — Incrementar o decrementar stock
-     *
-     * Recibe: { id, cantidad, operacion: 'incrementar' | 'decrementar' }
-     * Valida que el stock no quede negativo en decrementos.
+
+    
+     * Endpoint lógico de la API.
+
+    
+     * Procesa la petición HTTP, interactúa con los modelos y retorna una respuesta JSON.
+
+    
      */
+
+    
     public function adjustStock(Request $request)
     {
         $user = $request->user();

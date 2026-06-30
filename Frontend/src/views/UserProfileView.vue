@@ -264,6 +264,14 @@ const passwordMismatch = computed(() => {
   return !!(form.value.password && form.value.password_confirm && form.value.password !== form.value.password_confirm)
 })
 
+/**
+
+ * Obtiene datos desde el backend mediante API.
+
+ * Mantiene sincronizada la vista con la base de datos.
+
+ */
+
 async function fetchProfile() {
   loadingProfile.value = true
   try {
