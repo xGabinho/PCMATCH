@@ -12,7 +12,7 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
-        $middleware->statefulApi();
+        // $middleware->statefulApi();
 
         // CORS — permitir requests desde el frontend en Railway
         $middleware->use([
