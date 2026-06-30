@@ -33,7 +33,7 @@
             <router-link to="/login" class="btn-primary text-base px-8 py-4 w-full sm:w-auto text-center">
               Armar mi PC →
             </router-link>
-            <router-link to="/cotizacion" class="btn-secondary text-base px-8 py-4 w-full sm:w-auto text-center">
+            <router-link to="/ejemplo-cotizacion" class="btn-secondary text-base px-8 py-4 w-full sm:w-auto text-center">
               Ver ejemplo
             </router-link>
           </div>

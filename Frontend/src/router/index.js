@@ -5,6 +5,9 @@ import HomeView       from '../views/HomeView.vue'
 import LoginView      from '../views/LoginView.vue'
 import ForgotPasswordView  from '../views/ForgotPasswordView.vue'
 import ResetPasswordView   from '../views/ResetPasswordView.vue'
+import DemoQuoteView  from '../views/DemoQuoteView.vue'
+import AboutView      from '../views/AboutView.vue'
+import ContactView    from '../views/ContactView.vue'
 import ClientHomeView from '../views/ClientHomeView.vue'
 import BuilderView    from '../views/BuilderView.vue'
 import QuoteView      from '../views/QuoteView.vue'
@@ -21,6 +24,9 @@ const routes = [
   { path: '/login',  component: LoginView },
   { path: '/recuperar-password',   component: ForgotPasswordView },
   { path: '/restablecer-password', component: ResetPasswordView },
+  { path: '/ejemplo-cotizacion',   component: DemoQuoteView },
+  { path: '/sobre-nosotros',       component: AboutView },
+  { path: '/contacto',             component: ContactView },
 
   // Cliente
   { path: '/inicio',    component: ClientHomeView, meta: { requiresAuth: true, roles: ['cliente'] } },
