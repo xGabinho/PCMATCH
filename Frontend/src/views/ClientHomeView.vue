@@ -30,7 +30,7 @@
               </div>
             </div>
             <router-link to="/armar" class="btn-primary text-sm px-6 py-3 flex items-center justify-center gap-2 w-full sm:w-auto">
-              <span>⚡</span> Armar mi PC
+              <Zap class="w-4 h-4" /> Armar mi PC
             </router-link>
           </div>
         </div>
@@ -43,7 +43,7 @@
       <div class="flex flex-col gap-4 mb-10">
         <div class="flex flex-col md:flex-row gap-4">
           <div class="relative flex-1">
-            <span class="absolute left-4 top-1/2 -translate-y-1/2 theme-text-muted text-sm">🔍</span>
+            <Search class="absolute left-4 top-1/2 -translate-y-1/2 theme-text-muted w-4 h-4" />
             <input
               v-model="searchQuery"
               type="text"
@@ -59,7 +59,7 @@
 
           <div class="flex items-center gap-2 flex-wrap">
             <button @click="showAdvancedFilters = !showAdvancedFilters" class="px-5 py-3.5 rounded-xl border theme-border theme-card theme-text hover:border-accent/40 transition-all flex items-center gap-2 font-medium text-sm shadow-sm w-full md:w-auto justify-center">
-              <span>⚙️</span> Filtros avanzados
+              <Settings class="w-4 h-4" /> Filtros avanzados
             </button>
           </div>
         </div>
@@ -144,7 +144,7 @@
 
       <!-- Empty state -->
       <div v-else-if="filteredComponents.length === 0" class="text-center py-24">
-        <div class="text-5xl mb-4">🔍</div>
+        <Search class="w-12 h-12 mx-auto text-accent/50 mb-4" />
         <p class="theme-text font-semibold text-lg mb-2">Sin resultados</p>
         <p class="theme-text-muted text-sm">
           No encontramos componentes
@@ -168,7 +168,7 @@
               <img :src="comp.imagen_url" :alt="comp.nombre" class="w-full h-full object-contain drop-shadow-sm" />
             </template>
             <template v-else>
-              <span class="text-4xl opacity-20">{{ categoryIcons[comp.categoria] ?? '🔧' }}</span>
+              <component :is="categoryIcons[comp.categoria] || Wrench" class="w-10 h-10 opacity-20" />
             </template>
 
             <!-- Tier badge -->
@@ -247,8 +247,9 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, markRaw } from 'vue'
 import { useAuth } from '../composables/useAuth'
+import { Zap, Search, Settings, Wrench, Settings as CpuIcon, Gamepad2, Save, Disc, Plug, Snowflake, Monitor } from '@lucide/vue'
 
 import { API } from '@/config/api'
 const { user } = useAuth()
@@ -262,8 +263,8 @@ const loading        = ref(false)
 const categories = ['CPU', 'GPU', 'RAM', 'Storage', 'PSU', 'Motherboard', 'Cooler', 'Case']
 
 const categoryIcons = {
-  CPU: '⚙️', GPU: '🎮', RAM: '💾', Storage: '💿',
-  Motherboard: '🔌', PSU: '⚡', Cooler: '❄️', Case: '🖥️'
+  CPU: markRaw(CpuIcon), GPU: markRaw(Gamepad2), RAM: markRaw(Save), Storage: markRaw(Disc),
+  Motherboard: markRaw(Plug), PSU: markRaw(Zap), Cooler: markRaw(Snowflake), Case: markRaw(Monitor)
 }
 
 const tierStyles = {

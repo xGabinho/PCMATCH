@@ -16,7 +16,7 @@
 
     <!-- Alert -->
     <div class="mb-6 px-4 py-3 rounded-lg bg-accent/10 border border-accent/20 text-accent text-sm">
-      <p class="font-bold mb-1">ℹ️ Modo Demostración</p>
+      <p class="font-bold mb-1 flex items-center gap-1"><Info class="w-4 h-4" /> Modo Demostración</p>
       <p>Esta es una cotización de ejemplo con datos ficticios para que veas cómo funciona el sistema.</p>
     </div>
 
@@ -38,7 +38,7 @@
             >
               <!-- Icon -->
               <div class="w-9 h-9 rounded-lg bg-accent/10 flex items-center justify-center text-accent text-sm flex-shrink-0">
-                {{ item.step.icon }}
+                <component :is="item.step.icon" class="w-5 h-5" />
               </div>
 
               <!-- Info -->
@@ -69,7 +69,7 @@
               :key="step.id"
               class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-dashed theme-border theme-text-muted hover:border-accent hover:text-accent transition-all text-xs bg-white/50 dark:bg-transparent cursor-default"
             >
-              {{ step.icon }} {{ step.label }}
+              <component :is="step.icon" class="w-4 h-4" /> {{ step.label }}
             </button>
           </div>
         </div>
@@ -120,7 +120,7 @@
         </div>
 
         <div class="rounded-xl border border-amber-500/30 bg-amber-50 dark:bg-yellow-500/5 p-4">
-          <p class="text-amber-700 dark:text-yellow-400 text-xs font-medium mb-1">⚠️ Nota importante</p>
+          <p class="text-amber-700 dark:text-yellow-400 text-xs font-medium mb-1 flex items-center gap-1"><AlertTriangle class="w-3 h-3" /> Nota importante</p>
           <p class="text-amber-600/80 dark:text-text-muted text-xs leading-relaxed">
             Los precios son referenciales y pueden variar. Verifica disponibilidad antes de comprar.
           </p>
@@ -132,18 +132,19 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, markRaw } from 'vue'
+import { Info, AlertTriangle, Cpu, CircuitBoard, Zap, Gamepad2, Save, Battery, Package } from '@lucide/vue'
 
 const today = new Date().toLocaleDateString('es-CL', { day: 'numeric', month: 'long', year: 'numeric' })
 
 const steps = [
-  { id: 'cpu', label: 'Procesador', icon: '🧠' },
-  { id: 'mb', label: 'Placa Madre', icon: '🎛️' },
-  { id: 'ram', label: 'Memoria RAM', icon: '⚡' },
-  { id: 'gpu', label: 'Tarjeta de Video', icon: '🎮' },
-  { id: 'storage', label: 'Almacenamiento', icon: '💾' },
-  { id: 'psu', label: 'Fuente de Poder', icon: '🔋' },
-  { id: 'case', label: 'Gabinete', icon: '📦' }
+  { id: 'cpu', label: 'Procesador', icon: markRaw(Cpu) },
+  { id: 'mb', label: 'Placa Madre', icon: markRaw(CircuitBoard) },
+  { id: 'ram', label: 'Memoria RAM', icon: markRaw(Zap) },
+  { id: 'gpu', label: 'Tarjeta de Video', icon: markRaw(Gamepad2) },
+  { id: 'storage', label: 'Almacenamiento', icon: markRaw(Save) },
+  { id: 'psu', label: 'Fuente de Poder', icon: markRaw(Battery) },
+  { id: 'case', label: 'Gabinete', icon: markRaw(Package) }
 ]
 
 const selectedComponents = ref({

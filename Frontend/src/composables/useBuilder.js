@@ -1,5 +1,6 @@
-import { ref, computed, watch } from 'vue'
+import { ref, computed, watch, markRaw } from 'vue'
 import { useAuth } from './useAuth'
+import { Settings, Gamepad2, Save, Disc, Plug, Zap, Snowflake, Monitor } from '@lucide/vue'
 
 const { user } = useAuth()
 
@@ -50,14 +51,14 @@ watch([selectedItems, perfil], () => {
 
 
 const steps = [
-  { id: 'cpu',         icon: '⚙️', label: 'Procesador',      short: 'CPU',  categoria: 'CPU'         },
-  { id: 'gpu',         icon: '🎮', label: 'Tarjeta Gráfica', short: 'GPU',  categoria: 'GPU'         },
-  { id: 'ram',         icon: '💾', label: 'Memoria RAM',     short: 'RAM',  categoria: 'RAM'         },
-  { id: 'storage',     icon: '💿', label: 'Almacenamiento',  short: 'SSD',  categoria: 'Storage'     },
-  { id: 'motherboard', icon: '🔌', label: 'Motherboard',     short: 'MOBO', categoria: 'Motherboard' },
-  { id: 'psu',         icon: '⚡', label: 'Fuente de Poder', short: 'PSU',  categoria: 'PSU'         },
-  { id: 'cooler',      icon: '❄️', label: 'Cooler',          short: 'FAN',  categoria: 'Cooler'      },
-  { id: 'case',        icon: '🖥️', label: 'Gabinete',        short: 'CASE', categoria: 'Case'        },
+  { id: 'cpu',         icon: markRaw(Settings), label: 'Procesador',      short: 'CPU',  categoria: 'CPU'         },
+  { id: 'gpu',         icon: markRaw(Gamepad2), label: 'Tarjeta Gráfica', short: 'GPU',  categoria: 'GPU'         },
+  { id: 'ram',         icon: markRaw(Save), label: 'Memoria RAM',     short: 'RAM',  categoria: 'RAM'         },
+  { id: 'storage',     icon: markRaw(Disc), label: 'Almacenamiento',  short: 'SSD',  categoria: 'Storage'     },
+  { id: 'motherboard', icon: markRaw(Plug), label: 'Motherboard',     short: 'MOBO', categoria: 'Motherboard' },
+  { id: 'psu',         icon: markRaw(Zap), label: 'Fuente de Poder', short: 'PSU',  categoria: 'PSU'         },
+  { id: 'cooler',      icon: markRaw(Snowflake), label: 'Cooler',          short: 'FAN',  categoria: 'Cooler'      },
+  { id: 'case',        icon: markRaw(Monitor), label: 'Gabinete',        short: 'CASE', categoria: 'Case'        },
 ]
 
 export function useBuilder() {

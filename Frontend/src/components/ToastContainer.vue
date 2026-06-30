@@ -12,9 +12,11 @@
           isDark ? 'shadow-black/50' : 'shadow-gray-200'
         ]"
       >
-        <span class="text-xl leading-none mt-0.5">
-          {{ toast.type === 'success' ? '✅' : toast.type === 'error' ? '🚫' : 'ℹ️' }}
-        </span>
+        <div class="flex-shrink-0 text-lg mt-0.5">
+          <Check v-if="toast.type === 'success'" class="w-5 h-5" />
+          <AlertCircle v-else-if="toast.type === 'error'" class="w-5 h-5" />
+          <Info v-else class="w-5 h-5" />
+        </div>
         <p class="flex-1 leading-snug pt-0.5 theme-text">{{ toast.message }}</p>
         <button @click="removeToast(toast.id)" class="opacity-50 hover:opacity-100 transition-opacity p-2 -mt-2 -mr-2 theme-text min-h-[44px] min-w-[44px] flex items-center justify-center">
           ✕
@@ -27,6 +29,7 @@
 <script setup>
 import { useToast } from '../composables/useToast'
 import { useTheme } from '../composables/useTheme'
+import { Check, AlertCircle, Info } from '@lucide/vue'
 
 const { toasts, removeToast } = useToast()
 const { isDark } = useTheme()

@@ -73,7 +73,8 @@
                 @click="showPassword = !showPassword"
                 class="absolute right-3 top-1/2 -translate-y-1/2 theme-text-muted hover:theme-text transition-colors text-xs"
               >
-                {{ showPassword ? '🙈' : '👁️' }}
+                <EyeOff v-if="showPassword" class="w-4 h-4" />
+                <Eye v-else class="w-4 h-4" />
               </button>
             </div>
           </div>
@@ -157,7 +158,8 @@
                 @click="showPassword = !showPassword"
                 class="absolute right-3 top-1/2 -translate-y-1/2 theme-text-muted hover:theme-text transition-colors text-xs"
               >
-                {{ showPassword ? '🙈' : '👁️' }}
+                <EyeOff v-if="showPassword" class="w-4 h-4" />
+                <Eye v-else class="w-4 h-4" />
               </button>
             </div>
           </div>
@@ -181,7 +183,8 @@
                 @click="showConfirmPassword = !showConfirmPassword"
                 class="absolute right-3 top-1/2 -translate-y-1/2 theme-text-muted hover:theme-text transition-colors text-xs"
               >
-                {{ showConfirmPassword ? '🙈' : '👁️' }}
+                <EyeOff v-if="showConfirmPassword" class="w-4 h-4" />
+                <Eye v-else class="w-4 h-4" />
               </button>
             </div>
             <p v-if="registerData.confirmPassword && registerData.password !== registerData.confirmPassword"
@@ -190,7 +193,7 @@
             </p>
             <p v-if="registerData.confirmPassword && registerData.password === registerData.confirmPassword"
               class="text-xs text-green-400 mt-1">
-              ✓ Las contraseñas coinciden
+              <Check class="w-3 h-3 inline-block mr-1" /> Las contraseñas coinciden
             </p>
           </div>
 
@@ -221,7 +224,9 @@
       <div class="relative card-dark w-full sm:max-w-xl shadow-2xl flex flex-col max-h-[90vh] sm:rounded-2xl rounded-t-2xl sm:rounded-b-2xl animate-slide-up">
         <div class="flex items-center justify-between p-5 sm:p-6 border-b theme-border flex-shrink-0">
           <div class="flex items-center gap-3">
-            <div class="w-9 h-9 rounded-lg bg-accent/10 border border-accent/20 flex items-center justify-center text-base">📄</div>
+            <div class="w-9 h-9 rounded-lg bg-accent/10 border border-accent/20 flex items-center justify-center text-accent">
+              <FileText class="w-5 h-5" />
+            </div>
             <div>
               <h2 class="text-base font-bold theme-text">Términos de uso</h2>
               <p class="text-xs theme-text-muted mt-0.5">PCMATCH — Última actualización: Feb 2026</p>
@@ -275,7 +280,9 @@
       <div class="relative card-dark w-full sm:max-w-xl shadow-2xl flex flex-col max-h-[90vh] sm:rounded-2xl rounded-t-2xl sm:rounded-b-2xl animate-slide-up">
         <div class="flex items-center justify-between p-5 sm:p-6 border-b theme-border flex-shrink-0">
           <div class="flex items-center gap-3">
-            <div class="w-9 h-9 rounded-lg bg-accent/10 border border-accent/20 flex items-center justify-center text-base">🔐</div>
+            <div class="w-9 h-9 rounded-lg bg-accent/10 border border-accent/20 flex items-center justify-center text-accent">
+              <Lock class="w-5 h-5" />
+            </div>
             <div>
               <h2 class="text-base font-bold theme-text">Política de privacidad</h2>
               <p class="text-xs theme-text-muted mt-0.5">PCMATCH — Última actualización: Feb 2026</p>
@@ -316,6 +323,7 @@
 <script setup>
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
+import { Eye, EyeOff, Check, FileText, Lock } from '@lucide/vue'
 import { useAuth } from '../composables/useAuth'
 
 const tab = ref('login')

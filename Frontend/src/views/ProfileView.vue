@@ -71,6 +71,7 @@
 </template>
 
 <script setup>
+import { Briefcase, Gamepad2, Palette, BookOpen } from '@lucide/vue'
 import { ref } from 'vue'
 import { useBuilder } from '../composables/useBuilder'
 
@@ -78,10 +79,10 @@ const { perfil } = useBuilder()
 const selected = ref(perfil.value || null)
 
 const profiles = [
-  { id: 'office',  icon: '💼', name: 'Oficina',          desc: 'Para trabajo diario, documentos, correos y videollamadas.',              tags: ['Office', 'Zoom', 'Chrome', 'PDF']             },
-  { id: 'gaming',  icon: '🎮', name: 'Gaming',           desc: 'Para juegos exigentes con gráficos de alta calidad y alto rendimiento.',  tags: ['AAA Games', 'Streaming', '1080p+', 'FPS alto'] },
-  { id: 'design',  icon: '🎨', name: 'Diseño / Edición', desc: 'Para edición de video, diseño gráfico y renderizado 3D.',                tags: ['Premiere', 'Photoshop', 'Blender', '4K']      },
-  { id: 'study',   icon: '📚', name: 'Estudio',          desc: 'Para tareas, clases virtuales, investigación y programación.',           tags: ['Clases online', 'Tareas', 'Programar', 'Navegador'] },
+  { id: 'office',  icon: markRaw(Briefcase), name: 'Oficina',          desc: 'Para trabajo diario, documentos, correos y videollamadas.',              tags: ['Office', 'Zoom', 'Chrome', 'PDF']             },
+  { id: 'gaming',  icon: markRaw(Gamepad2), name: 'Gaming',           desc: 'Para juegos exigentes con gráficos de alta calidad y alto rendimiento.',  tags: ['AAA Games', 'Streaming', '1080p+', 'FPS alto'] },
+  { id: 'design',  icon: markRaw(Palette), name: 'Diseño / Edición', desc: 'Para edición de video, diseño gráfico y renderizado 3D.',                tags: ['Premiere', 'Photoshop', 'Blender', '4K']      },
+  { id: 'study',   icon: markRaw(BookOpen), name: 'Estudio',          desc: 'Para tareas, clases virtuales, investigación y programación.',           tags: ['Clases online', 'Tareas', 'Programar', 'Navegador'] },
 ]
 
 function selectProfile(id) {

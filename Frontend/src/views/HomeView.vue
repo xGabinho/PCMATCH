@@ -54,8 +54,8 @@
       <div class="max-w-7xl mx-auto px-6">
         <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
           <div v-for="feature in features" :key="feature.title" class="flex items-start gap-4">
-            <div class="w-10 h-10 rounded-lg bg-accent/10 flex items-center justify-center text-accent flex-shrink-0 text-lg">
-              {{ feature.icon }}
+            <div class="w-10 h-10 rounded-lg bg-accent/10 flex items-center justify-center text-accent flex-shrink-0">
+              <component :is="feature.icon" class="w-5 h-5" />
             </div>
             <div>
               <h3 class="font-semibold theme-text mb-1">{{ feature.title }}</h3>
@@ -69,6 +69,8 @@
 </template>
 
 <script setup>
+import { Zap, Wrench, FileText } from '@lucide/vue'
+
 const stats = [
   { value: '+500', label: 'Componentes' },
   { value: '+30', label: 'Bodegas' },
@@ -77,17 +79,17 @@ const stats = [
 
 const features = [
   {
-    icon: '⚡',
+    icon: Zap,
     title: 'Rápido y simple',
     desc: 'Selecciona tu perfil y obtén recomendaciones automáticas ajustadas a tu presupuesto.',
   },
   {
-    icon: '🔧',
+    icon: Wrench,
     title: 'Componentes compatibles',
     desc: 'Solo mostramos partes que funcionan juntas. Sin errores de compatibilidad.',
   },
   {
-    icon: '📄',
+    icon: FileText,
     title: 'Cotización descargable',
     desc: 'Genera un PDF listo para llevar a cualquier bodega o punto de venta.',
   },

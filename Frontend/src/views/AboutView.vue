@@ -16,7 +16,7 @@
         </p>
       </div>
       <div class="rounded-2xl bg-accent/5 p-8 border theme-border flex items-center justify-center">
-        <div class="text-8xl">🚀</div>
+        <Rocket class="w-24 h-24 text-accent" />
       </div>
     </div>
 
@@ -24,17 +24,23 @@
       <h2 class="text-2xl font-bold theme-text mb-6 text-center">¿Por qué elegir PCMATCH?</h2>
       <div class="grid grid-cols-1 sm:grid-cols-3 gap-8">
         <div class="text-center">
-          <div class="w-12 h-12 rounded-full bg-accent/10 text-accent flex items-center justify-center text-2xl mx-auto mb-4">🛡️</div>
+          <div class="w-12 h-12 rounded-full bg-accent/10 text-accent flex items-center justify-center mx-auto mb-4">
+            <Shield class="w-6 h-6" />
+          </div>
           <h3 class="font-bold theme-text mb-2">Compatibilidad</h3>
           <p class="text-sm theme-text-muted">Nuestro motor verifica que cada pieza encaje perfectamente con el resto.</p>
         </div>
         <div class="text-center">
-          <div class="w-12 h-12 rounded-full bg-accent/10 text-accent flex items-center justify-center text-2xl mx-auto mb-4">💰</div>
+          <div class="w-12 h-12 rounded-full bg-accent/10 text-accent flex items-center justify-center mx-auto mb-4">
+            <CircleDollarSign class="w-6 h-6" />
+          </div>
           <h3 class="font-bold theme-text mb-2">Mejores Precios</h3>
           <p class="text-sm theme-text-muted">Comparamos precios de diferentes bodegas para optimizar tu presupuesto.</p>
         </div>
         <div class="text-center">
-          <div class="w-12 h-12 rounded-full bg-accent/10 text-accent flex items-center justify-center text-2xl mx-auto mb-4">⚡</div>
+          <div class="w-12 h-12 rounded-full bg-accent/10 text-accent flex items-center justify-center mx-auto mb-4">
+            <Zap class="w-6 h-6" />
+          </div>
           <h3 class="font-bold theme-text mb-2">Rapidez</h3>
           <p class="text-sm theme-text-muted">Obtén tu cotización en formato PDF en menos de 5 minutos.</p>
         </div>
@@ -44,5 +50,5 @@
 </template>
 
 <script setup>
-// Lógica de Sobre Nosotros
+import { Rocket, Shield, CircleDollarSign, Zap } from '@lucide/vue'
 </script>

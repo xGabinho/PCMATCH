@@ -21,7 +21,7 @@
             ? 'bg-accent/10 text-accent border border-accent/20'
             : 'theme-text-muted hover:theme-text hover:theme-card'"
         >
-          <span>{{ section.icon }}</span>
+          <component :is="section.icon" class="w-5 h-5 inline-block" />
           {{ section.label }}
           <span v-if="section.count !== null" class="ml-auto text-xs font-mono opacity-60">{{ section.count }}</span>
         </button>
@@ -29,8 +29,8 @@
 
       <div class="p-3 border-t theme-border space-y-1">
         <button @click="toggleTheme" class="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm theme-text-muted hover:theme-text hover:theme-card transition-all duration-150">
-          <span v-if="isDark">☀️ Modo claro</span>
-          <span v-else>🌙 Modo oscuro</span>
+          <span v-if="isDark"><Sun class="w-4 h-4 inline-block mr-1" /> Modo claro</span>
+          <span v-else><Moon class="w-4 h-4 inline-block mr-1" /> Modo oscuro</span>
         </button>
         <button @click="handleLogout" class="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm theme-text-muted hover:theme-text hover:theme-card transition-all duration-150">
           ← Cerrar sesión
@@ -125,7 +125,7 @@
                 <div class="flex items-center gap-3">
                   <input v-model="filterComponente" type="text" placeholder="Buscar..." class="theme-bg border theme-border rounded-lg px-4 py-2 text-sm theme-text placeholder-text-muted focus:outline-none focus:border-accent transition-colors w-48" />
                   <button @click="showAdvancedFilters = !showAdvancedFilters" class="btn-secondary text-sm px-4 py-2 flex items-center gap-2">
-                    <span>⚙️</span> Filtros
+                    <span><Settings class="w-4 h-4 inline-block mr-1" /></span> Filtros
                   </button>
                 </div>
               </div>
@@ -243,7 +243,7 @@
                       ? 'border-accent bg-accent/5 text-accent'
                       : 'theme-border theme-text-muted hover:border-accent/40 hover:theme-text'"
                   >
-                    <span class="text-2xl">{{ role.icon }}</span>
+                    <component :is="role.icon" class="text-2xl inline-block" />
                     <span class="text-xs font-medium">{{ role.label }}</span>
                   </button>
                 </div>
@@ -330,8 +330,8 @@
                     </span>
                   </td>
                   <td class="px-6 py-4 text-right space-x-2">
-                    <button @click="openEditPerfil(p)" class="p-2 theme-bg border theme-border rounded-lg theme-text-muted hover:text-accent hover:border-accent/40 transition-colors">✏️</button>
-                    <button @click="confirmDeletePerfilAction(p)" class="p-2 theme-bg border theme-border rounded-lg theme-text-muted hover:text-red-400 hover:border-red-500/40 transition-colors">🗑️</button>
+                    <button @click="openEditPerfil(p)" class="p-2 theme-bg border theme-border rounded-lg theme-text-muted hover:text-accent hover:border-accent/40 transition-colors"><Pencil class="w-4 h-4 inline-block" /></button>
+                    <button @click="confirmDeletePerfilAction(p)" class="p-2 theme-bg border theme-border rounded-lg theme-text-muted hover:text-red-400 hover:border-red-500/40 transition-colors"><Trash2 class="w-4 h-4 inline-block" /></button>
                   </td>
                 </tr>
               </tbody>
@@ -461,7 +461,7 @@
                   ? 'border-accent bg-accent/5 text-accent'
                   : 'theme-border theme-text-muted hover:border-accent/40 hover:theme-text'"
               >
-                <span class="text-lg">{{ role.icon }}</span>
+                <component :is="role.icon" class="text-lg inline-block" />
                 {{ role.label }}
               </button>
             </div>
@@ -565,7 +565,7 @@
             <input v-model="newBodega.password" type="password" placeholder="Mínimo 8 caracteres" class="w-full theme-bg border theme-border rounded-lg px-4 py-3 text-sm theme-text placeholder-text-muted focus:outline-none focus:border-accent transition-colors" />
           </div>
           <div class="rounded-lg border border-accent/20 bg-accent/5 p-3 flex items-start gap-2">
-            <span class="text-accent text-sm mt-0.5">ℹ️</span>
+            <span class="text-accent text-sm mt-0.5"><Info class="w-4 h-4 inline-block" /></span>
             <p class="text-xs theme-text-muted leading-relaxed">El gestor usará estas credenciales para ingresar al sistema y administrar el stock de su bodega.</p>
           </div>
           <p v-if="bodegaError" class="text-xs text-red-400 bg-red-500/10 border border-red-500/20 rounded-lg px-4 py-2.5">{{ bodegaError }}</p>
@@ -613,7 +613,7 @@
             <label class="block text-sm font-medium text-text-primary mb-2">Estado</label>
             <div class="flex items-center gap-3">
               <button @click="editingBodega.activa = 1" class="flex-1 py-2 rounded-lg border text-sm font-medium transition-colors"
-                :class="editingBodega.activa == 1 ? 'border-green-500/40 bg-green-500/10 text-green-400' : 'border-dark-border text-text-muted'">✓ Activa</button>
+                :class="editingBodega.activa == 1 ? 'border-green-500/40 bg-green-500/10 text-green-400' : 'border-dark-border text-text-muted'"><Check class="w-4 h-4 inline-block mr-1" /> Activa</button>
               <button @click="editingBodega.activa = 0" class="flex-1 py-2 rounded-lg border text-sm font-medium transition-colors"
                 :class="editingBodega.activa == 0 ? 'border-red-500/40 bg-red-500/10 text-red-400' : 'border-dark-border text-text-muted'">✕ Inactiva</button>
             </div>
@@ -631,7 +631,7 @@
     <div v-if="showDeleteBodegaModal" class="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto py-6 px-4">
       <div class="fixed inset-0 bg-black/60 backdrop-blur-sm" @click="showDeleteBodegaModal = false"></div>
       <div class="relative card-dark rounded-2xl p-6 w-full max-w-sm my-auto shadow-2xl text-center">
-        <div class="w-14 h-14 rounded-full bg-red-500/10 border border-red-500/20 flex items-center justify-center mx-auto mb-4 text-2xl">🗑️</div>
+        <div class="w-14 h-14 rounded-full bg-red-500/10 border border-red-500/20 flex items-center justify-center mx-auto mb-4 text-2xl"><Trash2 class="w-4 h-4 inline-block" /></div>
         <h2 class="text-lg font-bold text-text-primary mb-2">Eliminar bodega</h2>
         <p class="text-text-muted text-sm mb-1">¿Estás seguro de que deseas eliminar</p>
         <p class="text-text-primary font-semibold mb-2">{{ deletingBodega?.nombre }}?</p>
@@ -682,7 +682,7 @@
               </div>
             </div>
             <p v-if="newComp.categoria" class="text-xs text-accent mt-1.5 flex items-center gap-1">
-              <span>✓</span> Categoría: {{ newComp.categoria }}
+              <span><Check class="w-4 h-4 inline-block mr-1" /></span> Categoría: {{ newComp.categoria }}
             </p>
           </div>
 
@@ -801,7 +801,7 @@
     <div v-if="showDeleteCompModal" class="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto py-6 px-4">
       <div class="fixed inset-0 bg-black/60 backdrop-blur-sm" @click="showDeleteCompModal = false"></div>
       <div class="relative card-dark rounded-2xl p-6 w-full max-w-sm my-auto shadow-2xl text-center">
-        <div class="w-14 h-14 rounded-full bg-red-500/10 border border-red-500/20 flex items-center justify-center mx-auto mb-4 text-2xl">🗑️</div>
+        <div class="w-14 h-14 rounded-full bg-red-500/10 border border-red-500/20 flex items-center justify-center mx-auto mb-4 text-2xl"><Trash2 class="w-4 h-4 inline-block" /></div>
         <h2 class="text-lg font-bold theme-text mb-2">Eliminar componente</h2>
         <p class="theme-text-muted text-sm mb-1">¿Estás seguro de que deseas eliminar</p>
         <p class="theme-text font-semibold mb-2">{{ deletingComp?.nombre }}?</p>
@@ -819,7 +819,7 @@
     <div v-if="showDeletePerfilModal" class="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto py-6 px-4">
       <div class="fixed inset-0 bg-black/60 backdrop-blur-sm" @click="showDeletePerfilModal = false"></div>
       <div class="relative card-dark rounded-2xl p-6 w-full max-w-sm my-auto shadow-2xl text-center">
-        <div class="w-14 h-14 rounded-full bg-red-500/10 border border-red-500/20 flex items-center justify-center mx-auto mb-4 text-2xl">🗑️</div>
+        <div class="w-14 h-14 rounded-full bg-red-500/10 border border-red-500/20 flex items-center justify-center mx-auto mb-4 text-2xl"><Trash2 class="w-4 h-4 inline-block" /></div>
         <h2 class="text-lg font-bold theme-text mb-2">Eliminar perfil</h2>
         <p class="theme-text-muted text-sm mb-1">¿Estás seguro de que deseas eliminar</p>
         <p class="theme-text font-semibold mb-2">{{ deletingPerfil?.nombre }}?</p>
@@ -899,6 +899,7 @@
 </template>
 
 <script setup>
+import { Check, Trash2, Pencil, Sun, Moon, Info, Wrench, FileText, Shield, Briefcase, Gamepad2, Palette, BookOpen, Store, Users, Lock, User, Settings } from '@lucide/vue'
 import { useTheme } from '../composables/useTheme'
 const { isDark, toggleTheme } = useTheme()
 import { ref, computed, onMounted } from 'vue'
@@ -937,26 +938,26 @@ function formatDate(dateStr) {
   return new Date(dateStr).toLocaleDateString('es-CL', { day: '2-digit', month: 'short', year: 'numeric' })
 }
 
-function perfilLabel(p) { return ({ office: '💼 Oficina', gaming: '🎮 Gaming', design: '🎨 Diseño', study: '📚 Estudio' })[p] ?? p ?? '—' }
+function perfilLabel(p) { return ({ office: 'Oficina', gaming: 'Gaming', design: 'Diseño', study: 'Estudio' })[p] ?? p ?? '—' }
 
 // ── Secciones ─────────────────────────────────────────────
 const activeSection = ref('bodegas')
 
 const sections = computed(() => [
-  { id: 'bodegas',            icon: '🏪', label: 'Bodegas',            description: `${bodegas.value.length} bodegas registradas`,    cta: '+ Agregar bodega', count: bodegas.value.length    },
-  { id: 'componentes',        icon: '🔧', label: 'Componentes',        description: `${componentes.value.length} componentes en total`, cta: '+ Nuevo Componente Maestro',               count: componentes.value.length },
-  { id: 'cotizaciones',       icon: '📄', label: 'Cotizaciones',       description: 'Historial de cotizaciones',                       cta: null,               count: null },
+  { id: 'bodegas',            icon: markRaw(Store), label: 'Bodegas',            description: `${bodegas.value.length} bodegas registradas`,    cta: '+ Agregar bodega', count: bodegas.value.length    },
+  { id: 'componentes',        icon: markRaw(Wrench), label: 'Componentes',        description: `${componentes.value.length} componentes en total`, cta: '+ Nuevo Componente Maestro',               count: componentes.value.length },
+  { id: 'cotizaciones',       icon: markRaw(FileText), label: 'Cotizaciones',       description: 'Historial de cotizaciones',                       cta: null,               count: null },
   { id: 'crear-usuario',      icon: '➕', label: 'Crear usuario',      description: 'Registrar nuevo usuario',                        cta: null,               count: null },
-  { id: 'gestionar-usuarios', icon: '👥', label: 'Gestionar usuarios', description: `${usuarios.value.length} usuarios registrados`,   cta: '+ Crear usuario',  count: usuarios.value.length   },
-  { id: 'perfiles', icon: '🔐', label: 'Perfiles y Permisos', description: `${perfiles.value.length} perfiles`, cta: '+ Crear perfil', count: perfiles.value.length },
+  { id: 'gestionar-usuarios', icon: markRaw(Users), label: 'Gestionar usuarios', description: `${usuarios.value.length} usuarios registrados`,   cta: '+ Crear usuario',  count: usuarios.value.length   },
+  { id: 'perfiles', icon: markRaw(Lock), label: 'Perfiles y Permisos', description: `${perfiles.value.length} perfiles`, cta: '+ Crear perfil', count: perfiles.value.length },
 ])
 
 const currentSection = computed(() => sections.value.find(s => s.id === activeSection.value))
 
 // ── Estilos ───────────────────────────────────────────────
 const roles = [
-  { id: 'admin',   icon: '🛡️', label: 'Admin',   description: 'Acceso total al panel administrativo.' },
-  { id: 'cliente', icon: '👤', label: 'Cliente',  description: 'Solo puede cotizar y ver su historial.' },
+  { id: 'admin',   icon: markRaw(Shield), label: 'Admin',   description: 'Acceso total al panel administrativo.' },
+  { id: 'cliente', icon: markRaw(User), label: 'Cliente',  description: 'Solo puede cotizar y ver su historial.' },
 ]
 
 const roleStyles = {

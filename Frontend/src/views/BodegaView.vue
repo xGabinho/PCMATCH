@@ -21,7 +21,7 @@
             ? 'bg-accent/10 text-accent border border-accent/20'
             : 'theme-text-muted hover:theme-text hover:theme-card'"
         >
-          <span>{{ section.icon }}</span>
+          <component :is="section.icon" class="w-5 h-5 inline-block" />
           {{ section.label }}
           <span v-if="section.count !== null" class="ml-auto text-xs font-mono opacity-60">{{ myComponents.length }}</span>
         </button>
@@ -33,8 +33,8 @@
           <p class="text-sm font-medium theme-text mt-0.5">{{ bodegaCorreo }}</p>
         </div>
         <button @click="toggleTheme" class="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm theme-text-muted hover:theme-text hover:theme-card transition-all duration-150">
-          <span v-if="isDark">☀️ Modo claro</span>
-          <span v-else>🌙 Modo oscuro</span>
+          <span v-if="isDark"><Sun class="w-4 h-4 inline-block mr-1" /> Modo claro</span>
+          <span v-else><Moon class="w-4 h-4 inline-block mr-1" /> Modo oscuro</span>
         </button>
         <button @click="handleLogout" class="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm theme-text-muted hover:theme-text hover:theme-card transition-all duration-150">
           ← Cerrar sesión
@@ -127,7 +127,7 @@
                 <option v-for="cat in categories" :key="cat" :value="cat" class="theme-bg">{{ cat }}</option>
               </select>
               <button @click="showAdvancedFilters = !showAdvancedFilters" class="btn-secondary text-sm px-4 py-2.5 flex items-center gap-2">
-                <span>⚙️</span> Filtros avanzados
+                <span><Settings class="w-4 h-4 inline-block mr-1" /></span> Filtros avanzados
               </button>
             </div>
             
@@ -273,7 +273,7 @@
               </div>
             </div>
             <p v-if="newComp.categoria" class="text-xs text-accent mt-1.5 flex items-center gap-1">
-              <span>✓</span> Categoría: {{ newComp.categoria }}
+              <span><Check class="w-4 h-4 inline-block mr-1" /></span> Categoría: {{ newComp.categoria }}
             </p>
           </div>
 
@@ -452,7 +452,7 @@
     <div v-if="showDeleteModal" class="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto py-6 px-4">
       <div class="fixed inset-0 bg-black/60 backdrop-blur-sm" @click="showDeleteModal = false"></div>
       <div class="relative card-dark rounded-2xl p-6 w-full max-w-sm my-auto shadow-2xl text-center">
-        <div class="w-14 h-14 rounded-full bg-red-500/10 border border-red-500/20 flex items-center justify-center mx-auto mb-4 text-2xl">🗑️</div>
+        <div class="w-14 h-14 rounded-full bg-red-500/10 border border-red-500/20 flex items-center justify-center mx-auto mb-4 text-2xl"><Trash2 class="w-4 h-4 inline-block" /></div>
         <h2 class="text-lg font-bold text-text-primary mb-2">Eliminar componente</h2>
         <p class="text-text-muted text-sm mb-1">¿Estás seguro de que deseas eliminar</p>
         <p class="text-text-primary font-semibold mb-2">{{ deletingComp?.nombre }}?</p>
@@ -471,6 +471,7 @@
 </template>
 
 <script setup>
+import { Check, Trash2, Sun, Moon, Wrench, Store, Settings } from '@lucide/vue'
 import { useTheme } from '../composables/useTheme'
 const { isDark, toggleTheme } = useTheme()
 import { useRouter } from 'vue-router'
@@ -496,7 +497,7 @@ const bodegaCorreo = user.value?.correo ?? ''
 const activeSection = ref('dashboard')
 const sections = [
   { id: 'dashboard',   icon: '📊', label: 'Dashboard',       description: 'Resumen de tu bodega',          count: null },
-  { id: 'componentes', icon: '🔧', label: 'Mis componentes', description: 'Gestiona tu catálogo y stock',  count: true },
+  { id: 'componentes', icon: markRaw(Wrench), label: 'Mis componentes', description: 'Gestiona tu catálogo y stock',  count: true },
 ]
 const currentSection = computed(() => sections.find(s => s.id === activeSection.value))
 

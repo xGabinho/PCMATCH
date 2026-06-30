@@ -188,7 +188,7 @@
             ? 'text-accent hover:bg-dark-card'
             : 'text-accent hover:bg-gray-100'"
         >
-          🖥️ Armar mi PC
+          <Monitor class="w-4 h-4 mr-2" /> Armar mi PC
         </router-link>
 
         <router-link
@@ -224,6 +224,7 @@
 <script setup>
 import { ref } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
+import { Monitor } from '@lucide/vue'
 import { useAuth } from '../composables/useAuth'
 import { useTheme } from '../composables/useTheme'
 

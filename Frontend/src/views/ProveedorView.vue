@@ -21,7 +21,7 @@
             ? 'bg-accent/10 text-accent border border-accent/20'
             : 'theme-text-muted hover:theme-text hover:theme-card'"
         >
-          <span>{{ section.icon }}</span>
+          <component :is="section.icon" class="w-5 h-5 inline-block" />
           {{ section.label }}
           <span v-if="section.count !== null" class="ml-auto text-xs font-mono opacity-60">{{ section.count }}</span>
         </button>
@@ -34,8 +34,8 @@
           <p class="theme-text-muted text-xs truncate">{{ user?.correo }}</p>
         </div>
         <button @click="toggleTheme" class="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm theme-text-muted hover:theme-text hover:theme-card transition-all duration-150">
-          <span v-if="isDark">☀️ Modo claro</span>
-          <span v-else>🌙 Modo oscuro</span>
+          <span v-if="isDark"><Sun class="w-4 h-4 inline-block mr-1" /> Modo claro</span>
+          <span v-else><Moon class="w-4 h-4 inline-block mr-1" /> Modo oscuro</span>
         </button>
         <button @click="handleLogout" class="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm theme-text-muted hover:theme-text hover:theme-card transition-all duration-150">
           ← Cerrar sesión
@@ -182,7 +182,7 @@
                 <div class="flex items-center gap-3">
                   <input v-model="filterComponente" type="text" placeholder="Buscar..." class="theme-bg border theme-border rounded-lg px-4 py-2 text-sm theme-text placeholder-text-muted focus:outline-none focus:border-accent transition-colors w-48" />
                   <button @click="showAdvancedFilters = !showAdvancedFilters" class="btn-secondary text-sm px-4 py-2 flex items-center gap-2">
-                    <span>⚙️</span> Filtros
+                    <span><Settings class="w-4 h-4 inline-block mr-1" /></span> Filtros
                   </button>
                 </div>
               </div>
@@ -292,7 +292,7 @@
                   </div>
                 </div>
                 <p v-if="newComp.categoria" class="text-xs text-accent mt-1.5 flex items-center gap-1">
-                  <span>✓</span> Categoría: {{ newComp.categoria }}
+                  <span><Check class="w-4 h-4 inline-block mr-1" /></span> Categoría: {{ newComp.categoria }}
                 </p>
               </div>
 
@@ -433,7 +433,7 @@
             <label class="block text-sm font-medium theme-text mb-2">Estado</label>
             <div class="grid grid-cols-2 gap-3">
               <button @click="editingBodega.activa = 1" class="py-3 rounded-xl border text-sm font-medium transition-all"
-                :class="editingBodega.activa == 1 ? 'border-green-500/40 bg-green-500/10 text-green-400' : 'theme-border theme-text-muted hover:border-green-500/30'">✓ Activa</button>
+                :class="editingBodega.activa == 1 ? 'border-green-500/40 bg-green-500/10 text-green-400' : 'theme-border theme-text-muted hover:border-green-500/30'"><Check class="w-4 h-4 inline-block mr-1" /> Activa</button>
               <button @click="editingBodega.activa = 0" class="py-3 rounded-xl border text-sm font-medium transition-all"
                 :class="editingBodega.activa == 0 ? 'border-red-500/40 bg-red-500/10 text-red-400' : 'theme-border theme-text-muted hover:border-red-500/30'">✕ Inactiva</button>
             </div>
@@ -451,7 +451,7 @@
     <div v-if="showDeleteBodegaModal" class="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto py-6 px-4">
       <div class="fixed inset-0 bg-black/60 backdrop-blur-sm" @click="showDeleteBodegaModal = false"></div>
       <div class="relative card-dark rounded-2xl p-6 w-full max-w-sm my-auto shadow-2xl text-center">
-        <div class="w-14 h-14 rounded-full bg-red-500/10 border border-red-500/20 flex items-center justify-center mx-auto mb-4 text-2xl">🗑️</div>
+        <div class="w-14 h-14 rounded-full bg-red-500/10 border border-red-500/20 flex items-center justify-center mx-auto mb-4 text-2xl"><Trash2 class="w-4 h-4 inline-block" /></div>
         <h2 class="text-lg font-bold text-text-primary mb-2">Eliminar bodega</h2>
         <p class="text-text-muted text-sm mb-1">¿Eliminar <span class="text-text-primary font-semibold">{{ deletingBodega?.nombre }}</span>?</p>
         <p class="text-xs text-text-muted mb-6 px-4">Se eliminarán también todos sus componentes.</p>
@@ -564,7 +564,7 @@
     <div v-if="showDeleteModal" class="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto py-6 px-4">
       <div class="fixed inset-0 bg-black/60 backdrop-blur-sm" @click="showDeleteModal = false"></div>
       <div class="relative card-dark rounded-2xl p-6 w-full max-w-sm my-auto shadow-2xl text-center">
-        <div class="w-14 h-14 rounded-full bg-red-500/10 border border-red-500/20 flex items-center justify-center mx-auto mb-4 text-2xl">🗑️</div>
+        <div class="w-14 h-14 rounded-full bg-red-500/10 border border-red-500/20 flex items-center justify-center mx-auto mb-4 text-2xl"><Trash2 class="w-4 h-4 inline-block" /></div>
         <h2 class="text-lg font-bold text-text-primary mb-2">Eliminar componente</h2>
         <p class="text-text-muted text-sm mb-1">¿Estás seguro de que deseas eliminar</p>
         <p class="text-text-primary font-semibold mb-2">{{ deletingComp?.nombre }}?</p>
@@ -582,6 +582,7 @@
 </template>
 
 <script setup>
+import { Check, Trash2, Sun, Moon, Wrench, FileText, Briefcase, Gamepad2, Palette, BookOpen, Store, Settings } from '@lucide/vue'
 import { useTheme } from '../composables/useTheme'
 const { isDark, toggleTheme } = useTheme()
 import { ref, computed, onMounted } from 'vue'
@@ -596,16 +597,16 @@ const toast = useToast()
 
 function handleLogout() { logout(); router.push('/login') }
 function formatDate(d) { return d ? new Date(d).toLocaleDateString('es-CL', { day: '2-digit', month: 'short', year: 'numeric' }) : '—' }
-function perfilLabel(p) { return ({ office: '💼 Oficina', gaming: '🎮 Gaming', design: '🎨 Diseño', study: '📚 Estudio' })[p] ?? p ?? '—' }
+function perfilLabel(p) { return ({ office: 'Oficina', gaming: 'Gaming', design: 'Diseño', study: 'Estudio' })[p] ?? p ?? '—' }
 
 // ── Secciones ─────────────────────────────────────────────
 const activeSection = ref('dashboard')
 
 const sections = computed(() => [
   { id: 'dashboard',    icon: '📊', label: 'Dashboard',    description: 'Resumen general de tus bodegas',           cta: null,            count: null                  },
-  { id: 'bodegas',      icon: '🏪', label: 'Mis bodegas',  description: `${bodegas.value.length} bodegas asignadas`, cta: '+ Nueva bodega', count: bodegas.value.length  },
-  { id: 'componentes',  icon: '🔧', label: 'Componentes',  description: `Componentes de tus bodegas`,               cta: '+ Nuevo componente', count: componentes.value.length },
-  { id: 'cotizaciones', icon: '📄', label: 'Cotizaciones', description: 'Cotizaciones de tus bodegas',              cta: null,            count: cotizaciones.value.length },
+  { id: 'bodegas',      icon: markRaw(Store), label: 'Mis bodegas',  description: `${bodegas.value.length} bodegas asignadas`, cta: '+ Nueva bodega', count: bodegas.value.length  },
+  { id: 'componentes',  icon: markRaw(Wrench), label: 'Componentes',  description: `Componentes de tus bodegas`,               cta: '+ Nuevo componente', count: componentes.value.length },
+  { id: 'cotizaciones', icon: markRaw(FileText), label: 'Cotizaciones', description: 'Cotizaciones de tus bodegas',              cta: null,            count: cotizaciones.value.length },
 ])
 
 const tierStyles = {
