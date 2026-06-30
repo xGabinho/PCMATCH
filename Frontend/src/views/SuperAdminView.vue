@@ -1156,7 +1156,7 @@
 </template>
 
 <script setup>
-import { Check, Trash2, Pencil, Sun, Moon, Info, Package, Wrench, FileText, Shield, Briefcase, Gamepad2, Palette, BookOpen, Building2, Store, Users, Lock, ClipboardList, Crown, User } from '@lucide/vue'
+import { UserPlus, Check, Trash2, Pencil, Sun, Moon, Info, Package, Wrench, FileText, Shield, Briefcase, Gamepad2, Palette, BookOpen, Building2, Store, Users, Lock, ClipboardList, Crown, User } from '@lucide/vue'
 import { useTheme } from '../composables/useTheme'
 const { isDark, toggleTheme } = useTheme()
 import { ref, markRaw, computed, onMounted } from 'vue'
@@ -1198,7 +1198,7 @@ const sections = computed(() => [
   { id: 'catalogo',          icon: markRaw(Package), label: 'Catálogo Base',     description: 'Productos predefinidos',                        cta: '+ Añadir Producto',   count: null                        },
   { id: 'componentes',       icon: markRaw(Wrench), label: 'Componentes',       description: `${componentes.value.length} componentes en inventario`, cta: '+ Nuevo Componente Maestro', count: componentes.value.length    },
   { id: 'cotizaciones',      icon: markRaw(FileText), label: 'Cotizaciones',      description: `${cotizaciones.value.length} cotizaciones`,     cta: null,                  count: cotizaciones.value.length   },
-  { id: 'crear-usuario',     icon: '➕', label: 'Crear usuario',     description: 'Registrar nuevo usuario',                       cta: null,                  count: null                        },
+  { id: 'crear-usuario',     icon: markRaw(UserPlus), label: 'Crear usuario',     description: 'Registrar nuevo usuario',                       cta: null,                  count: null                        },
   { id: 'gestionar-usuarios',icon: markRaw(Users), label: 'Gestionar usuarios',description: `${usuarios.value.length} usuarios`,            cta: '+ Crear usuario',     count: usuarios.value.length       },
   { id: 'perfiles',          icon: markRaw(Lock), label: 'Perfiles y Permisos',description: `${perfiles.value.length} perfiles`,           cta: '+ Crear perfil',      count: perfiles.value.length       },
   { id: 'historial',         icon: markRaw(ClipboardList), label: 'Historial',         description: 'Registro global de acciones',                   cta: null,                  count: historial.value.length      },

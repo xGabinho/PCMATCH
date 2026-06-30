@@ -899,7 +899,7 @@
 </template>
 
 <script setup>
-import { Check, Trash2, Pencil, Sun, Moon, Info, Wrench, FileText, Shield, Briefcase, Gamepad2, Palette, BookOpen, Store, Users, Lock, User, Settings } from '@lucide/vue'
+import { UserPlus, Check, Trash2, Pencil, Sun, Moon, Info, Wrench, FileText, Shield, Briefcase, Gamepad2, Palette, BookOpen, Store, Users, Lock, User, Settings } from '@lucide/vue'
 import { useTheme } from '../composables/useTheme'
 const { isDark, toggleTheme } = useTheme()
 import { ref, markRaw, computed, onMounted } from 'vue'
@@ -947,7 +947,7 @@ const sections = computed(() => [
   { id: 'bodegas',            icon: markRaw(Store), label: 'Bodegas',            description: `${bodegas.value.length} bodegas registradas`,    cta: '+ Agregar bodega', count: bodegas.value.length    },
   { id: 'componentes',        icon: markRaw(Wrench), label: 'Componentes',        description: `${componentes.value.length} componentes en total`, cta: '+ Nuevo Componente Maestro',               count: componentes.value.length },
   { id: 'cotizaciones',       icon: markRaw(FileText), label: 'Cotizaciones',       description: 'Historial de cotizaciones',                       cta: null,               count: null },
-  { id: 'crear-usuario',      icon: '➕', label: 'Crear usuario',      description: 'Registrar nuevo usuario',                        cta: null,               count: null },
+  { id: 'crear-usuario',      icon: markRaw(UserPlus), label: 'Crear usuario',      description: 'Registrar nuevo usuario',                        cta: null,               count: null },
   { id: 'gestionar-usuarios', icon: markRaw(Users), label: 'Gestionar usuarios', description: `${usuarios.value.length} usuarios registrados`,   cta: '+ Crear usuario',  count: usuarios.value.length   },
   { id: 'perfiles', icon: markRaw(Lock), label: 'Perfiles y Permisos', description: `${perfiles.value.length} perfiles`, cta: '+ Crear perfil', count: perfiles.value.length },
 ])
