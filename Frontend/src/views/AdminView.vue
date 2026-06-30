@@ -902,7 +902,7 @@
 import { Check, Trash2, Pencil, Sun, Moon, Info, Wrench, FileText, Shield, Briefcase, Gamepad2, Palette, BookOpen, Store, Users, Lock, User, Settings } from '@lucide/vue'
 import { useTheme } from '../composables/useTheme'
 const { isDark, toggleTheme } = useTheme()
-import { ref, computed, onMounted } from 'vue'
+import { ref, markRaw, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuth } from '../composables/useAuth'
 import { useToast } from '../composables/useToast'

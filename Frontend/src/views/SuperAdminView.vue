@@ -1159,7 +1159,7 @@
 import { Check, Trash2, Pencil, Sun, Moon, Info, Package, Wrench, FileText, Shield, Briefcase, Gamepad2, Palette, BookOpen, Building2, Store, Users, Lock, ClipboardList, Crown, User } from '@lucide/vue'
 import { useTheme } from '../composables/useTheme'
 const { isDark, toggleTheme } = useTheme()
-import { ref, computed, onMounted } from 'vue'
+import { ref, markRaw, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuth } from '../composables/useAuth'
 import { useToast } from '../composables/useToast'

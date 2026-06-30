@@ -585,7 +585,7 @@
 import { Check, Trash2, Sun, Moon, Wrench, FileText, Briefcase, Gamepad2, Palette, BookOpen, Store, Settings } from '@lucide/vue'
 import { useTheme } from '../composables/useTheme'
 const { isDark, toggleTheme } = useTheme()
-import { ref, computed, onMounted } from 'vue'
+import { ref, markRaw, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuth } from '../composables/useAuth'
 import { useToast } from '../composables/useToast'

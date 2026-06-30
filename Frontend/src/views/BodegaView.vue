@@ -477,7 +477,7 @@ const { isDark, toggleTheme } = useTheme()
 import { useRouter } from 'vue-router'
 import { useAuth } from '../composables/useAuth'
 import { useToast } from '../composables/useToast'
-import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
+import { ref, markRaw, computed, onMounted, onBeforeUnmount } from 'vue'
 
 import { API } from '@/config/api'
 
