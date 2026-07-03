@@ -11,9 +11,13 @@ use App\Helpers\AuditLog;
 
 class CatalogoController extends Controller
 {
+    
     /**
      * GET /api/catalogo — Lista pública del catálogo global
+     * Obtiene una lista de registros o recursos.
+     * Ejecuta la consulta a la base de datos (con posibles filtros/paginación) y retorna los datos en formato JSON.
      */
+    
     public function index(Request $request)
     {
         $query = DB::table('productos_catalogo')
@@ -43,9 +47,14 @@ class CatalogoController extends Controller
         ]);
     }
 
+    
     /**
      * POST /api/productos-catalogo — Crear un producto base completo (Admin/Superadmin)
+     * Almacena un nuevo registro en la base de datos.
+     * Valida la información recibida en la petición HTTP y crea el nuevo recurso.
      */
+
+    
     public function store(Request $request)
     {
         $user = $request->user();

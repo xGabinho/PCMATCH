@@ -23,8 +23,8 @@
                     ? 'bg-red-500/10 text-red-400 border border-red-500/20'
                     : 'theme-text-muted border theme-border hover:border-accent/40 hover:text-accent'"
             >
-              <span v-if="selectedItems[steps[index].id] && index !== activeStep" class="text-xs">✓</span>
-              <span v-else-if="!selectedItems[steps[index].id] && index < activeStep" class="text-xs">✗</span>
+              <Check v-if="selectedItems[steps[index].id] && index !== activeStep" class="w-3 h-3" />
+              <X v-else-if="!selectedItems[steps[index].id] && index < activeStep" class="w-3 h-3" />
               <span v-else class="text-xs font-mono">{{ index + 1 }}</span>
               <span class="hidden sm:inline">{{ step.label }}</span>
               <span class="sm:hidden">{{ step.short }}</span>
@@ -37,10 +37,10 @@
         <div class="flex flex-col sm:flex-row sm:items-start justify-between gap-4 mb-6">
           <div>
             <div class="flex items-center gap-3 mb-1">
-              <span class="text-2xl">{{ steps[activeStep].icon }}</span>
+              <component :is="steps[activeStep].icon" class="w-6 h-6" />
               <h1 class="text-2xl font-bold theme-text">{{ steps[activeStep].label }}</h1>
-              <span v-if="selectedItems[steps[activeStep].id]" class="badge bg-green-500/10 text-green-600 dark:text-green-400 border border-green-500/20">
-                ✓ Seleccionado
+              <span v-if="selectedItems[steps[activeStep].id]" class="badge bg-green-500/10 text-green-600 dark:text-green-400 border border-green-500/20 flex items-center gap-1">
+                <Check class="w-3 h-3" /> Seleccionado
               </span>
             </div>
             <p class="theme-text-muted text-sm">{{ steps[activeStep].hint }}</p>
@@ -54,7 +54,7 @@
         <div class="flex flex-col gap-3 mb-6">
           <div class="flex flex-col sm:flex-row gap-3">
             <div class="relative flex-1">
-              <span class="absolute left-3.5 top-1/2 -translate-y-1/2 theme-text-muted text-sm">🔍</span>
+              <Search class="absolute left-3.5 top-1/2 -translate-y-1/2 theme-text-muted w-4 h-4" />
               <input
                 v-model="stepSearch"
                 type="text"
@@ -93,7 +93,7 @@
               <option value="estudio">Estudio</option>
             </select>
             <button @click="showAdvancedFilters = !showAdvancedFilters" class="btn-secondary text-sm px-4 py-3 flex items-center justify-center gap-2">
-              <span>⚙️</span> Más filtros
+              <Settings class="w-4 h-4" /> Más filtros
             </button>
             <button v-if="filterGama || filterEnfoque || filterNucleos || filterHilos || filterFrecuenciaMin" @click="clearFilters" class="text-sm theme-text-muted hover:text-accent transition-colors text-center w-full sm:w-auto">
               Limpiar filtros
@@ -130,7 +130,7 @@
 
         <!-- Empty state -->
         <div v-else-if="filteredItems.length === 0" class="text-center py-16 theme-card border theme-border shadow-sm rounded-xl">
-          <div class="text-4xl mb-3">🔍</div>
+          <Search class="w-10 h-10 mx-auto mb-3 text-accent/50" />
           <p class="theme-text font-medium mb-1">Sin resultados</p>
           <p class="theme-text-muted text-sm">
             <span v-if="stepSearch">No hay componentes para "<span class="text-accent">{{ stepSearch }}</span>"</span>
@@ -236,7 +236,7 @@
       <!-- Selected Items -->
       <div class="flex-1 p-4 space-y-2 overflow-y-auto bg-gray-50/50 dark:bg-transparent">
         <div v-if="Object.keys(selectedComponents).length === 0" class="text-center py-10">
-          <div class="text-3xl mb-3">🖥️</div>
+          <Monitor class="w-10 h-10 mx-auto mb-3 text-accent/50" />
           <p class="theme-text-muted text-sm">Aún no has seleccionado componentes</p>
         </div>
 
@@ -246,7 +246,7 @@
             class="flex items-start justify-between gap-3 p-3 rounded-xl theme-bg border theme-border shadow-sm group"
           >
             <div class="flex items-start gap-2 flex-1 min-w-0">
-              <span class="text-base flex-shrink-0 mt-0.5">{{ step.icon }}</span>
+              <component :is="step.icon" class="w-5 h-5 flex-shrink-0 mt-0.5" />
               <div class="flex-1 min-w-0">
                 <p class="text-xs theme-text-muted uppercase tracking-wide mb-0.5">{{ step.label }}</p>
                 <p class="text-sm theme-text font-medium leading-tight truncate">{{ selectedComponents[step.id].nombre }}</p>
@@ -279,7 +279,7 @@
             v-else
             class="flex items-center gap-2 p-3 rounded-xl border border-dashed theme-border bg-white/50 dark:bg-transparent"
           >
-            <span class="text-sm opacity-40 grayscale">{{ step.icon }}</span>
+            <component :is="step.icon" class="w-4 h-4 opacity-40 grayscale" />
             <p class="text-xs theme-text-muted">{{ step.label }} sin seleccionar</p>
           </div>
         </template>
@@ -303,10 +303,11 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
+import { Check, X, Search, Settings, Monitor } from '@lucide/vue'
 import ComponentCard from '../components/ComponentCard.vue'
 import { useBuilder } from '../composables/useBuilder'
 
-const API = '/api'
+import { API } from '@/config/api'
 const router = useRouter()
 const { steps, selectedItems, selectedComponents, totalPrice, selectItem, removeItem, updateQuantity } = useBuilder()
 
@@ -336,6 +337,12 @@ const currentItems = computed(() => {
   return componentesPorCategoria.value[cat] ?? []
 })
 
+/**
+
+ * Propiedad computada que filtra dinámicamente los registros basándose en los criterios de búsqueda.
+
+ */
+
 const filteredItems = computed(() => {
   let items = [...currentItems.value]
   if (stepSearch.value.trim()) {
@@ -361,6 +368,14 @@ const filteredItems = computed(() => {
   if (stepSort.value === 'name')       items.sort((a, b) => a.nombre.localeCompare(b.nombre))
   return items
 })
+
+/**
+
+ * Obtiene datos desde el backend mediante API.
+
+ * Mantiene sincronizada la vista con la base de datos.
+
+ */
 
 async function fetchTodos() {
   loading.value = true

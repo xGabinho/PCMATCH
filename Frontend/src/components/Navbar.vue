@@ -36,6 +36,26 @@
         >
           🤖 Asistente
         </router-link>
+        <router-link
+          to="/sobre-nosotros"
+          class="px-4 py-2 rounded-lg text-sm font-medium transition-all duration-150"
+          :class="isDark
+            ? 'text-text-muted hover:text-text-primary hover:bg-dark-card'
+            : 'text-text-light-muted hover:text-text-light hover:bg-gray-100'"
+          active-class="!text-accent"
+        >
+          Sobre nosotros
+        </router-link>
+        <router-link
+          to="/contacto"
+          class="px-4 py-2 rounded-lg text-sm font-medium transition-all duration-150"
+          :class="isDark
+            ? 'text-text-muted hover:text-text-primary hover:bg-dark-card'
+            : 'text-text-light-muted hover:text-text-light hover:bg-gray-100'"
+          active-class="!text-accent"
+        >
+          Contacto
+        </router-link>
       </div>
 
       <!-- Right side -->
@@ -150,6 +170,26 @@
         >
           🤖 Asistente inteligente
         </router-link>
+        <router-link
+          to="/sobre-nosotros"
+          @click="mobileMenuOpen = false"
+          class="block px-4 py-3 rounded-lg text-sm font-medium transition-colors min-h-[44px] flex items-center"
+          :class="isDark
+            ? 'text-text-muted hover:text-text-primary hover:bg-dark-card'
+            : 'text-text-light-muted hover:text-text-light hover:bg-gray-100'"
+        >
+          Sobre nosotros
+        </router-link>
+        <router-link
+          to="/contacto"
+          @click="mobileMenuOpen = false"
+          class="block px-4 py-3 rounded-lg text-sm font-medium transition-colors min-h-[44px] flex items-center"
+          :class="isDark
+            ? 'text-text-muted hover:text-text-primary hover:bg-dark-card'
+            : 'text-text-light-muted hover:text-text-light hover:bg-gray-100'"
+        >
+          Contacto
+        </router-link>
 
         <router-link
           v-if="!isLoggedIn && route.path !== '/login'"
@@ -169,7 +209,7 @@
             ? 'text-accent hover:bg-dark-card'
             : 'text-accent hover:bg-gray-100'"
         >
-          🖥️ Armar mi PC
+          <Monitor class="w-4 h-4 mr-2" /> Armar mi PC
         </router-link>
 
         <router-link
@@ -205,6 +245,7 @@
 <script setup>
 import { ref } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
+import { Monitor } from '@lucide/vue'
 import { useAuth } from '../composables/useAuth'
 import { useTheme } from '../composables/useTheme'
 

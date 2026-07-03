@@ -21,7 +21,7 @@
             ? 'bg-accent/10 text-accent border border-accent/20'
             : 'theme-text-muted hover:theme-text hover:theme-card'"
         >
-          <span>{{ section.icon }}</span>
+          <component :is="section.icon" class="w-5 h-5 inline-block" />
           {{ section.label }}
           <span v-if="section.count !== null" class="ml-auto text-xs font-mono opacity-60">{{ myComponents.length }}</span>
         </button>
@@ -33,8 +33,8 @@
           <p class="text-sm font-medium theme-text mt-0.5">{{ bodegaCorreo }}</p>
         </div>
         <button @click="toggleTheme" class="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm theme-text-muted hover:theme-text hover:theme-card transition-all duration-150">
-          <span v-if="isDark">☀️ Modo claro</span>
-          <span v-else>🌙 Modo oscuro</span>
+          <span v-if="isDark"><Sun class="w-4 h-4 inline-block mr-1" /> Modo claro</span>
+          <span v-else><Moon class="w-4 h-4 inline-block mr-1" /> Modo oscuro</span>
         </button>
         <button @click="handleLogout" class="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm theme-text-muted hover:theme-text hover:theme-card transition-all duration-150">
           ← Cerrar sesión
@@ -127,7 +127,7 @@
                 <option v-for="cat in categories" :key="cat" :value="cat" class="theme-bg">{{ cat }}</option>
               </select>
               <button @click="showAdvancedFilters = !showAdvancedFilters" class="btn-secondary text-sm px-4 py-2.5 flex items-center gap-2">
-                <span>⚙️</span> Filtros avanzados
+                <span><Settings class="w-4 h-4 inline-block mr-1" /></span> Filtros avanzados
               </button>
             </div>
             
@@ -352,7 +352,7 @@
               </div>
             </div>
             <p v-if="newComp.categoria" class="text-xs text-accent mt-1.5 flex items-center gap-1">
-              <span>✓</span> Categoría: {{ newComp.categoria }}
+              <span><Check class="w-4 h-4 inline-block mr-1" /></span> Categoría: {{ newComp.categoria }}
             </p>
           </div>
 
@@ -448,7 +448,7 @@
     <div v-if="showDeleteModal" class="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto py-6 px-4">
       <div class="fixed inset-0 bg-black/60 backdrop-blur-sm" @click="showDeleteModal = false"></div>
       <div class="relative card-dark rounded-2xl p-6 w-full max-w-sm my-auto shadow-2xl text-center">
-        <div class="w-14 h-14 rounded-full bg-red-500/10 border border-red-500/20 flex items-center justify-center mx-auto mb-4 text-2xl">🗑️</div>
+        <div class="w-14 h-14 rounded-full bg-red-500/10 border border-red-500/20 flex items-center justify-center mx-auto mb-4 text-2xl"><Trash2 class="w-4 h-4 inline-block" /></div>
         <h2 class="text-lg font-bold text-text-primary mb-2">Eliminar componente</h2>
         <p class="text-text-muted text-sm mb-1">¿Estás seguro de que deseas eliminar</p>
         <p class="text-text-primary font-semibold mb-2">{{ deletingComp?.nombre }}?</p>
@@ -467,14 +467,15 @@
 </template>
 
 <script setup>
+import { Check, Trash2, Sun, Moon, Wrench, Store, Settings } from '@lucide/vue'
 import { useTheme } from '../composables/useTheme'
 const { isDark, toggleTheme } = useTheme()
 import { useRouter } from 'vue-router'
 import { useAuth } from '../composables/useAuth'
 import { useToast } from '../composables/useToast'
-import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
+import { ref, markRaw, computed, onMounted, onBeforeUnmount } from 'vue'
 
-const API = '/api'
+import { API } from '@/config/api'
 const toast = useToast()
 
 const router = useRouter()
@@ -493,8 +494,8 @@ const bodegaCorreo = user.value?.correo ?? ''
 const activeSection = ref('dashboard')
 const sections = [
   { id: 'dashboard',   icon: '📊', label: 'Dashboard',       description: 'Resumen de tu bodega',          count: null },
-  { id: 'componentes', icon: '🔧', label: 'Mis componentes', description: 'Gestiona tu catálogo y stock',  count: true },
-  { id: 'proveedores', icon: '🏭', label: 'Proveedores',     description: 'Explora catálogos mayoristas',  count: null },
+  { id: 'componentes', icon: markRaw(Wrench), label: 'Mis componentes', description: 'Gestiona tu catálogo y stock',  count: true },
+  { id: 'proveedores', icon: markRaw(Store), label: 'Proveedores',     description: 'Explora catálogos mayoristas',  count: null },
 ]
 const currentSection = computed(() => sections.find(s => s.id === activeSection.value))
 
@@ -573,6 +574,12 @@ const filterNucleos = ref('')
 const filterHilos = ref('')
 const filterFrecuenciaMin = ref('')
 
+/**
+
+ * Propiedad computada que filtra dinámicamente los registros basándose en los criterios de búsqueda.
+
+ */
+
 const filteredComponents = computed(() => {
   let result = [...myComponents.value]
   if (filterCategory.value) result = result.filter(c => c.categoria === filterCategory.value)
@@ -616,6 +623,14 @@ async function quickAdjust(comp, operacion, cantidad) {
   }
 }
 
+/**
+
+ * Obtiene datos desde el backend mediante API.
+
+ * Mantiene sincronizada la vista con la base de datos.
+
+ */
+
 async function fetchComponents() {
   loadingComponents.value = true
   try {
@@ -635,6 +650,12 @@ async function fetchComponents() {
 const categoriasBase = ref([])
 const productoSearch = ref('')
 const showProductoDropdown = ref(false)
+
+/**
+
+ * Propiedad computada que filtra el catálogo de productos disponible en tiempo real.
+
+ */
 
 const productosFiltrados = computed(() => {
   if (!productoSearch.value.trim()) return categoriasBase.value.slice(0, 10)
@@ -673,6 +694,10 @@ const addImageFile = ref(null)
 const addImagePreview = ref(null)
 const addFileName = ref('')
 
+/**
+ * Obtiene datos desde el backend mediante API.
+ * Mantiene sincronizada la vista con la base de datos.
+ */
 async function fetchCategoriasBase() {
   try {
     const res = await fetch(`${API}/componentes/maestros`, { headers: { Authorization: `Bearer ${getToken()}` } })
@@ -680,6 +705,12 @@ async function fetchCategoriasBase() {
     if (res.ok) categoriasBase.value = data.componentes || []
   } catch(e) { console.error(e) }
 }
+
+/**
+
+ * Abre el modal correspondiente e inicializa los datos necesarios.
+
+ */
 
 function openAddModal() {
   isImporting.value = false
@@ -691,6 +722,12 @@ function openAddModal() {
   if (categoriasBase.value.length === 0) fetchCategoriasBase()
   showAddModal.value = true
 }
+
+/**
+
+ * Cierra el modal activo y limpia los errores.
+
+ */
 
 function closeAddModal() {
   showAddModal.value = false
@@ -709,6 +746,14 @@ function onFileChange(e, type) {
     editImagePreview.value = URL.createObjectURL(file)
   }
 }
+
+/**
+
+ * Valida y envía los datos del formulario al backend (POST/PUT).
+
+ * Maneja la lógica de guardado y muestra feedback al usuario.
+
+ */
 
 async function saveNewComp() {
   addError.value = ''
@@ -762,6 +807,14 @@ function openEditComp(comp) {
   editError.value = ''
   showEditModal.value = true
 }
+
+/**
+
+ * Valida y envía los datos del formulario al backend (POST/PUT).
+
+ * Maneja la lógica de guardado y muestra feedback al usuario.
+
+ */
 
 async function saveEditComp() {
   editError.value = ''
@@ -824,6 +877,12 @@ function openDeleteComp(comp) {
   deleteError.value = ''
   showDeleteModal.value = true
 }
+
+/**
+
+ * Confirma y procesa la eliminación de un registro mediante la API.
+
+ */
 
 async function confirmDelete() {
   deleteError.value = ''

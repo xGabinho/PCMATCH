@@ -11,6 +11,7 @@ use App\Helpers\AuditLog;
 
 class ProveedorController extends Controller
 {
+    
     /**
      * Verifica que el usuario sea admin o superadmin
      */
@@ -33,7 +34,10 @@ class ProveedorController extends Controller
 
     /**
      * Equivalente a GET api/proveedores/index.php
+     * Obtiene una lista de registros o recursos.
+     * Ejecuta la consulta a la base de datos (con posibles filtros/paginación) y retorna los datos en formato JSON.
      */
+    
     public function index(Request $request)
     {
         if (!$this->checkSuperAdmin($request) && !$this->checkBodega($request)) {
@@ -61,9 +65,19 @@ class ProveedorController extends Controller
         ]);
     }
 
+    
     /**
-     * Equivalente a POST api/proveedores/index.php
+
+    
+     * Almacena un nuevo registro en la base de datos.
+
+    
+     * Valida la información recibida en la petición HTTP y crea el nuevo recurso.
+
+    
      */
+
+    
     public function store(Request $request)
     {
         if (!$this->checkSuperAdmin($request)) {
@@ -119,9 +133,19 @@ class ProveedorController extends Controller
         return response()->json(['message' => 'Proveedor creado', 'id' => $proveedor->id], 201);
     }
 
+    
     /**
-     * Equivalente a PUT api/proveedores/index.php
+
+    
+     * Actualiza un recurso existente en la base de datos.
+
+    
+     * Valida los nuevos datos y sobrescribe los valores del registro correspondiente.
+
+    
      */
+
+    
     public function update(Request $request)
     {
         if (!$this->checkSuperAdmin($request)) {
@@ -179,9 +203,19 @@ class ProveedorController extends Controller
         return response()->json(['message' => 'Proveedor actualizado']);
     }
 
+    
     /**
-     * Equivalente a DELETE api/proveedores/index.php
+
+    
+     * Elimina un registro de la base de datos.
+
+    
+     * Dependiendo de la lógica, puede ser una eliminación física o lógica (soft delete).
+
+    
      */
+
+    
     public function destroy(Request $request, $id = null)
     {
         if (!$this->checkSuperAdmin($request)) {
@@ -208,9 +242,19 @@ class ProveedorController extends Controller
         return response()->json(['message' => 'Proveedor eliminado']);
     }
 
+    
     /**
-     * Obtener productos del catálogo asignados a un proveedor
+
+    
+     * Endpoint lógico de la API.
+
+    
+     * Procesa la petición HTTP, interactúa con los modelos y retorna una respuesta JSON.
+
+    
      */
+
+    
     public function productos(Request $request, $id)
     {
         $user = $request->user();
@@ -253,9 +297,14 @@ class ProveedorController extends Controller
         ]);
     }
 
+    
     /**
      * POST /api/proveedores/{id}/productos — Agregar producto al catálogo del proveedor con precio mayorista
+     * Endpoint lógico de la API.
+     * Procesa la petición HTTP, interactúa con los modelos y retorna una respuesta JSON.
      */
+
+    
     public function syncProductos(Request $request, $id)
     {
         $user = $request->user();

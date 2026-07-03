@@ -14,6 +14,16 @@ use App\Http\Controllers\Api\CotizacionController;
 use App\Http\Controllers\Api\HistorialController;
 use App\Http\Controllers\Api\RecomendacionController;
 
+// Health check para Railway
+Route::get('/health', function () {
+    try {
+        \Illuminate\Support\Facades\DB::connection()->getPdo();
+        return response()->json(['status' => 'ok', 'db' => 'connected'], 200);
+    } catch (\Exception $e) {
+        return response()->json(['status' => 'ok', 'db' => 'disconnected'], 200);
+    }
+});
+
 Route::post('/auth/login', [AuthController::class, 'login']);
 Route::post('/auth/register', [AuthController::class, 'register']);
 Route::post('/auth/forgot-password', [PasswordResetController::class, 'sendResetLink']);

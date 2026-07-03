@@ -24,8 +24,8 @@
 
         <!-- Success state -->
         <div v-if="sent" class="text-center space-y-4">
-          <div class="w-16 h-16 rounded-full bg-green-500/10 border border-green-500/20 flex items-center justify-center text-3xl mx-auto">
-            ✉️
+          <div class="w-16 h-16 rounded-full bg-green-500/10 border border-green-500/20 flex items-center justify-center text-green-400 mx-auto">
+            <Mail class="w-8 h-8" />
           </div>
           <h2 class="text-lg font-bold theme-text">Enlace enviado</h2>
           <p class="theme-text-muted text-sm leading-relaxed">
@@ -80,6 +80,8 @@
 
 <script setup>
 import { ref } from 'vue'
+import { Mail } from '@lucide/vue'
+import { API } from '@/config/api'
 
 const correo = ref('')
 const loading = ref(false)
@@ -95,7 +97,7 @@ async function handleSubmit() {
 
   loading.value = true
   try {
-    const res = await fetch('/api/auth/forgot-password', {
+    const res = await fetch(`${API}/auth/forgot-password`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
       body: JSON.stringify({ correo: correo.value })

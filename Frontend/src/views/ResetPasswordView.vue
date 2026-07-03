@@ -24,8 +24,8 @@
 
         <!-- Invalid token state -->
         <div v-if="invalidLink" class="text-center space-y-4">
-          <div class="w-16 h-16 rounded-full bg-red-500/10 border border-red-500/20 flex items-center justify-center text-3xl mx-auto">
-            ⚠️
+          <div class="w-16 h-16 rounded-full bg-red-500/10 border border-red-500/20 flex items-center justify-center text-red-400 mx-auto">
+            <AlertTriangle class="w-8 h-8" />
           </div>
           <h2 class="text-lg font-bold theme-text">Enlace no válido</h2>
           <p class="theme-text-muted text-sm leading-relaxed">
@@ -38,8 +38,8 @@
 
         <!-- Success state -->
         <div v-else-if="success" class="text-center space-y-4">
-          <div class="w-16 h-16 rounded-full bg-green-500/10 border border-green-500/20 flex items-center justify-center text-3xl mx-auto">
-            ✅
+          <div class="w-16 h-16 rounded-full bg-green-500/10 border border-green-500/20 flex items-center justify-center text-green-400 mx-auto">
+            <Check class="w-8 h-8" />
           </div>
           <h2 class="text-lg font-bold theme-text">Contraseña actualizada</h2>
           <p class="theme-text-muted text-sm leading-relaxed">
@@ -73,7 +73,8 @@
                 @click="showPassword = !showPassword"
                 class="absolute right-3 top-1/2 -translate-y-1/2 theme-text-muted hover:theme-text transition-colors text-xs"
               >
-                {{ showPassword ? '🙈' : '👁️' }}
+                <EyeOff v-if="showPassword" class="w-4 h-4" />
+                <Eye v-else class="w-4 h-4" />
               </button>
             </div>
           </div>
@@ -98,7 +99,8 @@
                 @click="showConfirmPassword = !showConfirmPassword"
                 class="absolute right-3 top-1/2 -translate-y-1/2 theme-text-muted hover:theme-text transition-colors text-xs"
               >
-                {{ showConfirmPassword ? '🙈' : '👁️' }}
+                <EyeOff v-if="showConfirmPassword" class="w-4 h-4" />
+                <Eye v-else class="w-4 h-4" />
               </button>
             </div>
             <p v-if="confirmPassword && password !== confirmPassword"
@@ -107,7 +109,7 @@
             </p>
             <p v-if="confirmPassword && password === confirmPassword"
               class="text-xs text-green-400 mt-1">
-              ✓ Las contraseñas coinciden
+              <Check class="w-3 h-3 inline-block mr-1" /> Las contraseñas coinciden
             </p>
           </div>
 
@@ -136,6 +138,8 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+import { AlertTriangle, Check, Eye, EyeOff } from '@lucide/vue'
+import { API } from '@/config/api'
 
 const route = useRoute()
 const router = useRouter()
@@ -176,7 +180,7 @@ async function handleSubmit() {
 
   loading.value = true
   try {
-    const res = await fetch('/api/auth/reset-password', {
+    const res = await fetch(`${API}/auth/reset-password`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
       body: JSON.stringify({

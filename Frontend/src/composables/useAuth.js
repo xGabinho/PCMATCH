@@ -1,6 +1,5 @@
 import { ref } from 'vue'
-
-const API = '/api'
+import { API } from '@/config/api'
 
 // Estado global compartido entre componentes
 const isLoggedIn = ref(!!localStorage.getItem('token'))

@@ -21,7 +21,7 @@
             ? 'bg-accent/10 text-accent border border-accent/20'
             : 'theme-text-muted hover:theme-text hover:theme-card'"
         >
-          <span>{{ section.icon }}</span>
+          <component :is="section.icon" class="w-5 h-5 inline-block" />
           {{ section.label }}
           <span v-if="section.count !== null" class="ml-auto text-xs font-mono opacity-60">{{ section.count }}</span>
         </button>
@@ -29,8 +29,8 @@
 
       <div class="p-3 border-t theme-border space-y-1">
         <button @click="toggleTheme" class="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm theme-text-muted hover:theme-text hover:theme-card transition-all duration-150">
-          <span v-if="isDark">☀️ Modo claro</span>
-          <span v-else>🌙 Modo oscuro</span>
+          <span v-if="isDark"><Sun class="w-4 h-4 inline-block mr-1" /> Modo claro</span>
+          <span v-else><Moon class="w-4 h-4 inline-block mr-1" /> Modo oscuro</span>
         </button>
         <button @click="handleLogout" class="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm theme-text-muted hover:theme-text hover:theme-card transition-all duration-150">
           ← Cerrar sesión
@@ -298,7 +298,7 @@
                     class="flex flex-col items-center gap-2 p-4 rounded-xl border transition-all duration-150"
                     :class="newUser.rol === role.id ? 'border-accent bg-accent/5 text-accent' : 'theme-border theme-text-muted hover:border-accent/40 hover:theme-text'"
                   >
-                    <span class="text-2xl">{{ role.icon }}</span>
+                    <component :is="role.icon" class="text-2xl inline-block" />
                     <span class="text-xs font-medium">{{ role.label }}</span>
                   </button>
                 </div>
@@ -375,8 +375,8 @@
                     </span>
                   </td>
                   <td class="px-6 py-4 text-right space-x-2">
-                    <button @click="openEditPerfil(p)" class="p-2 theme-bg border theme-border rounded-lg theme-text-muted hover:text-accent hover:border-accent/40 transition-colors">✏️</button>
-                    <button @click="confirmDeletePerfilAction(p)" class="p-2 theme-bg border theme-border rounded-lg theme-text-muted hover:text-red-400 hover:border-red-500/40 transition-colors">🗑️</button>
+                    <button @click="openEditPerfil(p)" class="p-2 theme-bg border theme-border rounded-lg theme-text-muted hover:text-accent hover:border-accent/40 transition-colors"><Pencil class="w-4 h-4 inline-block" /></button>
+                    <button @click="confirmDeletePerfilAction(p)" class="p-2 theme-bg border theme-border rounded-lg theme-text-muted hover:text-red-400 hover:border-red-500/40 transition-colors"><Trash2 class="w-4 h-4 inline-block" /></button>
                   </td>
                 </tr>
               </tbody>
@@ -521,7 +521,7 @@
             <input @change="handleFileChange" type="file" accept=".pdf,.jpg,.jpeg,.png" class="w-full text-sm theme-text-muted file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:theme-bg file:text-accent hover:file:bg-accent/10 transition-colors" />
           </div>
           <div class="rounded-lg border border-accent/20 bg-accent/5 p-3 flex items-start gap-2">
-            <span class="text-accent text-sm mt-0.5">ℹ️</span>
+            <span class="text-accent text-sm mt-0.5"><Info class="w-4 h-4 inline-block" /></span>
             <p class="text-xs theme-text-muted leading-relaxed">El proveedor iniciará en estado 'Pendiente' de aprobación. Puedes aprobarlo inmediatamente desde la lista.</p>
           </div>
           <p v-if="proveedorError" class="text-xs text-red-400 bg-red-500/10 border border-red-500/20 rounded-lg px-4 py-2.5">{{ proveedorError }}</p>
@@ -596,7 +596,7 @@
               <p class="text-xs theme-text-muted">{{ prod.categoria }}</p>
             </div>
             <div class="w-5 h-5 rounded border flex items-center justify-center" :class="selectedCatalogoIds.includes(prod.id) ? 'bg-accent border-accent text-dark-card' : 'theme-border'">
-              <span v-if="selectedCatalogoIds.includes(prod.id)" class="text-xs">✓</span>
+              <span v-if="selectedCatalogoIds.includes(prod.id)" class="text-xs"><Check class="w-4 h-4 inline-block mr-1" /></span>
             </div>
           </div>
           <div v-if="catalogoFiltrado.length === 0" class="text-center py-4 theme-text-muted text-sm">No hay productos.</div>
@@ -645,7 +645,7 @@
             <label class="block text-sm font-medium theme-text mb-2">Estado</label>
             <div class="grid grid-cols-2 gap-3">
               <button @click="editingBodega.activa = 1" class="py-3 rounded-xl border text-sm font-medium transition-all"
-                :class="editingBodega.activa == 1 ? 'border-green-500/40 bg-green-500/10 text-green-400' : 'theme-border theme-text-muted'">✓ Activa</button>
+                :class="editingBodega.activa == 1 ? 'border-green-500/40 bg-green-500/10 text-green-400' : 'theme-border theme-text-muted'"><Check class="w-4 h-4 inline-block mr-1" /> Activa</button>
               <button @click="editingBodega.activa = 0" class="py-3 rounded-xl border text-sm font-medium transition-all"
                 :class="editingBodega.activa == 0 ? 'border-red-500/40 bg-red-500/10 text-red-400' : 'theme-border theme-text-muted'">✕ Inactiva</button>
             </div>
@@ -697,7 +697,7 @@
             <input v-model="newBodega.password" type="password" placeholder="Mínimo 8 caracteres" class="w-full theme-bg border theme-border rounded-lg px-4 py-3 text-sm theme-text placeholder-text-muted focus:outline-none focus:border-accent transition-colors" />
           </div>
           <div class="rounded-lg border border-accent/20 bg-accent/5 p-3 flex items-start gap-2">
-            <span class="text-accent text-sm mt-0.5">ℹ️</span>
+            <span class="text-accent text-sm mt-0.5"><Info class="w-4 h-4 inline-block" /></span>
             <p class="text-xs theme-text-muted leading-relaxed">El gestor usará estas credenciales para ingresar al sistema y administrar el stock de su bodega.</p>
           </div>
           <p v-if="bodegaError" class="text-xs text-red-400 bg-red-500/10 border border-red-500/20 rounded-lg px-4 py-2.5">{{ bodegaError }}</p>
@@ -715,7 +715,7 @@
     <div v-if="showDeleteBodegaModal" class="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto py-6 px-4">
       <div class="fixed inset-0 bg-black/60 backdrop-blur-sm" @click="showDeleteBodegaModal = false"></div>
       <div class="relative card-dark rounded-2xl p-6 w-full max-w-sm my-auto shadow-2xl text-center">
-        <div class="w-14 h-14 rounded-full bg-red-500/10 border border-red-500/20 flex items-center justify-center mx-auto mb-4 text-2xl">🗑️</div>
+        <div class="w-14 h-14 rounded-full bg-red-500/10 border border-red-500/20 flex items-center justify-center mx-auto mb-4 text-2xl"><Trash2 class="w-4 h-4 inline-block" /></div>
         <h2 class="text-lg font-bold theme-text mb-2">Eliminar bodega</h2>
         <p class="theme-text-muted text-sm mb-1">¿Eliminar <span class="theme-text font-semibold">{{ deletingBodega?.nombre }}</span>?</p>
         <p v-if="deleteBodegaError" class="text-xs text-red-400 bg-red-500/10 border border-red-500/20 rounded-lg px-4 py-2.5 mb-2">{{ deleteBodegaError }}</p>
@@ -768,7 +768,7 @@
               <button v-for="role in roles" :key="role.id" @click="editingUsuario.rol = role.id"
                 class="flex flex-col items-center gap-1.5 p-3 rounded-xl border text-xs font-medium transition-all"
                 :class="editingUsuario.rol === role.id ? 'border-accent bg-accent/5 text-accent' : 'theme-border theme-text-muted hover:border-accent/40'">
-                <span class="text-lg">{{ role.icon }}</span>{{ role.label }}
+                <component :is="role.icon" class="text-lg inline-block" />{{ role.label }}
               </button>
             </div>
           </div>
@@ -794,7 +794,7 @@
     <div v-if="showDeleteUsuarioModal" class="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto py-6 px-4">
       <div class="fixed inset-0 bg-black/60 backdrop-blur-sm" @click="showDeleteUsuarioModal = false"></div>
       <div class="relative card-dark rounded-2xl p-6 w-full max-w-sm my-auto shadow-2xl text-center">
-        <div class="w-14 h-14 rounded-full bg-red-500/10 border border-red-500/20 flex items-center justify-center mx-auto mb-4 text-2xl">🗑️</div>
+        <div class="w-14 h-14 rounded-full bg-red-500/10 border border-red-500/20 flex items-center justify-center mx-auto mb-4 text-2xl"><Trash2 class="w-4 h-4 inline-block" /></div>
         <h2 class="text-lg font-bold theme-text mb-2">Eliminar usuario</h2>
         <p class="theme-text-muted text-sm mb-1">¿Eliminar a <span class="theme-text font-semibold">{{ deletingUsuario?.nombre }} {{ deletingUsuario?.apellido }}</span>?</p>
         <p class="text-xs theme-text-muted mb-6">Esta acción no se puede deshacer.</p>
@@ -843,7 +843,7 @@
               </div>
             </div>
             <p v-if="newComp.categoria" class="text-xs text-accent mt-1.5 flex items-center gap-1">
-              <span>✓</span> Categoría: {{ newComp.categoria }}
+              <span><Check class="w-4 h-4 inline-block mr-1" /></span> Categoría: {{ newComp.categoria }}
             </p>
           </div>
 
@@ -1016,7 +1016,7 @@
     <div v-if="showDeleteCompModal" class="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto py-6 px-4">
       <div class="fixed inset-0 bg-black/60 backdrop-blur-sm" @click="showDeleteCompModal = false"></div>
       <div class="relative card-dark rounded-2xl p-6 w-full max-w-sm my-auto shadow-2xl text-center">
-        <div class="w-14 h-14 rounded-full bg-red-500/10 border border-red-500/20 flex items-center justify-center mx-auto mb-4 text-2xl">🗑️</div>
+        <div class="w-14 h-14 rounded-full bg-red-500/10 border border-red-500/20 flex items-center justify-center mx-auto mb-4 text-2xl"><Trash2 class="w-4 h-4 inline-block" /></div>
         <h2 class="text-lg font-bold theme-text mb-2">Eliminar componente</h2>
         <p class="theme-text-muted text-sm mb-1">¿Estás seguro de que deseas eliminar</p>
         <p class="theme-text font-semibold mb-2">{{ deletingComp?.nombre }}?</p>
@@ -1034,7 +1034,7 @@
     <div v-if="showDeletePerfilModal" class="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto py-6 px-4">
       <div class="fixed inset-0 bg-black/60 backdrop-blur-sm" @click="showDeletePerfilModal = false"></div>
       <div class="relative card-dark rounded-2xl p-6 w-full max-w-sm my-auto shadow-2xl text-center">
-        <div class="w-14 h-14 rounded-full bg-red-500/10 border border-red-500/20 flex items-center justify-center mx-auto mb-4 text-2xl">🗑️</div>
+        <div class="w-14 h-14 rounded-full bg-red-500/10 border border-red-500/20 flex items-center justify-center mx-auto mb-4 text-2xl"><Trash2 class="w-4 h-4 inline-block" /></div>
         <h2 class="text-lg font-bold theme-text mb-2">Eliminar perfil</h2>
         <p class="theme-text-muted text-sm mb-1">¿Estás seguro de que deseas eliminar</p>
         <p class="theme-text font-semibold mb-2">{{ deletingPerfil?.nombre }}?</p>
@@ -1114,9 +1114,10 @@
 </template>
 
 <script setup>
+import { UserPlus, Check, Trash2, Pencil, Sun, Moon, Info, Package, Wrench, FileText, Shield, Briefcase, Gamepad2, Palette, BookOpen, Building2, Store, Users, Lock, ClipboardList, Crown, User } from '@lucide/vue'
 import { useTheme } from '../composables/useTheme'
 const { isDark, toggleTheme } = useTheme()
-import { ref, computed, onMounted } from 'vue'
+import { ref, markRaw, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuth } from '../composables/useAuth'
 import { useToast } from '../composables/useToast'
@@ -1137,28 +1138,28 @@ function handleTelefonoInput(obj, key) {
   obj[key] = formatTelefonoLocal(obj[key])
 }
 
-const API = '/api'
+import { API } from '@/config/api'
 const { getToken, logout, user } = useAuth()
 const router = useRouter()
 const toast = useToast()
 
 function handleLogout() { logout(); router.push('/login') }
 function formatDate(d) { return d ? new Date(d).toLocaleDateString('es-CL', { day: '2-digit', month: 'short', year: 'numeric' }) : '—' }
-function perfilLabel(p) { return ({ office: '💼 Oficina', gaming: '🎮 Gaming', design: '🎨 Diseño', study: '📚 Estudio' })[p] ?? p ?? '—' }
+function perfilLabel(p) { return ({ office: 'Oficina', gaming: 'Gaming', design: 'Diseño', study: 'Estudio' })[p] ?? p ?? '—' }
 
 // ── Secciones ─────────────────────────────────────────────
 const activeSection = ref('proveedores')
 
 const sections = computed(() => [
-  { id: 'proveedores',       icon: '🏢', label: 'Proveedores',       description: `${proveedores.value.length} proveedores`,       cta: '+ Agregar proveedor', count: proveedores.value.length   },
-  { id: 'bodegas',           icon: '🏪', label: 'Bodegas',           description: `${bodegas.value.length} bodegas`,               cta: '+ Agregar bodega',                  count: bodegas.value.length        },
-  { id: 'catalogo',          icon: '📦', label: 'Catálogo Base',     description: 'Productos predefinidos',                        cta: '+ Añadir Producto',   count: null                        },
-  { id: 'componentes',       icon: '🔧', label: 'Componentes',       description: `${componentes.value.length} componentes en inventario`, cta: '+ Nuevo Componente Maestro', count: componentes.value.length    },
-  { id: 'cotizaciones',      icon: '📄', label: 'Cotizaciones',      description: `${cotizaciones.value.length} cotizaciones`,     cta: null,                  count: cotizaciones.value.length   },
-  { id: 'crear-usuario',     icon: '➕', label: 'Crear usuario',     description: 'Registrar nuevo usuario',                       cta: null,                  count: null                        },
-  { id: 'gestionar-usuarios',icon: '👥', label: 'Gestionar usuarios',description: `${usuarios.value.length} usuarios`,            cta: '+ Crear usuario',     count: usuarios.value.length       },
-  { id: 'perfiles',          icon: '🔐', label: 'Perfiles y Permisos',description: `${perfiles.value.length} perfiles`,           cta: '+ Crear perfil',      count: perfiles.value.length       },
-  { id: 'historial',         icon: '📋', label: 'Historial',         description: 'Registro global de acciones',                   cta: null,                  count: historial.value.length      },
+  { id: 'proveedores',       icon: markRaw(Building2), label: 'Proveedores',       description: `${proveedores.value.length} proveedores`,       cta: '+ Agregar proveedor', count: proveedores.value.length   },
+  { id: 'bodegas',           icon: markRaw(Store), label: 'Bodegas',           description: `${bodegas.value.length} bodegas`,               cta: '+ Agregar bodega',                  count: bodegas.value.length        },
+  { id: 'catalogo',          icon: markRaw(Package), label: 'Catálogo Base',     description: 'Productos predefinidos',                        cta: '+ Añadir Producto',   count: null                        },
+  { id: 'componentes',       icon: markRaw(Wrench), label: 'Componentes',       description: `${componentes.value.length} componentes en inventario`, cta: '+ Nuevo Componente Maestro', count: componentes.value.length    },
+  { id: 'cotizaciones',      icon: markRaw(FileText), label: 'Cotizaciones',      description: `${cotizaciones.value.length} cotizaciones`,     cta: null,                  count: cotizaciones.value.length   },
+  { id: 'crear-usuario',     icon: markRaw(UserPlus), label: 'Crear usuario',     description: 'Registrar nuevo usuario',                       cta: null,                  count: null                        },
+  { id: 'gestionar-usuarios',icon: markRaw(Users), label: 'Gestionar usuarios',description: `${usuarios.value.length} usuarios`,            cta: '+ Crear usuario',     count: usuarios.value.length       },
+  { id: 'perfiles',          icon: markRaw(Lock), label: 'Perfiles y Permisos',description: `${perfiles.value.length} perfiles`,           cta: '+ Crear perfil',      count: perfiles.value.length       },
+  { id: 'historial',         icon: markRaw(ClipboardList), label: 'Historial',         description: 'Registro global de acciones',                   cta: null,                  count: historial.value.length      },
 ])
 
 const currentSection = computed(() => sections.value.find(s => s.id === activeSection.value))
@@ -1174,9 +1175,9 @@ function handleCta() {
 
 // ── Estilos ───────────────────────────────────────────────
 const roles = [
-  { id: 'superadmin', icon: '👑', label: 'Superadmin' },
-  { id: 'admin',      icon: '🛡️', label: 'Admin'      },
-  { id: 'cliente',    icon: '👤', label: 'Cliente'    },
+  { id: 'superadmin', icon: markRaw(Crown), label: 'Superadmin' },
+  { id: 'admin',      icon: markRaw(Shield), label: 'Admin'      },
+  { id: 'cliente',    icon: markRaw(User), label: 'Cliente'    },
 ]
 
 const roleStyles = {
@@ -1206,6 +1207,12 @@ const savingEditProveedor = ref(false)
 const editProveedorError = ref('')
 const editingProveedor = ref({})
 
+/**
+
+ * Propiedad computada que filtra dinámicamente los registros basándose en los criterios de búsqueda.
+
+ */
+
 const filteredProveedores = computed(() => {
   if (!filterProveedor.value.trim()) return proveedores.value
   const q = filterProveedor.value.toLowerCase()
@@ -1217,6 +1224,14 @@ const filteredProveedores = computed(() => {
   )
 })
 
+/**
+
+ * Obtiene datos desde el backend mediante API.
+
+ * Mantiene sincronizada la vista con la base de datos.
+
+ */
+
 async function fetchProveedores() {
   loadingProveedores.value = true
   try {
@@ -1226,11 +1241,23 @@ async function fetchProveedores() {
   } catch(e) { console.error(e) } finally { loadingProveedores.value = false }
 }
 
+/**
+
+ * Abre el modal correspondiente e inicializa los datos necesarios.
+
+ */
+
 function openProveedorModal() {
   newProveedor.value = { razon_social: '', identificacion_legal: '', nombre: '', correo: '', password: '', documento: null }
   proveedorError.value = ''
   showProveedorModal.value = true
 }
+
+/**
+
+ * Cierra el modal activo y limpia los errores.
+
+ */
 
 function closeProveedorModal() {
   showProveedorModal.value = false
@@ -1243,6 +1270,14 @@ function handleFileChange(event) {
     newProveedor.value.documento = file
   }
 }
+
+/**
+
+ * Valida y envía los datos del formulario al backend (POST/PUT).
+
+ * Maneja la lógica de guardado y muestra feedback al usuario.
+
+ */
 
 async function saveNewProveedor() {
   proveedorError.value = ''
@@ -1313,6 +1348,12 @@ async function cambiarEstadoProveedor(p, estadoNuevo) {
   }
 }
 
+/**
+
+ * Alterna el estado (activo/inactivo) de un elemento en la base de datos.
+
+ */
+
 async function toggleActivoProveedor(p) {
   const activaNuevo = p.activo == 1 ? 0 : 1;
   try {
@@ -1353,6 +1394,14 @@ const openEditProveedor = (p) => {
 }
 
 // ... remove Asignar Catalogo variables ...
+
+/**
+
+ * Valida y envía los datos del formulario al backend (POST/PUT).
+
+ * Maneja la lógica de guardado y muestra feedback al usuario.
+
+ */
 
 async function saveEditProveedor() {
   editProveedorError.value = ''
@@ -1413,11 +1462,25 @@ const editBodegaError    = ref('')
 const savingEditBodega   = ref(false)
 const savingDeleteBodega = ref(false)
 
+/**
+
+ * Propiedad computada que filtra dinámicamente los registros basándose en los criterios de búsqueda.
+
+ */
+
 const filteredBodegas = computed(() => {
   if (!filterBodega.value.trim()) return bodegas.value
   const q = filterBodega.value.toLowerCase()
   return bodegas.value.filter(b => b.nombre.toLowerCase().includes(q) || b.correo.toLowerCase().includes(q))
 })
+
+/**
+
+ * Obtiene datos desde el backend mediante API.
+
+ * Mantiene sincronizada la vista con la base de datos.
+
+ */
 
 async function fetchBodegas() {
   loadingBodegas.value = true
@@ -1439,6 +1502,14 @@ function openEditBodega(b) {
   editBodegaError.value = ''; 
   showEditBodegaModal.value = true 
 }
+
+/**
+
+ * Valida y envía los datos del formulario al backend (POST/PUT).
+
+ * Maneja la lógica de guardado y muestra feedback al usuario.
+
+ */
 
 async function saveEditBodega() {
   editBodegaError.value = ''
@@ -1483,6 +1554,12 @@ async function saveEditBodega() {
   } finally { savingEditBodega.value = false }
 }
 
+/**
+
+ * Alterna el estado (activo/inactivo) de un elemento en la base de datos.
+
+ */
+
 async function toggleBodega(b) {
   const activaNuevo = b.activa == 1 ? 0 : 1
   try {
@@ -1506,6 +1583,12 @@ function openDeleteBodega(b) {
   deleteBodegaError.value = '';
   showDeleteBodegaModal.value = true
 }
+
+/**
+
+ * Confirma y procesa la eliminación de un registro mediante la API.
+
+ */
 
 async function confirmDeleteBodega() {
   deleteBodegaError.value = ''
@@ -1533,14 +1616,34 @@ async function confirmDeleteBodega() {
   } finally { savingDeleteBodega.value = false }
 }
 
+/**
+
+ * Cierra el modal activo y limpia los errores.
+
+ */
+
 function closeUserModal() {
   showUserModal.value = false
 }
+
+/**
+
+ * Cierra el modal activo y limpia los errores.
+
+ */
 
 function closeBodegaModal() {
   showBodegaModal.value = false
   bodegaError.value = ''
 }
+
+/**
+
+ * Valida y envía los datos del formulario al backend (POST/PUT).
+
+ * Maneja la lógica de guardado y muestra feedback al usuario.
+
+ */
 
 async function saveNewBodega() {
   bodegaError.value = ''
@@ -1604,11 +1707,25 @@ function handleEditCompImageChange(e) {
   if (e.target.files[0]) editingComp.value.imagen = e.target.files[0];
 }
 
+/**
+
+ * Propiedad computada que filtra el catálogo de productos disponible en tiempo real.
+
+ */
+
 const productosFiltrados = computed(() => {
   if (!productoSearch.value) return productosCatalogo.value
   const q = productoSearch.value.toLowerCase()
   return productosCatalogo.value.filter(p => p.nombre.toLowerCase().includes(q) || p.categoria.toLowerCase().includes(q))
 })
+
+/**
+
+ * Obtiene datos desde el backend mediante API.
+
+ * Mantiene sincronizada la vista con la base de datos.
+
+ */
 
 async function fetchProductosCatalogo() {
   try {
@@ -1618,6 +1735,12 @@ async function fetchProductosCatalogo() {
   } catch(e) { console.error(e) }
 }
 
+/**
+
+ * Abre el modal correspondiente e inicializa los datos necesarios.
+
+ */
+
 function openAddModal() {
   newComp.value = { producto_id: '', nombre: '', categoria: '', especificacion: '', nucleos: '', hilos: '', frecuencia_hz: '', enfoque_uso: '', gama: 'media', imagen: null }
   addCompError.value = ''
@@ -1626,6 +1749,12 @@ function openAddModal() {
   if (productosCatalogo.value.length === 0) fetchProductosCatalogo()
   showAddCompModal.value = true
 }
+
+/**
+
+ * Cierra el modal activo y limpia los errores.
+
+ */
 
 function closeAddModal() {
   showAddCompModal.value = false
@@ -1639,6 +1768,14 @@ function selectProducto(prod) {
   productoSearch.value = prod.nombre
   showProductoDropdown.value = false
 }
+
+/**
+
+ * Valida y envía los datos del formulario al backend (POST/PUT).
+
+ * Maneja la lógica de guardado y muestra feedback al usuario.
+
+ */
 
 async function saveNewComp() {
   addCompError.value = ''
@@ -1688,6 +1825,15 @@ const filterEnfoque = ref('')
 const filterGama = ref('')
 
 
+/**
+
+
+ * Propiedad computada que filtra dinámicamente los registros basándose en los criterios de búsqueda.
+
+
+ */
+
+
 const filteredComponentes = computed(() => {
   let result = componentes.value.filter(c => c.bodega_id === null)
   
@@ -1705,6 +1851,14 @@ const filteredComponentes = computed(() => {
   
   return result
 })
+
+/**
+
+ * Obtiene datos desde el backend mediante API.
+
+ * Mantiene sincronizada la vista con la base de datos.
+
+ */
 
 async function fetchComponentes() {
   loadingComponentes.value = true
@@ -1776,11 +1930,23 @@ async function saveCatalogoProveedor() {
   showCatalogoModal.value = false
 }
 
+/**
+ * Propiedad computada que filtra dinámicamente los registros basándose en los criterios de búsqueda.
+ */
+
 const filteredCatalogoList = computed(() => {
   if (!filterCatalogo.value.trim()) return catalogoList.value
   const q = filterCatalogo.value.toLowerCase()
   return catalogoList.value.filter(p => p.nombre.toLowerCase().includes(q) || p.categoria.toLowerCase().includes(q))
 })
+
+/**
+
+ * Obtiene datos desde el backend mediante API.
+
+ * Mantiene sincronizada la vista con la base de datos.
+
+ */
 
 async function fetchCatalogo() {
   loadingCatalogo.value = true
@@ -1794,6 +1960,14 @@ async function fetchCatalogo() {
     loadingCatalogo.value = false
   }
 }
+
+/**
+
+ * Valida y envía los datos del formulario al backend (POST/PUT).
+
+ * Maneja la lógica de guardado y muestra feedback al usuario.
+
+ */
 
 async function saveNewProducto() {
   addProductoError.value = ''
@@ -1823,6 +1997,14 @@ async function saveNewProducto() {
     savingProducto.value = false
   }
 }
+
+/**
+
+ * Valida y envía los datos del formulario al backend (POST/PUT).
+
+ * Maneja la lógica de guardado y muestra feedback al usuario.
+
+ */
 
 async function saveEditComp() {
   editCompError.value = ''
@@ -1878,6 +2060,12 @@ async function saveEditComp() {
   }
 }
 
+/**
+
+ * Alterna el estado (activo/inactivo) de un elemento en la base de datos.
+
+ */
+
 async function toggleComponente(c) {
   const activo = c.activo == 1 ? 0 : 1
   try {
@@ -1897,6 +2085,12 @@ function openDeleteComp(c) {
   deletingComp.value = c
   showDeleteCompModal.value = true
 }
+
+/**
+
+ * Confirma y procesa la eliminación de un registro mediante la API.
+
+ */
 
 async function confirmDeleteComp() {
   savingDeleteComp.value = true
@@ -1924,6 +2118,14 @@ async function confirmDeleteComp() {
 const cotizaciones       = ref([])
 const loadingCotizaciones = ref(false)
 
+/**
+
+ * Obtiene datos desde el backend mediante API.
+
+ * Mantiene sincronizada la vista con la base de datos.
+
+ */
+
 async function fetchCotizaciones() {
   loadingCotizaciones.value = true
   try {
@@ -1949,11 +2151,25 @@ const createUserSuccess     = ref('')
 const savingUser            = ref(false)
 const newUser = ref({ rol: 'cliente', nombre: '', apellido: '', correo: '', telefono: '', password: '' })
 
+/**
+
+ * Propiedad computada que filtra dinámicamente los registros basándose en los criterios de búsqueda.
+
+ */
+
 const filteredUsuarios = computed(() => {
   if (!filterUsuario.value.trim()) return usuarios.value
   const q = filterUsuario.value.toLowerCase()
   return usuarios.value.filter(u => u.nombre.toLowerCase().includes(q) || u.correo.toLowerCase().includes(q) || u.apellido?.toLowerCase().includes(q))
 })
+
+/**
+
+ * Obtiene datos desde el backend mediante API.
+
+ * Mantiene sincronizada la vista con la base de datos.
+
+ */
 
 async function fetchUsuarios() {
   loadingUsuarios.value = true
@@ -1968,6 +2184,14 @@ function resetNewUser() {
   newUser.value = { rol: 'cliente', nombre: '', apellido: '', correo: '', telefono: '', password: '' }
   createUserError.value = ''; createUserSuccess.value = ''
 }
+
+/**
+
+ * Valida y envía los datos del formulario al backend (POST/PUT).
+
+ * Maneja la lógica de guardado y muestra feedback al usuario.
+
+ */
 
 async function saveNewUser() {
   createUserError.value = ''; createUserSuccess.value = ''
@@ -2014,6 +2238,14 @@ function openEditUsuario(u) {
   showEditUsuarioModal.value = true 
 }
 
+/**
+
+ * Valida y envía los datos del formulario al backend (POST/PUT).
+
+ * Maneja la lógica de guardado y muestra feedback al usuario.
+
+ */
+
 async function saveEditUsuario() {
   editUsuarioError.value = ''
   if (editingUsuario.value.telefonoLocal) {
@@ -2052,6 +2284,12 @@ async function saveEditUsuario() {
 
 function openDeleteUsuario(u) { deletingUsuario.value = u; showDeleteUsuarioModal.value = true }
 
+/**
+
+ * Confirma y procesa la eliminación de un registro mediante la API.
+
+ */
+
 async function confirmDeleteUsuario() {
   savingDeleteUsuario.value = true
   try {
@@ -2067,6 +2305,12 @@ async function confirmDeleteUsuario() {
     showDeleteUsuarioModal.value = false
   } catch(e) { console.error(e) } finally { savingDeleteUsuario.value = false }
 }
+
+/**
+
+ * Alterna el estado (activo/inactivo) de un elemento en la base de datos.
+
+ */
 
 async function toggleActivoUsuario(u) {
   const activoNuevo = u.activo == 1 ? 0 : 1
@@ -2098,6 +2342,14 @@ async function toggleActivoUsuario(u) {
 const historial = ref([])
 const loadingHistorial = ref(false)
 
+/**
+
+ * Obtiene datos desde el backend mediante API.
+
+ * Mantiene sincronizada la vista con la base de datos.
+
+ */
+
 async function fetchHistorial() {
   loadingHistorial.value = true
   try {
@@ -2120,6 +2372,14 @@ const savingDeletePerfil = ref(false)
 const perfilError = ref('')
 const availablePermisos = ref({})
 
+/**
+
+ * Obtiene datos desde el backend mediante API.
+
+ * Mantiene sincronizada la vista con la base de datos.
+
+ */
+
 async function fetchPerfiles() {
   loadingPerfiles.value = true
   try {
@@ -2128,6 +2388,14 @@ async function fetchPerfiles() {
     if (res.ok) perfiles.value = data.perfiles || data
   } catch(e) { console.error(e) } finally { loadingPerfiles.value = false }
 }
+
+/**
+
+ * Obtiene datos desde el backend mediante API.
+
+ * Mantiene sincronizada la vista con la base de datos.
+
+ */
 
 async function fetchPermisosDisponibles() {
   try {
@@ -2147,16 +2415,36 @@ function openEditPerfil(p = null) {
   showPerfilModal.value = true
 }
 
+/**
+
+ * Cierra el modal activo y limpia los errores.
+
+ */
+
 function closePerfilModal() {
   showPerfilModal.value = false
   perfilError.value = ''
 }
+
+/**
+
+ * Alterna el estado (activo/inactivo) de un elemento en la base de datos.
+
+ */
 
 function togglePermiso(code) {
   const idx = editingPerfil.value.permisos.indexOf(code)
   if (idx === -1) editingPerfil.value.permisos.push(code)
   else editingPerfil.value.permisos.splice(idx, 1)
 }
+
+/**
+
+ * Valida y envía los datos del formulario al backend (POST/PUT).
+
+ * Maneja la lógica de guardado y muestra feedback al usuario.
+
+ */
 
 async function savePerfil() {
   perfilError.value = ''
@@ -2187,6 +2475,12 @@ async function savePerfil() {
     savingPerfil.value = false
   }
 }
+
+/**
+
+ * Confirma y procesa la eliminación de un registro mediante la API.
+
+ */
 
 function confirmDeletePerfilAction(p) {
   deletingPerfil.value = p

@@ -3,7 +3,7 @@
 
     <!-- Sin componentes -->
     <div v-if="Object.keys(selectedComponents).length === 0" class="text-center py-24">
-      <div class="text-5xl mb-4">🖥️</div>
+      <Monitor class="w-16 h-16 mx-auto mb-4 text-accent/50" />
       <p class="theme-text font-semibold text-lg mb-2">No hay componentes seleccionados</p>
       <p class="theme-text-muted text-sm mb-6">Vuelve al armador y selecciona los componentes de tu PC</p>
       <router-link to="/armar" class="btn-primary text-sm">← Ir al armador</router-link>
@@ -19,15 +19,16 @@
         </div>
         <div class="flex items-center gap-3 w-full sm:w-auto">
           <router-link to="/armar" class="btn-secondary text-sm flex-1 sm:flex-none text-center">← Editar build</router-link>
-          <button @click="saveCotizacion" :disabled="saving" class="btn-primary text-sm flex-1 sm:flex-none">
-            {{ saving ? 'Guardando...' : '💾 Guardar cotización' }}
+          <button @click="saveCotizacion" :disabled="saving" class="btn-primary text-sm flex-1 sm:flex-none flex items-center justify-center gap-2">
+            <template v-if="saving">Guardando...</template>
+            <template v-else><Save class="w-4 h-4" /> Guardar cotización</template>
           </button>
         </div>
       </div>
 
       <!-- Success -->
       <div v-if="saveSuccess" class="mb-6 px-4 py-3 rounded-lg bg-green-500/10 border border-green-500/20 text-green-400 text-sm">
-        <p class="font-bold mb-1">✓ Cotización guardada correctamente</p>
+        <p class="font-bold mb-1 flex items-center gap-1"><Check class="w-4 h-4" /> Cotización guardada correctamente</p>
         <p>Tu código de cotización es: <strong class="font-mono text-white">{{ generatedCode }}</strong></p>
         <p class="mt-1 opacity-80">Hemos enviado un correo con el PDF detallado de tu cotización.</p>
       </div>
@@ -53,7 +54,7 @@
               >
                 <!-- Icon -->
                 <div class="w-9 h-9 rounded-lg bg-accent/10 flex items-center justify-center text-accent text-sm flex-shrink-0">
-                  {{ item.step.icon }}
+                  <component :is="item.step.icon" class="w-5 h-5" />
                 </div>
 
                 <!-- Info -->
@@ -114,7 +115,7 @@
                 @click="goToStep(step)"
                 class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-dashed theme-border theme-text-muted hover:border-accent hover:text-accent transition-all text-xs bg-white/50 dark:bg-transparent"
               >
-                {{ step.icon }} {{ step.label }} →
+                <component :is="step.icon" class="w-4 h-4" /> {{ step.label }} →
               </button>
             </div>
           </div>
@@ -161,18 +162,19 @@
                 <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
                 <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
               </svg>
-              {{ saving ? 'Guardando...' : '💾 Guardar cotización' }}
+              <template v-if="saving">Guardando...</template>
+              <template v-else><Save class="w-4 h-4" /> Guardar cotización</template>
             </button>
             <router-link to="/armar" class="btn-secondary w-full text-sm text-center block">
               ← Volver al armador
             </router-link>
-            <button @click="clearAll(); $router.push('/armar')" class="w-full text-sm py-2 rounded-lg theme-text-muted hover:text-red-500 hover:bg-red-500/10 border theme-border transition-colors">
-              🗑️ Empezar de nuevo
+            <button @click="clearAll(); $router.push('/armar')" class="w-full text-sm py-2 rounded-lg theme-text-muted hover:text-red-500 hover:bg-red-500/10 border theme-border transition-colors flex items-center justify-center gap-2">
+              <Trash2 class="w-4 h-4" /> Empezar de nuevo
             </button>
           </div>
 
           <div class="rounded-xl border border-amber-500/30 bg-amber-50 dark:bg-yellow-500/5 p-4">
-            <p class="text-amber-700 dark:text-yellow-400 text-xs font-medium mb-1">⚠️ Nota importante</p>
+            <p class="text-amber-700 dark:text-yellow-400 text-xs font-medium mb-1 flex items-center gap-1"><AlertTriangle class="w-3 h-3" /> Nota importante</p>
             <p class="text-amber-600/80 dark:text-text-muted text-xs leading-relaxed">
               Los precios son referenciales y pueden variar. Verifica disponibilidad antes de comprar.
             </p>
@@ -187,10 +189,11 @@
 <script setup>
 import { computed, ref } from 'vue'
 import { useRouter } from 'vue-router'
+import { Monitor, Save, Check, Trash2, AlertTriangle } from '@lucide/vue'
 import { useBuilder } from '../composables/useBuilder'
 import { useAuth } from '../composables/useAuth'
 
-const API = '/api'
+import { API } from '@/config/api'
 const router = useRouter()
 const { steps, selectedComponents, totalPrice, perfil, removeItem, clearAll, updateQuantity } = useBuilder()
 const { getToken } = useAuth()
@@ -225,6 +228,14 @@ function goToStep(step) {
   const index = steps.findIndex(s => s.id === step.id)
   router.push({ path: '/armar', query: { step: index } })
 }
+
+/**
+
+ * Valida y envía los datos del formulario al backend (POST/PUT).
+
+ * Maneja la lógica de guardado y muestra feedback al usuario.
+
+ */
 
 async function saveCotizacion() {
   saveError.value = ''

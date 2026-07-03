@@ -21,7 +21,7 @@
             ? 'bg-accent/10 text-accent border border-accent/20'
             : 'theme-text-muted hover:theme-text hover:theme-card'"
         >
-          <span>{{ section.icon }}</span>
+          <component :is="section.icon" class="w-5 h-5 inline-block" />
           {{ section.label }}
           <span v-if="section.count !== null" class="ml-auto text-xs font-mono opacity-60">{{ section.count }}</span>
         </button>
@@ -34,8 +34,8 @@
           <p class="theme-text-muted text-xs truncate">{{ user?.correo }}</p>
         </div>
         <button @click="toggleTheme" class="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm theme-text-muted hover:theme-text hover:theme-card transition-all duration-150">
-          <span v-if="isDark">☀️ Modo claro</span>
-          <span v-else>🌙 Modo oscuro</span>
+          <span v-if="isDark"><Sun class="w-4 h-4 inline-block mr-1" /> Modo claro</span>
+          <span v-else><Moon class="w-4 h-4 inline-block mr-1" /> Modo oscuro</span>
         </button>
         <button @click="handleLogout" class="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm theme-text-muted hover:theme-text hover:theme-card transition-all duration-150">
           ← Cerrar sesión
@@ -173,7 +173,7 @@
                 <div class="flex items-center gap-3">
                   <input v-model="filterComponente" type="text" placeholder="Buscar..." class="theme-bg border theme-border rounded-lg px-4 py-2 text-sm theme-text placeholder-text-muted focus:outline-none focus:border-accent transition-colors w-48" />
                   <button @click="showAdvancedFilters = !showAdvancedFilters" class="btn-secondary text-sm px-4 py-2 flex items-center gap-2">
-                    <span>⚙️</span> Filtros
+                    <span><Settings class="w-4 h-4 inline-block mr-1" /></span> Filtros
                   </button>
                 </div>
               </div>
@@ -275,7 +275,7 @@
                   </div>
                 </div>
                 <p v-if="newComp.categoria" class="text-xs text-accent mt-1.5 flex items-center gap-1">
-                  <span>✓</span> Categoría: {{ newComp.categoria }}
+                  <span><Check class="w-4 h-4 inline-block mr-1" /></span> Categoría: {{ newComp.categoria }}
                 </p>
               </div>
 
@@ -334,7 +334,7 @@
             <label class="block text-sm font-medium theme-text mb-2">Estado</label>
             <div class="grid grid-cols-2 gap-3">
               <button @click="editingBodega.activa = 1" class="py-3 rounded-xl border text-sm font-medium transition-all"
-                :class="editingBodega.activa == 1 ? 'border-green-500/40 bg-green-500/10 text-green-400' : 'theme-border theme-text-muted hover:border-green-500/30'">✓ Activa</button>
+                :class="editingBodega.activa == 1 ? 'border-green-500/40 bg-green-500/10 text-green-400' : 'theme-border theme-text-muted hover:border-green-500/30'"><Check class="w-4 h-4 inline-block mr-1" /> Activa</button>
               <button @click="editingBodega.activa = 0" class="py-3 rounded-xl border text-sm font-medium transition-all"
                 :class="editingBodega.activa == 0 ? 'border-red-500/40 bg-red-500/10 text-red-400' : 'theme-border theme-text-muted hover:border-red-500/30'">✕ Inactiva</button>
             </div>
@@ -352,7 +352,7 @@
     <div v-if="showDeleteBodegaModal" class="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto py-6 px-4">
       <div class="fixed inset-0 bg-black/60 backdrop-blur-sm" @click="showDeleteBodegaModal = false"></div>
       <div class="relative card-dark rounded-2xl p-6 w-full max-w-sm my-auto shadow-2xl text-center">
-        <div class="w-14 h-14 rounded-full bg-red-500/10 border border-red-500/20 flex items-center justify-center mx-auto mb-4 text-2xl">🗑️</div>
+        <div class="w-14 h-14 rounded-full bg-red-500/10 border border-red-500/20 flex items-center justify-center mx-auto mb-4 text-2xl"><Trash2 class="w-4 h-4 inline-block" /></div>
         <h2 class="text-lg font-bold text-text-primary mb-2">Eliminar bodega</h2>
         <p class="text-text-muted text-sm mb-1">¿Eliminar <span class="text-text-primary font-semibold">{{ deletingBodega?.nombre }}</span>?</p>
         <p class="text-xs text-text-muted mb-6 px-4">Se eliminarán también todos sus componentes.</p>
@@ -405,7 +405,7 @@
     <div v-if="showDeleteModal" class="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto py-6 px-4">
       <div class="fixed inset-0 bg-black/60 backdrop-blur-sm" @click="showDeleteModal = false"></div>
       <div class="relative card-dark rounded-2xl p-6 w-full max-w-sm my-auto shadow-2xl text-center">
-        <div class="w-14 h-14 rounded-full bg-red-500/10 border border-red-500/20 flex items-center justify-center mx-auto mb-4 text-2xl">🗑️</div>
+        <div class="w-14 h-14 rounded-full bg-red-500/10 border border-red-500/20 flex items-center justify-center mx-auto mb-4 text-2xl"><Trash2 class="w-4 h-4 inline-block" /></div>
         <h2 class="text-lg font-bold text-text-primary mb-2">Eliminar componente</h2>
         <p class="text-text-muted text-sm mb-1">¿Estás seguro de que deseas eliminar</p>
         <p class="text-text-primary font-semibold mb-2">{{ deletingComp?.nombre }}?</p>
@@ -423,30 +423,31 @@
 </template>
 
 <script setup>
+import { Check, Trash2, Sun, Moon, Wrench, FileText, Briefcase, Gamepad2, Palette, BookOpen, Store, Settings } from '@lucide/vue'
 import { useTheme } from '../composables/useTheme'
 const { isDark, toggleTheme } = useTheme()
-import { ref, computed, onMounted } from 'vue'
+import { ref, markRaw, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuth } from '../composables/useAuth'
 import { useToast } from '../composables/useToast'
 
-const API = '/api'
+import { API } from '@/config/api'
 const { getToken, logout, user } = useAuth()
 const router = useRouter()
 const toast = useToast()
 
 function handleLogout() { logout(); router.push('/login') }
 function formatDate(d) { return d ? new Date(d).toLocaleDateString('es-CL', { day: '2-digit', month: 'short', year: 'numeric' }) : '—' }
-function perfilLabel(p) { return ({ office: '💼 Oficina', gaming: '🎮 Gaming', design: '🎨 Diseño', study: '📚 Estudio' })[p] ?? p ?? '—' }
+function perfilLabel(p) { return ({ office: 'Oficina', gaming: 'Gaming', design: 'Diseño', study: 'Estudio' })[p] ?? p ?? '—' }
 
 // ── Secciones ─────────────────────────────────────────────
 const activeSection = ref('dashboard')
 
 const sections = computed(() => [
   { id: 'dashboard',    icon: '📊', label: 'Dashboard',    description: 'Resumen general de tus bodegas',           cta: null,            count: null                  },
-  { id: 'bodegas',      icon: '🏬', label: 'Bodegas asociadas',  description: `${bodegas.value.length} bodegas asociadas`, cta: null, count: bodegas.value.length  },
-  { id: 'componentes',  icon: '🔧', label: 'Componentes',  description: `Componentes de tus bodegas`,               cta: '+ Nuevo componente', count: componentes.value.length },
-  { id: 'cotizaciones', icon: '📄', label: 'Cotizaciones', description: 'Cotizaciones de tus bodegas',              cta: null,            count: cotizaciones.value.length },
+  { id: 'bodegas',      icon: markRaw(Store), label: 'Bodegas asociadas',  description: `${bodegas.value.length} bodegas asociadas`, cta: '+ Nueva bodega', count: bodegas.value.length  },
+  { id: 'componentes',  icon: markRaw(Wrench), label: 'Componentes',  description: `Componentes de tus bodegas`,               cta: '+ Nuevo componente', count: componentes.value.length },
+  { id: 'cotizaciones', icon: markRaw(FileText), label: 'Cotizaciones', description: 'Cotizaciones de tus bodegas',              cta: null,            count: cotizaciones.value.length },
 ])
 
 const tierStyles = {
@@ -476,11 +477,25 @@ const savingEditBodega   = ref(false)
 const savingDeleteBodega = ref(false)
 const deleteBodegaError  = ref('')
 
+/**
+
+ * Propiedad computada que filtra dinámicamente los registros basándose en los criterios de búsqueda.
+
+ */
+
 const filteredBodegas = computed(() => {
   if (!filterBodega.value.trim()) return bodegas.value
   const q = filterBodega.value.toLowerCase()
   return bodegas.value.filter(b => b.nombre.toLowerCase().includes(q) || b.correo.toLowerCase().includes(q))
 })
+
+/**
+
+ * Obtiene datos desde el backend mediante API.
+
+ * Mantiene sincronizada la vista con la base de datos.
+
+ */
 
 async function fetchBodegas() {
   loadingBodegas.value = true
@@ -491,8 +506,44 @@ async function fetchBodegas() {
   } catch(e) { console.error(e) } finally { loadingBodegas.value = false }
 }
 
+/**
+ * Valida y envía los datos del formulario al backend (POST/PUT).
+ * Maneja la lógica de guardado y muestra feedback al usuario.
+ */
+async function saveNewBodega() {
+  bodegaError.value = ''
+  if (!newBodega.value.nombre || !newBodega.value.correo || !newBodega.value.password)
+    return bodegaError.value = 'Nombre, correo y contraseña son requeridos'
+  savingBodega.value = true
+  try {
+    const res = await fetch(`${API}/bodegas`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Accept: 'application/json', Authorization: `Bearer ${getToken()}` },
+      body: JSON.stringify(newBodega.value)
+    })
+    const data = await res.json()
+    if (!res.ok) {
+      toast.error(data.message ?? 'Error al crear')
+      return bodegaError.value = data.message ?? 'Error al crear'
+    }
+    await fetchBodegas()
+    showBodegaModal.value = false
+    toast.success('Bodega agregada exitosamente')
+  } catch(e) { 
+    bodegaError.value = 'Error de conexión'
+    toast.error('Error de conexión')
+  } finally { savingBodega.value = false }
+}
 
 function openEditBodega(b) { editingBodega.value = { ...b }; editBodegaError.value = ''; showEditBodegaModal.value = true }
+
+/**
+
+ * Valida y envía los datos del formulario al backend (POST/PUT).
+
+ * Maneja la lógica de guardado y muestra feedback al usuario.
+
+ */
 
 async function saveEditBodega() {
   editBodegaError.value = ''
@@ -520,6 +571,12 @@ async function saveEditBodega() {
 
 function openDeleteBodega(b) { deletingBodega.value = b; deleteBodegaError.value = ''; showDeleteBodegaModal.value = true }
 
+/**
+
+ * Confirma y procesa la eliminación de un registro mediante la API.
+
+ */
+
 async function confirmDeleteBodega() {
   deleteBodegaError.value = ''
   savingDeleteBodega.value = true
@@ -542,6 +599,12 @@ async function confirmDeleteBodega() {
     savingDeleteBodega.value = false 
   }
 }
+
+/**
+
+ * Alterna el estado (activo/inactivo) de un elemento en la base de datos.
+
+ */
 
 async function toggleActivoBodega(b) {
   const activaNuevo = b.activa == 1 ? 0 : 1
@@ -571,6 +634,14 @@ async function toggleActivoBodega(b) {
 const cotizaciones        = ref([])
 const loadingCotizaciones = ref(false)
 
+/**
+
+ * Obtiene datos desde el backend mediante API.
+
+ * Mantiene sincronizada la vista con la base de datos.
+
+ */
+
 async function fetchCotizaciones() {
   loadingCotizaciones.value = true
   try {
@@ -595,6 +666,12 @@ const filterEnfoque = ref('')
 const filterNucleos = ref('')
 const filterHilos = ref('')
 const filterFrecuenciaMin = ref('')
+
+/**
+
+ * Propiedad computada que filtra dinámicamente los registros basándose en los criterios de búsqueda.
+
+ */
 
 const filteredComponentes = computed(() => {
   let result = [...componentes.value]
@@ -624,6 +701,12 @@ const categoriasBase = ref([])
 const productoSearch = ref('')
 const showProductoDropdown = ref(false)
 
+/**
+
+ * Propiedad computada que filtra el catálogo de productos disponible en tiempo real.
+
+ */
+
 const productosFiltrados = computed(() => {
   if (!productoSearch.value.trim()) return categoriasBase.value.slice(0, 10)
   const q = productoSearch.value.toLowerCase()
@@ -649,6 +732,14 @@ function selectProducto(prod) {
   showProductoDropdown.value = false
 }
 
+/**
+
+ * Obtiene datos desde el backend mediante API.
+
+ * Mantiene sincronizada la vista con la base de datos.
+
+ */
+
 async function fetchCategoriasBase() {
   try {
     const res = await fetch(`${API}/componentes/maestros`, { headers: { Authorization: `Bearer ${getToken()}` } })
@@ -657,12 +748,24 @@ async function fetchCategoriasBase() {
   } catch(e) { console.error(e) }
 }
 
+/**
+
+ * Abre el modal correspondiente e inicializa los datos necesarios.
+
+ */
+
 function openAddModal() {
   newComp.value = { producto_id: '', especificacion: '', nucleos: '', hilos: '', frecuencia_hz: '', enfoque_uso: '', gama: 'media', precio: '' }
   addCompError.value = ''
   showAddCompModal.value = true
   if (categoriasBase.value.length === 0) fetchCategoriasBase()
 }
+
+/**
+
+ * Cierra el modal activo y limpia los errores.
+
+ */
 
 function closeAddModal() {
   showAddCompModal.value = false
@@ -684,6 +787,14 @@ function onFileChange(e, type) {
 
 function blockInvalidChars(e) { if (['e', 'E', '+', '-'].includes(e.key)) e.preventDefault() }
 function blockInvalidCharsStock(e) { if (['e', 'E', '+', '-', '.'].includes(e.key)) e.preventDefault() }
+
+/**
+
+ * Valida y envía los datos del formulario al backend (POST/PUT).
+
+ * Maneja la lógica de guardado y muestra feedback al usuario.
+
+ */
 
 async function saveNewComp() {
   if (!newComp.value.producto_id) return addCompError.value = 'Selecciona un producto base'
@@ -731,6 +842,14 @@ async function saveNewComp() {
   }
 }
 
+/**
+
+ * Obtiene datos desde el backend mediante API.
+
+ * Mantiene sincronizada la vista con la base de datos.
+
+ */
+
 async function fetchComponentes() {
   loadingComponentes.value = true
   try {
@@ -752,6 +871,14 @@ function openEditComp(comp) {
   editCompError.value = ''
   showEditCompModal.value = true
 }
+
+/**
+
+ * Valida y envía los datos del formulario al backend (POST/PUT).
+
+ * Maneja la lógica de guardado y muestra feedback al usuario.
+
+ */
 
 async function saveEditComp() {
   if (!editingComp.value.precio_mayorista) return editCompError.value = 'El precio mayorista es requerido'
@@ -798,6 +925,12 @@ function openDeleteComp(comp) {
   deleteError.value = ''
   showDeleteModal.value = true
 }
+
+/**
+
+ * Confirma y procesa la eliminación de un registro mediante la API.
+
+ */
 
 async function confirmDelete() {
   if (!deletingComp.value) return

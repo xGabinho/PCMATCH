@@ -11,9 +11,9 @@
         :alt="name"
         class="w-full h-full object-contain mix-blend-multiply dark:mix-blend-normal drop-shadow-sm"
       />
-      <div v-else class="flex flex-col items-center gap-2 opacity-20">
-        <span class="text-4xl">{{ categoryIcon }}</span>
-      </div>
+      <template v-else>
+        <component :is="categoryIcon" class="w-10 h-10 opacity-20" />
+      </template>
       <!-- Tier badge -->
       <span
         v-if="tier"
@@ -59,6 +59,7 @@
 
 <script setup>
 import { computed } from 'vue'
+import { Cpu, Gamepad2, Save, Disc, Plug, Zap, Snowflake, Monitor, Wrench } from '@lucide/vue'
 
 const props = defineProps({
   name: String,
@@ -75,17 +76,17 @@ const props = defineProps({
 })
 
 const categoryIcons = {
-  'CPU': '⚙️', 'Procesador': '⚙️',
-  'GPU': '🎮', 'Tarjeta Gráfica': '🎮',
-  'RAM': '💾', 'Memoria RAM': '💾',
-  'Storage': '💿', 'Almacenamiento': '💿',
-  'Motherboard': '🔌',
-  'PSU': '⚡', 'Fuente de Poder': '⚡',
-  'Cooler': '❄️',
-  'Case': '🖥️', 'Gabinete': '🖥️',
+  'CPU': Cpu, 'Procesador': Cpu,
+  'GPU': Gamepad2, 'Tarjeta Gráfica': Gamepad2,
+  'RAM': Save, 'Memoria RAM': Save,
+  'Storage': Disc, 'Almacenamiento': Disc,
+  'Motherboard': Plug, 'Placa Madre': Plug,
+  'PSU': Zap, 'Fuente de Poder': Zap,
+  'Cooler': Snowflake,
+  'Case': Monitor, 'Gabinete': Monitor,
 }
 
-const categoryIcon = computed(() => categoryIcons[props.category] ?? '🔧')
+const categoryIcon = computed(() => categoryIcons[props.category] || Wrench)
 
 const tierStyles = {
   alta:  'bg-yellow-50 dark:bg-yellow-500/10 text-yellow-700 dark:text-yellow-400 border-yellow-200 dark:border-yellow-500/20',

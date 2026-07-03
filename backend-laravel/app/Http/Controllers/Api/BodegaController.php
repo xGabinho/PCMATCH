@@ -9,9 +9,15 @@ use App\Helpers\AuditLog;
 
 class BodegaController extends Controller
 {
+    
     /**
-     * Equivalente a GET api/bodegas/index.php
+    
+     * Obtiene una lista de registros o recursos.
+    
+     * Ejecuta la consulta a la base de datos (con posibles filtros/paginación) y retorna los datos en formato JSON.
+    
      */
+    
     public function index(Request $request)
     {
         // 1. Determinar el rol real basado en el modelo que se autenticó
@@ -65,9 +71,19 @@ class BodegaController extends Controller
         ]);
     }
 
+    
     /**
-     * Equivalente a POST api/bodegas/index.php
+
+    
+     * Almacena un nuevo registro en la base de datos.
+
+    
+     * Valida la información recibida en la petición HTTP y crea el nuevo recurso.
+
+    
      */
+
+    
     public function store(Request $request)
     {
         $user = $request->user();
@@ -124,9 +140,19 @@ class BodegaController extends Controller
         return response()->json(['message' => 'Bodega creada', 'id' => $bodega->id], 201);
     }
 
+    
     /**
-     * Equivalente a PUT api/bodegas/index.php
+
+    
+     * Actualiza un recurso existente en la base de datos.
+
+    
+     * Valida los nuevos datos y sobrescribe los valores del registro correspondiente.
+
+    
      */
+
+    
     public function update(Request $request)
     {
         $user = $request->user();
@@ -191,9 +217,19 @@ class BodegaController extends Controller
         return response()->json(['message' => 'Bodega actualizada']);
     }
 
+    
     /**
-     * Equivalente a DELETE api/bodegas/index.php
+
+    
+     * Elimina un registro de la base de datos.
+
+    
+     * Dependiendo de la lógica, puede ser una eliminación física o lógica (soft delete).
+
+    
      */
+
+    
     public function destroy(Request $request, $id = null)
     {
         $user = $request->user();
