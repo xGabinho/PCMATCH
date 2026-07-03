@@ -233,7 +233,7 @@
             <div v-if="loadingComponentes" class="px-6 py-12 text-center theme-text-muted text-sm">Cargando componentes...</div>
             <table v-else class="w-full min-w-[640px]">
               <thead class="border-b theme-border">
-                <tr><th v-for="h in ['Componente','Categoría','Gama','Precio','Bodega','Stock','Estado','Acciones']" :key="h" class="px-6 py-3 text-left text-xs theme-text-muted uppercase tracking-wider font-medium">{{ h }}</th></tr>
+                <tr><th v-for="h in ['Componente','Categoría','Gama','Estado','Acciones']" :key="h" class="px-6 py-3 text-left text-xs theme-text-muted uppercase tracking-wider font-medium">{{ h }}</th></tr>
               </thead>
               <tbody class="divide-y divide-dark-border">
                 <tr v-if="filteredComponentes.length === 0"><td colspan="7" class="px-6 py-12 text-center theme-text-muted text-sm">Sin componentes</td></tr>
@@ -241,22 +241,6 @@
                   <td class="px-6 py-4 text-sm font-medium theme-text">{{ c.nombre }}</td>
                   <td class="px-6 py-4"><span class="badge text-xs bg-accent/10 text-accent border border-accent/20">{{ c.categoria }}</span></td>
                   <td class="px-6 py-4"><span class="text-xs px-2 py-0.5 rounded-full font-medium border" :class="tierStyles[c.gama]">{{ c.gama }}</span></td>
-                  <td class="px-6 py-4 text-sm text-accent font-mono">${{ Number(c.precio).toLocaleString() }}</td>
-                  <td class="px-6 py-4 text-sm theme-text-muted">{{ c.bodega_nombre }}</td>
-                  <td class="px-6 py-4">
-                    <div class="flex items-center gap-1.5">
-                      <button @click="quickAdjustAdmin(c, 'decrementar', stockQtyAdmin[c.id] ?? 1)" :disabled="c.stock < (stockQtyAdmin[c.id] ?? 1) || c._adjusting" class="w-7 h-7 rounded-lg border theme-border theme-bg theme-text-muted hover:text-red-400 hover:border-red-500/40 transition-colors flex items-center justify-center text-sm font-bold disabled:opacity-30 disabled:cursor-not-allowed">−</button>
-                      <input
-                        type="number"
-                        :value="stockQtyAdmin[c.id] ?? 1"
-                        @input="stockQtyAdmin[c.id] = Math.max(1, parseInt($event.target.value) || 1)"
-                        min="1"
-                        class="w-12 h-7 theme-bg border theme-border rounded-lg text-center text-xs font-mono theme-text focus:outline-none focus:border-accent transition-colors [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-                      />
-                      <button @click="quickAdjustAdmin(c, 'incrementar', stockQtyAdmin[c.id] ?? 1)" :disabled="c._adjusting" class="w-7 h-7 rounded-lg border theme-border theme-bg theme-text-muted hover:text-green-400 hover:border-green-500/40 transition-colors flex items-center justify-center text-sm font-bold disabled:opacity-30 disabled:cursor-not-allowed">+</button>
-                      <span class="text-sm font-mono font-semibold ml-1.5" :class="c.stock <= 3 ? 'text-yellow-400' : 'text-accent'">{{ c.stock }}</span>
-                    </div>
-                  </td>
                   <td class="px-6 py-4">
                     <span class="badge text-xs px-2.5 py-1" :class="c.activo == 1 ? 'bg-green-500/10 text-green-400 border border-green-500/20' : 'bg-red-500/10 text-red-400 border border-red-500/20'">
                       {{ c.activo == 1 ? 'Activo' : 'Inactivo' }}
@@ -893,22 +877,10 @@
             </div>
           </div>
 
-          <div class="grid grid-cols-2 gap-4">
-            <div>
+            <div class="col-span-2">
               <label class="block text-sm font-medium theme-text mb-2">Frecuencia GHz (Opcional)</label>
               <input v-model="newComp.frecuencia_hz" type="number" step="0.1" min="0" placeholder="Ej: 3.5" class="w-full theme-bg border theme-border rounded-lg px-4 py-3 text-sm theme-text focus:outline-none focus:border-accent transition-colors" />
             </div>
-            <div>
-              <label class="block text-sm font-medium theme-text mb-2">Enfoque de uso</label>
-              <select v-model="newComp.enfoque_uso" class="w-full theme-bg border theme-border rounded-lg px-4 py-3 text-sm theme-text focus:outline-none focus:border-accent transition-colors">
-                <option :value="null">Ninguno</option>
-                <option value="estudio">Estudio</option>
-                <option value="oficina">Oficina</option>
-                <option value="gaming">Gaming</option>
-                <option value="diseño">Diseño</option>
-              </select>
-            </div>
-          </div>
 
           <div>
             <label class="block text-sm font-medium theme-text mb-1">Imagen del Componente (Opcional)</label>
@@ -967,22 +939,10 @@
             </div>
           </div>
 
-          <div class="grid grid-cols-2 gap-4">
-            <div>
+            <div class="col-span-2">
               <label class="block text-sm font-medium theme-text mb-2">Frecuencia GHz (Opcional)</label>
               <input v-model="editingComp.frecuencia_hz" type="number" step="0.1" min="0" placeholder="Ej: 3.5" class="w-full theme-bg border theme-border rounded-lg px-4 py-3 text-sm theme-text focus:outline-none focus:border-accent transition-colors" />
             </div>
-            <div>
-              <label class="block text-sm font-medium theme-text mb-2">Enfoque de uso</label>
-              <select v-model="editingComp.enfoque_uso" class="w-full theme-bg border theme-border rounded-lg px-4 py-3 text-sm theme-text focus:outline-none focus:border-accent transition-colors">
-                <option :value="null">Ninguno</option>
-                <option value="estudio">Estudio</option>
-                <option value="oficina">Oficina</option>
-                <option value="gaming">Gaming</option>
-                <option value="diseño">Diseño</option>
-              </select>
-            </div>
-          </div>
 
           <div>
             <label class="block text-sm font-medium theme-text mb-1">Actualizar Imagen (Opcional)</label>
@@ -1033,16 +993,14 @@
             <label class="block text-sm font-medium theme-text mb-1">Categoría <span class="text-red-400">*</span></label>
             <select v-model="newProducto.categoria" class="w-full theme-bg border theme-border rounded-lg px-4 py-3 text-sm theme-text focus:outline-none focus:border-accent transition-colors">
               <option value="" disabled>Seleccionar...</option>
-              <option value="Procesadores">Procesadores</option>
-              <option value="Tarjetas de Video">Tarjetas de Video</option>
-              <option value="Placas Madre">Placas Madre</option>
-              <option value="Memorias RAM">Memorias RAM</option>
-              <option value="Almacenamiento">Almacenamiento</option>
-              <option value="Fuentes de Poder">Fuentes de Poder</option>
-              <option value="Gabinetes">Gabinetes</option>
-              <option value="Refrigeración">Refrigeración</option>
-              <option value="Monitores">Monitores</option>
-              <option value="Periféricos">Periféricos</option>
+              <option value="CPU">Procesadores</option>
+              <option value="GPU">Tarjetas de Video</option>
+              <option value="Motherboard">Placas Madre</option>
+              <option value="RAM">Memorias RAM</option>
+              <option value="Storage">Almacenamiento</option>
+              <option value="PSU">Fuentes de Poder</option>
+              <option value="Case">Gabinetes</option>
+              <option value="Cooler">Refrigeración</option>
             </select>
           </div>
           <p v-if="addProductoError" class="text-xs text-red-400 bg-red-500/10 border border-red-500/20 rounded-lg px-4 py-2.5">{{ addProductoError }}</p>
@@ -1731,7 +1689,7 @@ const filterGama = ref('')
 
 
 const filteredComponentes = computed(() => {
-  let result = componentes.value
+  let result = componentes.value.filter(c => c.bodega_id === null)
   
   if (filterComponente.value.trim()) {
     const q = filterComponente.value.toLowerCase()
@@ -1790,10 +1748,33 @@ function openEditComp(comp) {
 const showAddProductoModal = ref(false)
 const savingProducto = ref(false)
 const addProductoError = ref('')
-const newProducto = ref({ nombre: '', categoria: '' })
+const newProducto = ref({ nombre: '', categoria: '', especificacion: '', nucleos: '', hilos: '', frecuencia_hz: '', enfoque_uso: '', gama: '', imagen_url: '' })
 const catalogoList = ref([])
 const filterCatalogo = ref('')
 const loadingCatalogo = ref(false)
+
+// Modal Asignar Catalogo Variables
+const showCatalogoModal = ref(false)
+const catalogoSearch = ref('')
+const selectedCatalogoIds = ref([])
+const selectedProveedor = ref(null)
+const catalogoFiltrado = computed(() => {
+  if (!catalogoSearch.value.trim()) return catalogoList.value
+  const q = catalogoSearch.value.toLowerCase()
+  return catalogoList.value.filter(p => p.nombre.toLowerCase().includes(q) || p.categoria.toLowerCase().includes(q))
+})
+function toggleProductoCatalogo(id) {
+  if (selectedCatalogoIds.value.includes(id)) {
+    selectedCatalogoIds.value = selectedCatalogoIds.value.filter(x => x !== id)
+  } else {
+    selectedCatalogoIds.value.push(id)
+  }
+}
+const savingCatalogoProveedor = ref(false)
+async function saveCatalogoProveedor() {
+  // Placeholder para la lógica de guardar
+  showCatalogoModal.value = false
+}
 
 const filteredCatalogoList = computed(() => {
   if (!filterCatalogo.value.trim()) return catalogoList.value
@@ -1828,12 +1809,13 @@ async function saveNewProducto() {
     })
     const data = await res.json()
     if (!res.ok) {
-      toast.error(data.message ?? 'Error al crear producto')
-      return addProductoError.value = data.message ?? 'Error al crear producto'
+      const errorMsg = data.errors ? Object.values(data.errors).flat().join(' | ') : (data.message ?? 'Error al crear producto')
+      toast.error(errorMsg)
+      return addProductoError.value = errorMsg
     }
     toast.success('Producto base creado exitosamente')
     showAddProductoModal.value = false
-    newProducto.value = { nombre: '', categoria: '' }
+    newProducto.value = { nombre: '', categoria: '', especificacion: '', nucleos: '', hilos: '', frecuencia_hz: '', enfoque_uso: '', gama: '', imagen_url: '' }
     await fetchCatalogo()
   } catch(e) {
     addProductoError.value = 'Error de conexión'
@@ -1919,10 +1901,16 @@ function openDeleteComp(c) {
 async function confirmDeleteComp() {
   savingDeleteComp.value = true
   try {
-    await fetch(`${API}/componentes?id=${deletingComp.value.id}`, {
+    const res = await fetch(`${API}/componentes?id=${deletingComp.value.id}`, {
       method: 'DELETE',
       headers: { Authorization: `Bearer ${getToken()}` }
     })
+    const data = await res.json()
+    if (!res.ok) {
+      toast.error(data.message || 'Error al eliminar componente')
+      showDeleteCompModal.value = false
+      return
+    }
     await fetchComponentes()
     showDeleteCompModal.value = false
     toast.success('Componente eliminado exitosamente')

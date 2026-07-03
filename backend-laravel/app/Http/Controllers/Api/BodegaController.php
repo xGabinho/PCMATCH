@@ -34,7 +34,10 @@ class BodegaController extends Controller
 
         // 3. Recrear las consultas Left Join usando DB Builder (evitamos crear el modelo Componentes prematuramente)
         $query = DB::table('bodegas as b')
-            ->leftJoin('componentes as c', 'c.bodega_id', '=', 'b.id')
+            ->leftJoin('componentes as c', function ($join) {
+                $join->on('c.bodega_id', '=', 'b.id')
+                     ->whereNull('c.deleted_at');
+            })
             ->groupBy('b.id', 'b.nombre', 'b.telefono', 'b.correo', 'b.activa', 'b.proveedor_id');
 
         if ($rol === 'proveedor') {

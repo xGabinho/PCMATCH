@@ -29,9 +29,14 @@
                 <p class="text-xs theme-text-muted">Bodegas</p>
               </div>
             </div>
-            <router-link to="/armar" class="btn-primary text-sm px-6 py-3 flex items-center justify-center gap-2 w-full sm:w-auto">
-              <span>⚡</span> Armar mi PC
-            </router-link>
+            <div class="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
+              <router-link to="/armar" class="btn-primary text-sm px-5 py-2.5 flex items-center justify-center gap-2 w-full sm:w-auto">
+                <span>⚡</span> Armar mi PC
+              </router-link>
+              <router-link to="/asistente" class="btn-secondary text-sm px-5 py-2.5 flex items-center justify-center gap-2 w-full sm:w-auto">
+                <span>🤖</span> Usar asistente
+              </router-link>
+            </div>
           </div>
         </div>
       </div>
@@ -131,8 +136,8 @@
             class="theme-card border theme-border shadow-sm rounded-lg px-3 py-2 text-xs theme-text focus:outline-none focus:border-accent transition-colors"
           >
             <option value="name" class="theme-bg">Nombre</option>
-            <option value="price-asc" class="theme-bg">Precio: menor a mayor</option>
-            <option value="price-desc" class="theme-bg">Precio: menor a menor</option>
+            <option value="price-asc" class="theme-bg">Precio: Mayor a Menor</option>
+            <option value="price-desc" class="theme-bg">Precio: Menor a Mayor</option>
           </select>
         </div>
       </div>
@@ -204,7 +209,11 @@
             <div class="pt-3 border-t theme-border space-y-3">
               <div class="flex items-end justify-between">
                 <div>
-                  <p class="text-accent font-bold font-mono text-lg">${{ Number(comp.precio).toLocaleString() }}</p>
+                  <div v-if="comp.descuento_activo && comp.descuento_porcentaje > 0" class="flex items-center gap-1.5 mb-0.5">
+                    <span class="line-through text-xs theme-text-muted opacity-70">${{ Number(comp.precio).toLocaleString() }}</span>
+                    <span class="text-[10px] bg-red-500/20 text-red-400 px-1.5 py-0.5 rounded font-bold">-{{ comp.descuento_porcentaje }}%</span>
+                  </div>
+                  <p class="text-accent font-bold font-mono text-lg">${{ Number(comp.precio_final || comp.precio).toLocaleString() }}</p>
                   <p class="text-xs theme-text-muted mt-0.5">{{ comp.bodega }}</p>
                 </div>
                 <div v-if="comp.stock > 0" class="text-xs theme-text-muted font-mono">
@@ -226,22 +235,61 @@
     </div>
 
     <!-- Bottom CTA Banner -->
-    <section class="border-t theme-border mt-8">
-      <div class="max-w-7xl mx-auto px-6 py-12">
-        <div class="card-dark rounded-2xl p-6 sm:p-8 flex flex-col sm:flex-row items-center justify-between gap-6 relative overflow-hidden text-center sm:text-left">
-          <div class="absolute left-0 top-0 w-64 h-full bg-accent/5 blur-3xl pointer-events-none"></div>
-          <div class="relative z-10">
-            <h2 class="text-2xl font-bold theme-text mb-2">¿Listo para armar tu PC?</h2>
-            <p class="theme-text-muted text-sm max-w-md mx-auto sm:mx-0">
-              Selecciona tu perfil de uso y te recomendamos los mejores componentes compatibles según tu presupuesto.
-            </p>
+    <!-- ════ Asistente CTA Section ════ -->
+    <section class="border-t theme-border py-16">
+      <div class="max-w-7xl mx-auto px-6">
+        <div class="relative overflow-hidden rounded-2xl p-8 sm:p-12"
+          :class="isDark
+            ? 'bg-gradient-to-br from-accent/10 via-dark-card to-purple-500/10 border border-accent/20'
+            : 'bg-gradient-to-br from-blue-50 via-white to-purple-50 border border-accent/20 shadow-lg'"
+        >
+          <!-- Decorative glow -->
+          <div class="absolute -right-20 -top-20 w-64 h-64 bg-accent/10 rounded-full blur-3xl pointer-events-none"></div>
+          <div class="absolute -left-10 -bottom-10 w-40 h-40 bg-purple-500/10 rounded-full blur-3xl pointer-events-none"></div>
+
+          <div class="relative z-10 flex flex-col lg:flex-row items-center gap-8">
+            <div class="flex-1 text-center lg:text-left">
+              <div class="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-accent/20 bg-accent/10 text-accent text-xs font-medium mb-4">
+                <span>🤖</span> Nuevo: Asistente inteligente
+              </div>
+              <h2 class="text-2xl sm:text-3xl font-bold theme-text tracking-tight mb-3">
+                ¿No sabes de tecnología? <span class="text-accent">No hay problema</span>
+              </h2>
+              <p class="theme-text-muted text-sm leading-relaxed max-w-lg mx-auto lg:mx-0">
+                Nuestro asistente te hace 3 preguntas simples y te recomienda la combinación perfecta de componentes según tu presupuesto y lo que necesitas. Sin jerga técnica, sin complicaciones.
+              </p>
+
+              <div class="flex flex-wrap justify-center lg:justify-start gap-4 mt-6 text-xs theme-text-muted">
+                <div class="flex items-center gap-1.5">
+                  <span class="w-1.5 h-1.5 rounded-full bg-green-500"></span>
+                  3 preguntas simples
+                </div>
+                <div class="flex items-center gap-1.5">
+                  <span class="w-1.5 h-1.5 rounded-full bg-green-500"></span>
+                  Recomendación instantánea
+                </div>
+                <div class="flex items-center gap-1.5">
+                  <span class="w-1.5 h-1.5 rounded-full bg-green-500"></span>
+                  Optimizado a tu presupuesto
+                </div>
+              </div>
+            </div>
+
+            <div class="flex-shrink-0 flex flex-col gap-3">
+              <router-link to="/asistente" class="btn-primary text-base px-8 py-4 inline-flex items-center justify-center gap-2">
+                <span>🚀</span> Probar asistente
+              </router-link>
+              <router-link to="/armar" class="btn-secondary text-sm px-6 py-3">
+                O armar manualmente →
+              </router-link>
+            </div>
           </div>
-          <router-link to="/armar" class="btn-primary text-base px-8 py-4 relative z-10 w-full sm:w-auto">
-            Armar mi PC →
-          </router-link>
         </div>
       </div>
     </section>
+
+    <!-- ════ Más Vendidos ════ -->
+    <SeccionMasVendidos />
 
   </main>
 </template>
@@ -249,9 +297,12 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { useAuth } from '../composables/useAuth'
+import { useTheme } from '../composables/useTheme'
+import SeccionMasVendidos from '../components/Recomendaciones/SeccionMasVendidos.vue'
 
 const API = '/api'
 const { user } = useAuth()
+const { isDark } = useTheme()
 
 const searchQuery    = ref('')
 const activeCategory = ref('Todos')

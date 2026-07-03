@@ -118,7 +118,7 @@
             <div v-if="loadingBodegas" class="px-6 py-12 text-center theme-text-muted text-sm">Cargando bodegas...</div>
             <table v-else class="w-full min-w-[640px]">
               <thead class="border-b theme-border">
-                <tr><th v-for="h in ['Nombre','Teléfono','Correo','Componentes','Estado','Acciones']" :key="h" class="px-6 py-3 text-left text-xs theme-text-muted uppercase tracking-wider font-medium">{{ h }}</th></tr>
+                <tr><th v-for="h in ['Nombre','Teléfono','Correo','Componentes','Estado']" :key="h" class="px-6 py-3 text-left text-xs theme-text-muted uppercase tracking-wider font-medium">{{ h }}</th></tr>
               </thead>
               <tbody class="divide-y divide-dark-border">
                 <tr v-if="filteredBodegas.length === 0"><td colspan="6" class="px-6 py-12 text-center theme-text-muted text-sm">Sin bodegas asignadas</td></tr>
@@ -131,15 +131,6 @@
                     <span class="badge text-xs px-2.5 py-1" :class="b.activa == 1 ? 'bg-green-500/10 text-green-400 border border-green-500/20' : 'bg-red-500/10 text-red-400 border border-red-500/20'">
                       {{ b.activa == 1 ? 'Activa' : 'Inactiva' }}
                     </span>
-                  </td>
-                  <td class="px-6 py-4">
-                    <div class="flex gap-2">
-                        <button @click="toggleActivoBodega(b)" class="text-xs theme-text-muted hover:text-green-400 px-2 py-1 rounded hover:bg-green-400/10 transition-colors">
-                           {{ b.activa == 1 ? 'Desactivar' : 'Activar' }}
-                        </button>
-                      <button @click="openEditBodega(b)" class="text-xs theme-text-muted hover:text-accent px-2 py-1 rounded hover:bg-accent/10 transition-colors">Editar</button>
-                      <button @click="openDeleteBodega(b)" class="text-xs theme-text-muted hover:text-red-400 px-2 py-1 rounded hover:bg-red-400/10 transition-colors">Eliminar</button>
-                    </div>
                   </td>
                 </tr>
               </tbody>
@@ -225,7 +216,7 @@
             <div v-if="loadingComponentes" class="px-6 py-12 text-center theme-text-muted text-sm">Cargando componentes...</div>
             <table v-else class="w-full min-w-[640px]">
               <thead class="border-b theme-border">
-                <tr><th v-for="h in ['Componente','Categoría','Gama','Precio','Stock','Acciones']" :key="h" class="px-6 py-3 text-left text-xs theme-text-muted uppercase tracking-wider font-medium">{{ h }}</th></tr>
+                <tr><th v-for="h in ['Producto','Categoría','Gama','Precio Mayorista','Stock','Acciones']" :key="h" class="px-6 py-3 text-left text-xs theme-text-muted uppercase tracking-wider font-medium">{{ h }}</th></tr>
               </thead>
               <tbody class="divide-y divide-dark-border">
                 <tr v-if="filteredComponentes.length === 0"><td colspan="6" class="px-6 py-12 text-center theme-text-muted text-sm">Sin componentes</td></tr>
@@ -233,8 +224,10 @@
                   <td class="px-6 py-4 text-sm font-medium theme-text">{{ c.nombre }}</td>
                   <td class="px-6 py-4"><span class="badge text-xs bg-accent/10 text-accent border border-accent/20">{{ c.categoria }}</span></td>
                   <td class="px-6 py-4"><span class="text-xs px-2 py-0.5 rounded-full font-medium border" :class="tierStyles[c.gama]">{{ c.gama }}</span></td>
-                  <td class="px-6 py-4 text-sm text-accent font-mono font-medium">${{ Number(c.precio).toLocaleString() }}</td>
-                  <td class="px-6 py-4 text-sm font-mono" :class="c.stock <= 3 ? 'text-yellow-400' : 'theme-text'">{{ c.stock }}</td>
+                  <td class="px-6 py-4 text-sm font-mono">
+                    <span class="text-accent font-medium">${{ Number(c.precio_mayorista).toLocaleString() }}</span>
+                  </td>
+                  <td class="px-6 py-4 text-sm font-mono theme-text">{{ c.stock ?? 0 }}</td>
                   <td class="px-6 py-4">
                     <div class="flex items-center gap-2">
                       <button @click="openEditComp(c)" class="text-xs theme-text-muted hover:text-accent px-2 py-1 rounded hover:bg-accent/10 transition-colors">Editar</button>
@@ -254,39 +247,29 @@
             <div class="flex items-center justify-between mb-6">
               <div>
                 <h2 class="text-lg font-bold theme-text">Añadir componente</h2>
-                <p class="text-xs theme-text-muted mt-0.5">Agrega un nuevo producto a una de tus bodegas</p>
+                <p class="text-xs theme-text-muted mt-0.5">Agrega un producto base a tu catálogo mayorista</p>
               </div>
               <button @click="closeAddModal" class="theme-text-muted hover:theme-text transition-colors text-2xl leading-none w-8 h-8 flex items-center justify-center rounded-lg hover:theme-bg">×</button>
             </div>
             
-            <div class="mb-5">
-              <label class="block text-sm font-medium theme-text mb-2">Bodega destino <span class="text-red-400">*</span></label>
-              <select v-model="newComp.bodega_id" class="w-full theme-bg border theme-border rounded-lg px-4 py-3 text-sm theme-text focus:outline-none focus:border-accent transition-colors">
-                <option value="" disabled>Selecciona una bodega...</option>
-                <option v-for="b in bodegas.filter(b => b.activa == 1)" :key="b.id" :value="b.id">{{ b.nombre }}</option>
-              </select>
-              <p v-if="bodegas.filter(b => b.activa == 1).length === 0" class="text-xs text-red-400 mt-1">No tienes bodegas activas para asignar componentes.</p>
-            </div>
-
             <div class="space-y-5 max-h-[60vh] overflow-y-auto pr-2">
-              
               <!-- Select buscable de producto -->
               <div>
                 <label class="block text-sm font-medium theme-text mb-2">Producto Base <span class="text-red-400">*</span></label>
                 <div class="relative">
                   <input
                     v-model="productoSearch"
-                    @input="showProductoDropdown = true; newComp.producto_id = ''; newComp.categoria = ''"
+                    @input="showProductoDropdown = true; newComp.master_component_id = ''; newComp.producto_id = ''; newComp.categoria = ''"
                     @focus="showProductoDropdown = true"
                     type="text"
-                    placeholder="Buscar producto..."
+                    placeholder="Buscar componente maestro..."
                     class="allow-special w-full theme-bg border theme-border rounded-lg px-4 py-3 text-sm theme-text placeholder-text-muted focus:outline-none focus:border-accent transition-colors"
-                    :class="{ 'border-accent': newComp.producto_id }"
+                    :class="{ 'border-accent': newComp.master_component_id || newComp.producto_id }"
                     autocomplete="off"
                   />
                   <div v-if="showProductoDropdown && productosFiltrados.length > 0" class="absolute top-full left-0 right-0 mt-1 theme-card border theme-border rounded-lg shadow-xl z-20 max-h-52 overflow-y-auto">
                     <button v-for="prod in productosFiltrados" :key="prod.id" @click="selectProducto(prod)" class="w-full flex items-center justify-between px-4 py-2.5 text-sm hover:theme-bg transition-colors text-left">
-                      <span class="theme-text">{{ prod.nombre }}</span>
+                      <span class="theme-text">{{ prod.nombre }} <span v-if="prod.especificacion" class="text-xs opacity-70 ml-1">- {{ prod.especificacion }}</span></span>
                       <span class="text-xs theme-text-muted ml-3 flex-shrink-0">{{ prod.categoria }}</span>
                     </button>
                   </div>
@@ -296,75 +279,28 @@
                 </p>
               </div>
 
-              <!-- Especificación -->
+              <!-- Especificación Comercial -->
               <div>
-                <label class="block text-sm font-medium theme-text mb-2">Especificación técnica <span class="text-red-400">*</span></label>
-                <input v-model="newComp.especificacion" type="text" placeholder="Ej: Core i5-12400F 2.5 GHz" class="allow-special w-full theme-bg border theme-border rounded-lg px-4 py-3 text-sm theme-text placeholder-text-muted focus:outline-none focus:border-accent transition-colors" />
+                <label class="block text-sm font-medium theme-text mb-2">Descripción Comercial (Opcional)</label>
+                <input v-model="newComp.especificacion" type="text" placeholder="Ej: Precio especial por lotes de 10+" class="allow-special w-full theme-bg border theme-border rounded-lg px-4 py-3 text-sm theme-text placeholder-text-muted focus:outline-none focus:border-accent transition-colors" />
               </div>
 
-              <!-- Gama -->
-              <div>
-                <label class="block text-sm font-medium theme-text mb-3">Gama <span class="text-red-400">*</span></label>
-                <div class="grid grid-cols-3 gap-3">
-                  <button v-for="tier in ['alta', 'media', 'baja']" :key="tier" @click="newComp.gama = tier"
-                    class="py-2.5 rounded-lg border text-sm font-medium transition-all"
-                    :class="newComp.gama === tier ? 'border-accent bg-accent/10 text-accent' : 'theme-border theme-text-muted hover:border-accent/40'">
-                    {{ tier.charAt(0).toUpperCase() + tier.slice(1) }}
-                  </button>
-                </div>
-              </div>
-
-              <!-- Precio y Stock -->
               <div class="grid grid-cols-2 gap-4">
                 <div>
-                  <label class="block text-sm font-medium theme-text mb-2">Precio ($) <span class="text-red-400">*</span></label>
+                  <label class="block text-sm font-medium theme-text mb-2">Precio Mayorista ($) <span class="text-red-400">*</span></label>
                   <input v-model="newComp.precio" type="number" min="0" step="1" @keydown="blockInvalidChars($event)" class="w-full theme-bg border theme-border rounded-lg px-4 py-3 text-sm theme-text focus:outline-none focus:border-accent transition-colors" />
                 </div>
                 <div>
-                  <label class="block text-sm font-medium theme-text mb-2">Stock inicial <span class="text-red-400">*</span></label>
-                  <input v-model="newComp.stock" type="number" min="0" step="1" @keydown="blockInvalidCharsStock($event)" class="w-full theme-bg border theme-border rounded-lg px-4 py-3 text-sm theme-text focus:outline-none focus:border-accent transition-colors" />
+                  <label class="block text-sm font-medium theme-text mb-2">Stock Disponible <span class="text-red-400">*</span></label>
+                  <input v-model="newComp.stock" type="number" min="0" step="1" @keydown="blockInvalidChars($event)" class="w-full theme-bg border theme-border rounded-lg px-4 py-3 text-sm theme-text focus:outline-none focus:border-accent transition-colors" />
                 </div>
-              </div>
-
-              <!-- Especificaciones Avanzadas -->
-              <div class="grid grid-cols-2 gap-4">
-                <div>
-                  <label class="block text-sm font-medium theme-text mb-2">Núcleos (Opcional)</label>
-                  <input v-model="newComp.nucleos" type="number" min="1" placeholder="Ej: 8" class="w-full theme-bg border theme-border rounded-lg px-4 py-3 text-sm theme-text focus:outline-none focus:border-accent transition-colors" />
-                </div>
-                <div>
-                  <label class="block text-sm font-medium theme-text mb-2">Hilos (Opcional)</label>
-                  <input v-model="newComp.hilos" type="number" min="1" placeholder="Ej: 16" class="w-full theme-bg border theme-border rounded-lg px-4 py-3 text-sm theme-text focus:outline-none focus:border-accent transition-colors" />
-                </div>
-              </div>
-
-              <div class="grid grid-cols-2 gap-4">
-                <div>
-                  <label class="block text-sm font-medium theme-text mb-2">Frecuencia GHz (Opcional)</label>
-                  <input v-model="newComp.frecuencia_hz" type="number" step="0.1" min="0" placeholder="Ej: 3.5" class="w-full theme-bg border theme-border rounded-lg px-4 py-3 text-sm theme-text focus:outline-none focus:border-accent transition-colors" />
-                </div>
-                <div>
-                  <label class="block text-sm font-medium theme-text mb-2">Enfoque de uso</label>
-                  <select v-model="newComp.enfoque_uso" class="w-full theme-bg border theme-border rounded-lg px-4 py-3 text-sm theme-text focus:outline-none focus:border-accent transition-colors">
-                    <option :value="null">Ninguno</option>
-                    <option value="estudio">Estudio</option>
-                    <option value="oficina">Oficina</option>
-                    <option value="gaming">Gaming</option>
-                    <option value="diseño">Diseño</option>
-                  </select>
-                </div>
-              </div>
-
-              <div>
-                <label class="block text-sm font-medium theme-text mb-1">Imagen del Componente (Opcional)</label>
-                <input @change="onFileChange($event, 'add')" type="file" accept=".jpeg,.png,.jpg,.webp" class="w-full text-sm theme-text-muted file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:theme-bg file:text-accent hover:file:bg-accent/10 transition-colors" />
               </div>
             </div>
 
             <p v-if="addCompError" class="mt-5 text-xs text-red-400 bg-red-500/10 border border-red-500/20 rounded-lg px-4 py-2.5 text-center">{{ addCompError }}</p>
 
             <div class="flex gap-3 mt-8">
-              <button @click="saveNewComp" :disabled="savingAddComp || bodegas.filter(b => b.activa == 1).length === 0" class="btn-primary flex-1 text-sm">
+              <button @click="saveNewComp" :disabled="savingAddComp" class="btn-primary flex-1 text-sm">
                 {{ savingAddComp ? 'Guardando...' : 'Crear componente' }}
               </button>
               <button @click="closeAddModal" class="btn-secondary text-sm px-5">Cancelar</button>
@@ -375,42 +311,7 @@
       </div>
     </main>
 
-    <!-- ===== MODAL CREAR BODEGA ===== -->
-    <div v-if="showBodegaModal" class="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto py-6 px-4">
-      <div class="fixed inset-0 bg-black/60 backdrop-blur-sm" @click="showBodegaModal = false"></div>
-      <div class="relative card-dark rounded-2xl p-6 w-full max-w-md my-auto shadow-2xl">
-        <div class="flex items-center justify-between mb-6">
-          <div>
-            <h2 class="text-lg font-bold theme-text">Agregar bodega</h2>
-            <p class="text-xs theme-text-muted mt-0.5">Se asignará automáticamente a tu cuenta</p>
-          </div>
-          <button @click="showBodegaModal = false" class="theme-text-muted hover:theme-text text-2xl leading-none w-8 h-8 flex items-center justify-center rounded-lg hover:theme-bg">×</button>
-        </div>
-        <div class="space-y-5">
-          <div>
-            <label class="block text-sm font-medium theme-text mb-2">Nombre de la bodega</label>
-            <input v-model="newBodega.nombre" type="text" placeholder="Ej: Bodega Norte" class="w-full theme-bg border theme-border rounded-lg px-4 py-3 text-sm theme-text placeholder-text-muted focus:outline-none focus:border-accent transition-colors" />
-          </div>
-          <div>
-            <label class="block text-sm font-medium theme-text mb-2">Correo electrónico</label>
-            <input v-model="newBodega.correo" type="email" placeholder="bodega@email.com" class="w-full theme-bg border theme-border rounded-lg px-4 py-3 text-sm theme-text placeholder-text-muted focus:outline-none focus:border-accent transition-colors" />
-          </div>
-          <div>
-            <label class="block text-sm font-medium theme-text mb-2">Teléfono</label>
-            <input v-model="newBodega.telefono" type="tel" placeholder="+57 300 123 4567" class="w-full theme-bg border theme-border rounded-lg px-4 py-3 text-sm theme-text placeholder-text-muted focus:outline-none focus:border-accent transition-colors" />
-          </div>
-          <div>
-            <label class="block text-sm font-medium theme-text mb-2">Contraseña de acceso</label>
-            <input v-model="newBodega.password" type="password" placeholder="Mínimo 8 caracteres" class="w-full theme-bg border theme-border rounded-lg px-4 py-3 text-sm theme-text placeholder-text-muted focus:outline-none focus:border-accent transition-colors" />
-          </div>
-          <p v-if="bodegaError" class="text-xs text-red-400 bg-red-500/10 border border-red-500/20 rounded-lg px-4 py-2.5">{{ bodegaError }}</p>
-        </div>
-        <div class="flex gap-3 mt-8">
-          <button @click="saveNewBodega" :disabled="savingBodega" class="btn-primary flex-1 text-sm">{{ savingBodega ? 'Creando...' : 'Crear bodega' }}</button>
-          <button @click="showBodegaModal = false" class="btn-secondary text-sm px-5">Cancelar</button>
-        </div>
-      </div>
-    </div>
+
 
     <!-- ===== MODAL EDITAR BODEGA ===== -->
     <div v-if="showEditBodegaModal" class="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto py-6 px-4">
@@ -468,7 +369,7 @@
     <!-- ===== MODAL EDITAR COMPONENTE ===== -->
     <div v-if="showEditCompModal" class="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto py-6 px-4">
       <div class="fixed inset-0 bg-black/60 backdrop-blur-sm" @click="showEditCompModal = false"></div>
-      <div class="relative card-dark rounded-2xl p-6 w-full max-w-3xl my-auto shadow-2xl">
+      <div class="relative card-dark rounded-2xl p-6 w-full max-w-md my-auto shadow-2xl">
         <div class="flex items-center justify-between mb-6">
           <div>
             <h2 class="text-lg font-bold theme-text">Editar componente</h2>
@@ -477,80 +378,20 @@
           <button @click="showEditCompModal = false" class="theme-text-muted hover:theme-text transition-colors text-2xl leading-none w-8 h-8 flex items-center justify-center rounded-lg hover:theme-bg">×</button>
         </div>
 
-        <div class="grid grid-cols-2 gap-6">
-          <div class="space-y-5">
+        <div class="space-y-5 max-h-[60vh] overflow-y-auto pr-2">
+          <div class="grid grid-cols-2 gap-4">
             <div>
-              <label class="block text-sm font-medium theme-text mb-2">Especificación técnica</label>
-              <input v-model="editingComp.especificacion" type="text" class="w-full theme-bg border theme-border rounded-lg px-4 py-3 text-sm theme-text focus:outline-none focus:border-accent transition-colors" />
+              <label class="block text-sm font-medium theme-text mb-2">Precio Mayorista ($)</label>
+              <input v-model="editingComp.precio_mayorista" type="number" min="0" step="1" @keydown="blockInvalidChars($event)" class="w-full theme-bg border theme-border rounded-lg px-4 py-3 text-sm theme-text focus:outline-none focus:border-accent transition-colors" />
             </div>
             <div>
-              <label class="block text-sm font-medium theme-text mb-2">Enfoque de uso</label>
-              <select v-model="editingComp.enfoque_uso" class="w-full theme-bg border theme-border rounded-lg px-4 py-3 text-sm theme-text focus:outline-none focus:border-accent transition-colors">
-                <option value="">Opcional / Mixto</option>
-                <option value="gaming">Gaming</option>
-                <option value="diseño">Diseño</option>
-                <option value="estudio">Estudio</option>
-                <option value="oficina">Oficina</option>
-              </select>
-            </div>
-            <div>
-              <label class="block text-sm font-medium theme-text mb-2">Gama</label>
-              <select v-model="editingComp.gama" class="w-full theme-bg border theme-border rounded-lg px-4 py-3 text-sm theme-text focus:outline-none focus:border-accent transition-colors">
-                <option value="baja">Baja</option>
-                <option value="media">Media</option>
-                <option value="alta">Alta</option>
-              </select>
-            </div>
-            <div>
-              <label class="block text-sm font-medium theme-text mb-2">Estado</label>
-              <select v-model="editingComp.activo" class="w-full theme-bg border theme-border rounded-lg px-4 py-3 text-sm theme-text focus:outline-none focus:border-accent transition-colors">
-                <option :value="true">Activo</option>
-                <option :value="false">Inactivo</option>
-              </select>
+              <label class="block text-sm font-medium theme-text mb-2">Stock Disponible</label>
+              <input v-model="editingComp.stock" type="number" min="0" step="1" @keydown="blockInvalidChars($event)" class="w-full theme-bg border theme-border rounded-lg px-4 py-3 text-sm theme-text focus:outline-none focus:border-accent transition-colors" />
             </div>
           </div>
-
-          <div class="space-y-5">
-            <div class="grid grid-cols-2 gap-4">
-              <div>
-                <label class="block text-sm font-medium theme-text mb-2">Núcleos</label>
-                <input v-model="editingComp.nucleos" type="number" min="1" class="w-full theme-bg border theme-border rounded-lg px-4 py-3 text-sm theme-text focus:outline-none focus:border-accent transition-colors" />
-              </div>
-              <div>
-                <label class="block text-sm font-medium theme-text mb-2">Hilos</label>
-                <input v-model="editingComp.hilos" type="number" min="1" class="w-full theme-bg border theme-border rounded-lg px-4 py-3 text-sm theme-text focus:outline-none focus:border-accent transition-colors" />
-              </div>
-            </div>
-            <div>
-              <label class="block text-sm font-medium theme-text mb-2">Frecuencia (GHz)</label>
-              <input v-model="editingComp.frecuencia_hz" type="number" step="0.1" min="0" class="w-full theme-bg border theme-border rounded-lg px-4 py-3 text-sm theme-text focus:outline-none focus:border-accent transition-colors" />
-            </div>
-            <div class="grid grid-cols-2 gap-4">
-              <div>
-                <label class="block text-sm font-medium theme-text mb-2">Precio ($)</label>
-                <input v-model="editingComp.precio" type="number" min="0" step="1" @keydown="blockInvalidChars($event)" class="w-full theme-bg border theme-border rounded-lg px-4 py-3 text-sm theme-text focus:outline-none focus:border-accent transition-colors" />
-              </div>
-              <div>
-                <label class="block text-sm font-medium theme-text mb-2">Stock</label>
-                <input v-model="editingComp.stock" type="number" min="0" step="1" @keydown="blockInvalidCharsStock($event)" class="w-full theme-bg border theme-border rounded-lg px-4 py-3 text-sm theme-text focus:outline-none focus:border-accent transition-colors" />
-              </div>
-            </div>
-            <div>
-              <label class="block text-sm font-medium theme-text mb-2">Imagen referencial</label>
-              <div class="relative w-full h-[3.15rem]">
-                <input type="file" @change="onFileChange($event, 'edit')" accept="image/*" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10" />
-                <div class="absolute inset-0 flex items-center justify-between px-4 theme-bg border theme-border rounded-lg group-hover:border-accent transition-colors" :class="{'border-accent': editImagePreview}">
-                  <span class="text-sm truncate mr-4" :class="editFileName ? 'theme-text' : 'theme-text-muted'">{{ editFileName || 'Cambiar imagen...' }}</span>
-                  <div v-if="editImagePreview" class="w-7 h-7 rounded bg-cover bg-center border theme-border shadow-sm flex-shrink-0" :style="{ backgroundImage: `url(${editImagePreview})` }"></div>
-                  <span v-else class="theme-text-muted">📷</span>
-                </div>
-              </div>
-            </div>
-          </div>
+          <p v-if="editCompError" class="mt-5 text-xs text-red-400 bg-red-500/10 border border-red-500/20 rounded-lg px-4 py-2.5 text-center">{{ editCompError }}</p>
         </div>
-
-        <p v-if="editCompError" class="mt-5 text-xs text-red-400 bg-red-500/10 border border-red-500/20 rounded-lg px-4 py-2.5 text-center">{{ editCompError }}</p>
-
+        
         <div class="flex gap-3 mt-8">
           <button @click="saveEditComp" :disabled="savingEditComp" class="btn-primary flex-1 text-sm">
             {{ savingEditComp ? 'Guardando...' : 'Guardar cambios' }}
@@ -603,7 +444,7 @@ const activeSection = ref('dashboard')
 
 const sections = computed(() => [
   { id: 'dashboard',    icon: '📊', label: 'Dashboard',    description: 'Resumen general de tus bodegas',           cta: null,            count: null                  },
-  { id: 'bodegas',      icon: '🏪', label: 'Mis bodegas',  description: `${bodegas.value.length} bodegas asignadas`, cta: '+ Nueva bodega', count: bodegas.value.length  },
+  { id: 'bodegas',      icon: '🏬', label: 'Bodegas asociadas',  description: `${bodegas.value.length} bodegas asociadas`, cta: null, count: bodegas.value.length  },
   { id: 'componentes',  icon: '🔧', label: 'Componentes',  description: `Componentes de tus bodegas`,               cta: '+ Nuevo componente', count: componentes.value.length },
   { id: 'cotizaciones', icon: '📄', label: 'Cotizaciones', description: 'Cotizaciones de tus bodegas',              cta: null,            count: cotizaciones.value.length },
 ])
@@ -617,11 +458,7 @@ const tierStyles = {
 const currentSection = computed(() => sections.value.find(s => s.id === activeSection.value))
 
 function handleCta() {
-  if (activeSection.value === 'bodegas') {
-    newBodega.value = { nombre: '', correo: '', telefono: '', password: '' }
-    bodegaError.value = ''
-    showBodegaModal.value = true
-  } else if (activeSection.value === 'componentes') {
+  if (activeSection.value === 'componentes') {
     openAddModal()
   }
 }
@@ -630,15 +467,11 @@ function handleCta() {
 const bodegas            = ref([])
 const loadingBodegas     = ref(false)
 const filterBodega       = ref('')
-const showBodegaModal    = ref(false)
 const showEditBodegaModal   = ref(false)
 const showDeleteBodegaModal = ref(false)
-const newBodega          = ref({ nombre: '', correo: '', telefono: '', password: '' })
 const editingBodega      = ref({})
 const deletingBodega     = ref(null)
-const bodegaError        = ref('')
 const editBodegaError    = ref('')
-const savingBodega       = ref(false)
 const savingEditBodega   = ref(false)
 const savingDeleteBodega = ref(false)
 const deleteBodegaError  = ref('')
@@ -658,30 +491,6 @@ async function fetchBodegas() {
   } catch(e) { console.error(e) } finally { loadingBodegas.value = false }
 }
 
-async function saveNewBodega() {
-  bodegaError.value = ''
-  if (!newBodega.value.nombre || !newBodega.value.correo || !newBodega.value.password)
-    return bodegaError.value = 'Nombre, correo y contraseña son requeridos'
-  savingBodega.value = true
-  try {
-    const res = await fetch(`${API}/bodegas`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', Accept: 'application/json', Authorization: `Bearer ${getToken()}` },
-      body: JSON.stringify(newBodega.value)
-    })
-    const data = await res.json()
-    if (!res.ok) {
-      toast.error(data.message ?? 'Error al crear')
-      return bodegaError.value = data.message ?? 'Error al crear'
-    }
-    await fetchBodegas()
-    showBodegaModal.value = false
-    toast.success('Bodega agregada exitosamente')
-  } catch(e) { 
-    bodegaError.value = 'Error de conexión'
-    toast.error('Error de conexión')
-  } finally { savingBodega.value = false }
-}
 
 function openEditBodega(b) { editingBodega.value = { ...b }; editBodegaError.value = ''; showEditBodegaModal.value = true }
 
@@ -803,7 +612,7 @@ const filteredComponentes = computed(() => {
 
 // Variables para Add Component
 const showAddCompModal = ref(false)
-const newComp = ref({ bodega_id: '', producto_id: '', especificacion: '', nucleos: '', hilos: '', frecuencia_hz: '', enfoque_uso: '', gama: 'media', precio: '', stock: '' })
+const newComp = ref({ producto_id: '', especificacion: '', nucleos: '', hilos: '', frecuencia_hz: '', enfoque_uso: '', gama: 'media', precio: '' })
 const addCompError = ref('')
 const savingAddComp = ref(false)
 const addImageFile = ref(null)
@@ -819,37 +628,40 @@ const productosFiltrados = computed(() => {
   if (!productoSearch.value.trim()) return categoriasBase.value.slice(0, 10)
   const q = productoSearch.value.toLowerCase()
   return categoriasBase.value.filter(p =>
-    p.nombre.toLowerCase().includes(q) ||
-    p.categoria.toLowerCase().includes(q)
+    (p.nombre && p.nombre.toLowerCase().includes(q)) ||
+    (p.categoria && p.categoria.toLowerCase().includes(q)) ||
+    (p.especificacion && p.especificacion.toLowerCase().includes(q))
   ).slice(0, 10)
 })
 
 function selectProducto(prod) {
+  newComp.value.master_component_id = prod.id
   newComp.value.producto_id = prod.id
   newComp.value.nombre = prod.nombre
   newComp.value.categoria = prod.categoria
-  productoSearch.value = prod.nombre
+  newComp.value.especificacion = prod.especificacion || ''
+  newComp.value.gama = prod.gama || 'media'
+  newComp.value.nucleos = prod.nucleos || ''
+  newComp.value.hilos = prod.hilos || ''
+  newComp.value.frecuencia_hz = prod.frecuencia_hz || ''
+  newComp.value.enfoque_uso = prod.enfoque_uso || ''
+  productoSearch.value = `${prod.nombre} - ${prod.especificacion}`
   showProductoDropdown.value = false
 }
 
 async function fetchCategoriasBase() {
   try {
-    const res = await fetch(`${API}/catalogo`, { headers: { Authorization: `Bearer ${getToken()}` } })
+    const res = await fetch(`${API}/componentes/maestros`, { headers: { Authorization: `Bearer ${getToken()}` } })
     const data = await res.json()
-    if (res.ok) categoriasBase.value = data.productos
+    if (res.ok) categoriasBase.value = data.componentes || []
   } catch(e) { console.error(e) }
 }
 
 function openAddModal() {
-  newComp.value = { bodega_id: '', producto_id: '', especificacion: '', nucleos: '', hilos: '', frecuencia_hz: '', enfoque_uso: '', gama: 'media', precio: '', stock: '' }
-  addImageFile.value = null
-  addImagePreview.value = null
-  addFileName.value = ''
+  newComp.value = { producto_id: '', especificacion: '', nucleos: '', hilos: '', frecuencia_hz: '', enfoque_uso: '', gama: 'media', precio: '' }
   addCompError.value = ''
-  productoSearch.value = ''
-  showProductoDropdown.value = false
-  if (categoriasBase.value.length === 0) fetchCategoriasBase()
   showAddCompModal.value = true
+  if (categoriasBase.value.length === 0) fetchCategoriasBase()
 }
 
 function closeAddModal() {
@@ -874,22 +686,33 @@ function blockInvalidChars(e) { if (['e', 'E', '+', '-'].includes(e.key)) e.prev
 function blockInvalidCharsStock(e) { if (['e', 'E', '+', '-', '.'].includes(e.key)) e.preventDefault() }
 
 async function saveNewComp() {
-  addCompError.value = ''
-  const c = newComp.value
-  if (!c.bodega_id || !c.producto_id || !c.especificacion || !c.gama || !c.precio || c.stock === '') {
-    return addCompError.value = 'El producto, especificación, gama, bodega destino, precio y stock son requeridos'
+  if (!newComp.value.producto_id) return addCompError.value = 'Selecciona un producto base'
+  if (!newComp.value.precio) return addCompError.value = 'El precio mayorista es requerido'
+  if (newComp.value.stock === undefined || newComp.value.stock === '') return addCompError.value = 'El stock es requerido'
+  
+  if (Number(String(newComp.value.precio).replace(',', '.')) <= 0) {
+    return addCompError.value = 'El precio debe ser mayor a 0'
   }
 
+  addCompError.value = ''
   savingAddComp.value = true
-  const formData = new FormData()
-  Object.entries(c).forEach(([k,v]) => { if(v !== '' && v !== null) formData.append(k, v) })
-  if (addImageFile.value) formData.append('imagen', addImageFile.value)
-
+  
   try {
-    const res = await fetch(`${API}/componentes`, {
+    const payload = {
+      items: [
+        {
+          producto_catalogo_id: newComp.value.producto_id,
+          precio_mayorista: newComp.value.precio,
+          stock: newComp.value.stock,
+          descripcion_comercial: newComp.value.especificacion
+        }
+      ]
+    }
+    
+    const res = await fetch(`${API}/proveedores/me/productos`, {
       method: 'POST',
-      headers: { Authorization: `Bearer ${getToken()}`, Accept: 'application/json' },
-      body: formData
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getToken()}` },
+      body: JSON.stringify(payload)
     })
     const data = await res.json()
     if (!res.ok) {
@@ -911,9 +734,9 @@ async function saveNewComp() {
 async function fetchComponentes() {
   loadingComponentes.value = true
   try {
-    const res = await fetch(`${API}/componentes`, { headers: { Authorization: `Bearer ${getToken()}` } })
+    const res = await fetch(`${API}/proveedores/me/productos`, { headers: { Authorization: `Bearer ${getToken()}` } })
     const data = await res.json()
-    if (res.ok) componentes.value = data.componentes
+    if (res.ok) componentes.value = data.productos
   } catch(e) { console.error(e) } finally { loadingComponentes.value = false }
 }
 
@@ -931,44 +754,28 @@ function openEditComp(comp) {
 }
 
 async function saveEditComp() {
+  if (!editingComp.value.precio_mayorista) return editCompError.value = 'El precio mayorista es requerido'
+  if (editingComp.value.stock === undefined || editingComp.value.stock === '') return editCompError.value = 'El stock es requerido'
+
   editCompError.value = ''
-  
-  if (editingComp.value.precio !== undefined && Number(editingComp.value.precio) <= 0) {
-    return editCompError.value = 'El precio debe ser mayor a 0'
-  }
-  if (editingComp.value.stock !== undefined && editingComp.value.stock !== '' && !Number.isInteger(Number(editingComp.value.stock))) {
-    return editCompError.value = 'El stock debe ser un número entero sin decimales'
-  }
-  if (editingComp.value.stock !== undefined && Number(editingComp.value.stock) < 0) {
-    return editCompError.value = 'El stock no puede ser negativo'
-  }
-
   savingEditComp.value = true
-  const formData = new FormData()
-  formData.append('id', editingComp.value.id)
-  // Trick for Laravel PUT via FormData
-  formData.append('_method', 'PUT')
   
-  const fields = ['especificacion', 'nucleos', 'hilos', 'frecuencia_hz', 'enfoque_uso', 'gama', 'precio', 'stock', 'activo']
-  fields.forEach(f => {
-    if (editingComp.value[f] !== undefined && editingComp.value[f] !== null) {
-      formData.append(f, editingComp.value[f])
-    }
-  })
-  
-  if (editImageFile.value) formData.append('imagen', editImageFile.value)
-
   try {
-    const res = await fetch(`${API}/componentes`, {
-      method: 'POST', // POST for FormData spoofing
-      headers: { Authorization: `Bearer ${getToken()}`, Accept: 'application/json' },
-      body: formData
+    const payload = {
+      producto_catalogo_id: editingComp.value.id,
+      precio_mayorista: editingComp.value.precio_mayorista,
+      stock: editingComp.value.stock
+    }
+
+    const res = await fetch(`${API}/proveedores/catalogo/item`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getToken()}` },
+      body: JSON.stringify(payload)
     })
     const data = await res.json()
     if (!res.ok) {
-      const msg = data.message ?? 'Error al guardar los cambios'
-      toast.error(msg)
-      return editCompError.value = msg
+      toast.error(data.message ?? 'Error al actualizar')
+      return editCompError.value = data.message ?? 'Error al actualizar'
     }
     await fetchComponentes()
     showEditCompModal.value = false
@@ -997,7 +804,7 @@ async function confirmDelete() {
   savingDelete.value = true
   deleteError.value = ''
   try {
-    const res = await fetch(`${API}/componentes/${deletingComp.value.id}`, {
+    const res = await fetch(`${API}/proveedores/catalogo/item?producto_catalogo_id=${deletingComp.value.id}`, {
       method: 'DELETE',
       headers: { Authorization: `Bearer ${getToken()}` }
     })

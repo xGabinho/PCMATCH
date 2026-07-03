@@ -14,11 +14,13 @@ import BodegaView     from '../views/BodegaView.vue'
 import ProveedorView  from '../views/ProveedorView.vue'
 import ProfileView    from '../views/ProfileView.vue'
 import UserProfileView from '../views/UserProfileView.vue'
+import AsistenteArmadoView from '../views/AsistenteArmadoView.vue'
 
 const routes = [
   // Públicas
-  { path: '/',       component: HomeView  },
-  { path: '/login',  component: LoginView },
+  { path: '/',          component: HomeView  },
+  { path: '/login',     component: LoginView },
+  { path: '/asistente', component: AsistenteArmadoView },
   { path: '/recuperar-password',   component: ForgotPasswordView },
   { path: '/restablecer-password', component: ResetPasswordView },
 

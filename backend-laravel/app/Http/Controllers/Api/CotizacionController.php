@@ -110,29 +110,47 @@ class CotizacionController extends Controller
         $cotizacionId = null;
         $codigoUnico = 'COT-' . strtoupper(Str::random(8));
         
-        DB::transaction(function () use ($user, $perfil, $total, $items, &$cotizacionId, $codigoUnico) {
-            // 1. Insertar la cotización madre
-            $cotizacionId = DB::table('cotizaciones')->insertGetId([
-                'usuario_id' => $user->id,
-                'perfil' => $perfil,
-                'total' => $total,
-                'codigo' => $codigoUnico,
-                // created_at se setea automáticamente usualmente, pero si en tu DB legacy usabas NOW():
-                'created_at' => now(),
-            ]);
+        try {
+            DB::transaction(function () use ($user, $perfil, $total, $items, &$cotizacionId, $codigoUnico) {
+                // 1. Insertar la cotización madre
+                $cotizacionId = DB::table('cotizaciones')->insertGetId([
+                    'usuario_id' => $user->id,
+                    'perfil' => $perfil,
+                    'total' => $total,
+                    'codigo' => $codigoUnico,
+                    'created_at' => now(),
+                    'stock_restaurado' => 'false'
+                ]);
 
-            // 2. Insertar cada uno de los items
-            $itemsData = [];
-            foreach ($items as $item) {
-                $itemsData[] = [
-                    'cotizacion_id' => $cotizacionId,
-                    'componente_id' => $item['componente_id'],
-                    'cantidad' => $item['cantidad'] ?? 1,
-                    'precio_unitario' => $item['precio']
-                ];
-            }
-            DB::table('cotizacion_items')->insert($itemsData);
-        });
+                // 2. Insertar cada uno de los items y descontar stock
+                $itemsData = [];
+                foreach ($items as $item) {
+                    $cantidad = $item['cantidad'] ?? 1;
+                    
+                    // Validar stock del componente
+                    $componente = DB::table('componentes')->where('id', $item['componente_id'])->lockForUpdate()->first();
+                    if (!$componente) {
+                        throw new \Exception("El componente con ID {$item['componente_id']} no existe.");
+                    }
+                    if ($componente->stock < $cantidad) {
+                        throw new \Exception("Stock insuficiente para el componente: {$componente->especificacion}. Disponible: {$componente->stock}");
+                    }
+                    
+                    // Descontar stock
+                    DB::table('componentes')->where('id', $item['componente_id'])->decrement('stock', $cantidad);
+
+                    $itemsData[] = [
+                        'cotizacion_id' => $cotizacionId,
+                        'componente_id' => $item['componente_id'],
+                        'cantidad' => $cantidad,
+                        'precio_unitario' => $item['precio']
+                    ];
+                }
+                DB::table('cotizacion_items')->insert($itemsData);
+            });
+        } catch (\Exception $e) {
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 400);
+        }
 
         // 3. Obtener los datos completos para el PDF
         $cotizacion = DB::table('cotizaciones')->where('id', $cotizacionId)->first();

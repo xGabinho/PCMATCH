@@ -72,7 +72,7 @@ export function useBuilder() {
   })
 
   const totalPrice = computed(() =>
-    Object.values(selectedComponents.value).reduce((sum, item) => sum + Number(item.precio) * (item.cantidad || 1), 0)
+    Object.values(selectedComponents.value).reduce((sum, item) => sum + Number(item.precio_final || item.precio) * (item.cantidad || 1), 0)
   )
 
   function selectItem(stepId, item) {

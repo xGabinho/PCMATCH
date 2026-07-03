@@ -198,7 +198,15 @@
                       {{ comp.gama }}
                     </span>
                   </td>
-                  <td class="px-6 py-4 text-sm text-accent font-mono font-semibold">${{ Number(comp.precio).toLocaleString() }}</td>
+                  <td class="px-6 py-4 text-sm font-mono">
+                    <div class="flex flex-col">
+                      <div v-if="comp.descuento_activo && comp.descuento_porcentaje > 0" class="flex items-center gap-1.5 mb-0.5">
+                        <span class="line-through text-xs theme-text-muted opacity-70">${{ Number(comp.precio).toLocaleString() }}</span>
+                        <span class="text-[10px] bg-red-500/20 text-red-400 px-1.5 py-0.5 rounded font-bold">-{{ comp.descuento_porcentaje }}%</span>
+                      </div>
+                      <span class="text-accent font-semibold">${{ Number(comp.precio_final || comp.precio).toLocaleString() }}</span>
+                    </div>
+                  </td>
                   <td class="px-6 py-4">
                     <div class="flex items-center gap-1.5">
                       <button @click="quickAdjust(comp, 'decrementar', stockQty[comp.id] ?? 1)" :disabled="comp.stock < (stockQty[comp.id] ?? 1) || comp._adjusting" class="w-7 h-7 rounded-lg border theme-border theme-bg theme-text-muted hover:text-red-400 hover:border-red-500/40 transition-colors flex items-center justify-center text-sm font-bold disabled:opacity-30 disabled:cursor-not-allowed">−</button>
@@ -235,6 +243,72 @@
           </div>
         </template>
 
+        <!-- ===== PROVEEDORES ===== -->
+        <template v-if="activeSection === 'proveedores'">
+          <div v-if="!selectedProveedor" class="animate-fade-in">
+            <h2 class="text-lg font-bold theme-text mb-4">Directorio de Proveedores</h2>
+            <div v-if="loadingProveedores" class="px-6 py-12 text-center theme-text-muted text-sm">Cargando proveedores...</div>
+            <div v-else class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              <div v-if="proveedores.length === 0" class="col-span-full px-6 py-12 text-center theme-text-muted text-sm border theme-border rounded-xl">
+                No hay proveedores activos en este momento.
+              </div>
+              <div v-for="prov in proveedores" :key="prov.id" class="card-dark rounded-2xl p-6 border theme-border flex flex-col hover:border-accent/40 transition-all group">
+                <div class="flex items-start justify-between mb-4">
+                  <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-full bg-accent/10 flex items-center justify-center text-accent font-bold text-lg">
+                      {{ prov.nombre.charAt(0).toUpperCase() }}
+                    </div>
+                    <div>
+                      <h3 class="font-bold theme-text">{{ prov.nombre }}</h3>
+                      <p class="text-xs theme-text-muted">{{ prov.correo }}</p>
+                    </div>
+                  </div>
+                </div>
+                <p class="text-xs theme-text-muted mb-6 flex-1">{{ prov.razon_social }} ({{ prov.identificacion_legal }})</p>
+                <button @click="viewProveedorCatalogo(prov)" class="btn-primary w-full text-sm">
+                  Ver catálogo
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <div v-else class="animate-fade-in">
+            <button @click="selectedProveedor = null" class="mb-4 text-sm theme-text-muted hover:theme-text flex items-center gap-2">
+              <span>←</span> Volver a proveedores
+            </button>
+            <div class="flex items-center justify-between mb-6">
+              <div>
+                <h2 class="text-lg font-bold theme-text">Catálogo de: {{ selectedProveedor.nombre }}</h2>
+                <p class="text-xs theme-text-muted mt-0.5">Selecciona los productos que deseas añadir a tu inventario</p>
+              </div>
+            </div>
+            
+            <div v-if="loadingCatalogo" class="px-6 py-12 text-center theme-text-muted text-sm">Cargando catálogo...</div>
+            <table v-else class="w-full min-w-[640px] bg-dark-bg/30 rounded-xl overflow-hidden">
+              <thead class="border-b theme-border">
+                <tr><th v-for="h in ['Producto','Categoría','Gama','Precio Mayorista','Acción']" :key="h" class="px-6 py-3 text-left text-xs theme-text-muted uppercase tracking-wider font-medium">{{ h }}</th></tr>
+              </thead>
+              <tbody class="divide-y divide-dark-border">
+                <tr v-if="proveedorCatalogo.length === 0"><td colspan="5" class="px-6 py-12 text-center theme-text-muted text-sm">Este proveedor no tiene productos en su catálogo</td></tr>
+                <tr v-for="p in proveedorCatalogo" :key="p.id" class="hover:bg-gray-100 dark:bg-dark-bg/50 transition-colors">
+                  <td class="px-6 py-4">
+                    <p class="text-sm font-medium theme-text">{{ p.nombre }}</p>
+                    <p class="text-xs theme-text-muted">{{ p.descripcion_comercial || p.especificacion }}</p>
+                  </td>
+                  <td class="px-6 py-4"><span class="badge text-xs bg-accent/10 text-accent border border-accent/20">{{ p.categoria }}</span></td>
+                  <td class="px-6 py-4"><span class="text-xs px-2 py-0.5 rounded-full font-medium border" :class="tierStyles[p.gama]">{{ p.gama }}</span></td>
+                  <td class="px-6 py-4 text-sm font-mono text-accent font-medium">${{ Number(p.precio_mayorista).toLocaleString() }}</td>
+                  <td class="px-6 py-4">
+                    <button @click="openImportModal(p)" class="btn-secondary text-xs px-3 py-1.5 flex items-center gap-1.5">
+                      <span>➕</span> Añadir
+                    </button>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </template>
+
       </div>
     </main>
 
@@ -244,30 +318,35 @@
       <div class="relative card-dark rounded-2xl p-6 w-full max-w-lg my-auto shadow-2xl">
         <div class="flex items-center justify-between mb-6">
           <div>
-            <h2 class="text-lg font-bold theme-text">Añadir componente</h2>
-            <p class="text-xs theme-text-muted mt-0.5">Registra un nuevo producto en tu inventario</p>
+            <h2 class="text-lg font-bold theme-text">{{ isImporting ? 'Importar Componente' : 'Añadir Componente' }}</h2>
+            <p class="text-xs theme-text-muted mt-0.5">{{ isImporting ? 'Define tu precio y stock inicial' : 'Registra un nuevo producto en tu inventario' }}</p>
           </div>
           <button @click="closeAddModal" class="theme-text-muted hover:theme-text transition-colors text-2xl leading-none w-8 h-8 flex items-center justify-center rounded-lg hover:theme-bg">×</button>
         </div>
 
         <div class="space-y-5 max-h-[60vh] overflow-y-auto pr-2">
-          <!-- Select buscable de producto -->
-          <div>
+          
+          <div v-if="isImporting" class="p-3 rounded bg-accent/10 border border-accent/20 mb-4">
+            <p class="text-sm font-bold text-accent">{{ newComp.nombre }}</p>
+            <p class="text-xs theme-text-muted">Precio mayorista: ${{ Number(newComp.precio_mayorista).toLocaleString() }}</p>
+          </div>
+
+          <div v-if="!isImporting" class="mb-4 relative">
             <label class="block text-sm font-medium theme-text mb-2">Producto Base <span class="text-red-400">*</span></label>
             <div class="relative">
               <input
                 v-model="productoSearch"
-                @input="showProductoDropdown = true; newComp.producto_id = ''; newComp.categoria = ''"
+                @input="showProductoDropdown = true; newComp.master_component_id = ''; newComp.producto_id = ''; newComp.categoria = ''"
                 @focus="showProductoDropdown = true"
                 type="text"
-                placeholder="Buscar producto..."
+                placeholder="Buscar componente maestro..."
                 class="allow-special w-full theme-bg border theme-border rounded-lg px-4 py-3 text-sm theme-text placeholder-text-muted focus:outline-none focus:border-accent transition-colors"
-                :class="{ 'border-accent': newComp.producto_id }"
+                :class="{ 'border-accent': newComp.master_component_id || newComp.producto_id }"
                 autocomplete="off"
               />
               <div v-if="showProductoDropdown && productosFiltrados.length > 0" class="absolute top-full left-0 right-0 mt-1 theme-card border theme-border rounded-lg shadow-xl z-20 max-h-52 overflow-y-auto">
                 <button v-for="prod in productosFiltrados" :key="prod.id" @click="selectProducto(prod)" class="w-full flex items-center justify-between px-4 py-2.5 text-sm hover:theme-bg transition-colors text-left">
-                  <span class="theme-text">{{ prod.nombre }}</span>
+                  <span class="theme-text">{{ prod.nombre }} <span v-if="prod.especificacion" class="text-xs opacity-70 ml-1">- {{ prod.especificacion }}</span></span>
                   <span class="text-xs theme-text-muted ml-3 flex-shrink-0">{{ prod.categoria }}</span>
                 </button>
               </div>
@@ -277,62 +356,15 @@
             </p>
           </div>
 
-          <!-- Especificación -->
-          <div>
-            <label class="block text-sm font-medium theme-text mb-2">Especificación técnica <span class="text-red-400">*</span></label>
-            <input v-model="newComp.especificacion" type="text" placeholder="Ej: Core i5-12400F 2.5 GHz" class="allow-special w-full theme-bg border theme-border rounded-lg px-4 py-3 text-sm theme-text placeholder-text-muted focus:outline-none focus:border-accent transition-colors" />
-          </div>
-
-          <!-- Gama -->
-          <div>
-            <label class="block text-sm font-medium theme-text mb-3">Gama <span class="text-red-400">*</span></label>
-            <div class="grid grid-cols-3 gap-3">
-              <button v-for="tier in ['alta', 'media', 'baja']" :key="tier" @click="newComp.gama = tier"
-                class="py-2.5 rounded-lg border text-sm font-medium transition-all"
-                :class="newComp.gama === tier ? 'border-accent bg-accent/10 text-accent' : 'theme-border theme-text-muted hover:border-accent/40'">
-                {{ tier.charAt(0).toUpperCase() + tier.slice(1) }}
-              </button>
-            </div>
-          </div>
-
           <!-- Precio y Stock -->
           <div class="grid grid-cols-2 gap-4">
             <div>
-              <label class="block text-sm font-medium theme-text mb-2">Precio ($) <span class="text-red-400">*</span></label>
+              <label class="block text-sm font-medium theme-text mb-2">Precio Retail ($) <span class="text-red-400">*</span></label>
               <input v-model="newComp.precio" type="number" min="0" step="1" @keydown="blockInvalidChars($event)" class="w-full theme-bg border theme-border rounded-lg px-4 py-3 text-sm theme-text focus:outline-none focus:border-accent transition-colors" />
             </div>
             <div>
               <label class="block text-sm font-medium theme-text mb-2">Stock inicial <span class="text-red-400">*</span></label>
               <input v-model="newComp.stock" type="number" min="0" step="1" @keydown="blockInvalidCharsStock($event)" class="w-full theme-bg border theme-border rounded-lg px-4 py-3 text-sm theme-text focus:outline-none focus:border-accent transition-colors" />
-            </div>
-          </div>
-
-          <!-- Especificaciones Avanzadas -->
-          <div class="grid grid-cols-2 gap-4">
-            <div>
-              <label class="block text-sm font-medium theme-text mb-2">Núcleos (Opcional)</label>
-              <input v-model="newComp.nucleos" type="number" min="1" placeholder="Ej: 8" class="w-full theme-bg border theme-border rounded-lg px-4 py-3 text-sm theme-text focus:outline-none focus:border-accent transition-colors" />
-            </div>
-            <div>
-              <label class="block text-sm font-medium theme-text mb-2">Hilos (Opcional)</label>
-              <input v-model="newComp.hilos" type="number" min="1" placeholder="Ej: 16" class="w-full theme-bg border theme-border rounded-lg px-4 py-3 text-sm theme-text focus:outline-none focus:border-accent transition-colors" />
-            </div>
-          </div>
-
-          <div class="grid grid-cols-2 gap-4">
-            <div>
-              <label class="block text-sm font-medium theme-text mb-2">Frecuencia GHz (Opcional)</label>
-              <input v-model="newComp.frecuencia_hz" type="number" step="0.1" min="0" placeholder="Ej: 3.5" class="w-full theme-bg border theme-border rounded-lg px-4 py-3 text-sm theme-text focus:outline-none focus:border-accent transition-colors" />
-            </div>
-            <div>
-              <label class="block text-sm font-medium theme-text mb-2">Enfoque de uso</label>
-              <select v-model="newComp.enfoque_uso" class="w-full theme-bg border theme-border rounded-lg px-4 py-3 text-sm theme-text focus:outline-none focus:border-accent transition-colors">
-                <option :value="null">Ninguno</option>
-                <option value="estudio">Estudio</option>
-                <option value="oficina">Oficina</option>
-                <option value="gaming">Gaming</option>
-                <option value="diseño">Diseño</option>
-              </select>
             </div>
           </div>
 
@@ -346,7 +378,7 @@
 
         <div class="flex gap-3 mt-8">
           <button @click="saveNewComp" :disabled="savingAdd" class="btn-primary flex-1 text-sm">
-            {{ savingAdd ? 'Guardando...' : 'Crear componente' }}
+            {{ savingAdd ? 'Guardando...' : (isImporting ? 'Importar componente' : 'Crear componente') }}
           </button>
           <button @click="closeAddModal" class="btn-secondary text-sm px-5">Cancelar</button>
         </div>
@@ -356,7 +388,7 @@
     <!-- ===== MODAL EDITAR COMPONENTE ===== -->
     <div v-if="showEditModal" class="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto py-6 px-4">
       <div class="fixed inset-0 bg-black/60 backdrop-blur-sm" @click="showEditModal = false"></div>
-      <div class="relative card-dark rounded-2xl p-6 w-full max-w-3xl my-auto shadow-2xl">
+      <div class="relative card-dark rounded-2xl p-6 w-full max-w-xl my-auto shadow-2xl">
         <div class="flex items-center justify-between mb-6">
           <div>
             <h2 class="text-lg font-bold theme-text">Editar componente</h2>
@@ -365,30 +397,19 @@
           <button @click="showEditModal = false" class="theme-text-muted hover:theme-text transition-colors text-2xl leading-none w-8 h-8 flex items-center justify-center rounded-lg hover:theme-bg">×</button>
         </div>
 
-        <div class="grid grid-cols-2 gap-6">
-          <div class="space-y-5">
+        <div class="space-y-5">
+          <div class="grid grid-cols-2 gap-4">
             <div>
-              <label class="block text-sm font-medium theme-text mb-2">Especificación técnica</label>
-              <input v-model="editingComp.especificacion" type="text" class="w-full theme-bg border theme-border rounded-lg px-4 py-3 text-sm theme-text focus:outline-none focus:border-accent transition-colors" />
+              <label class="block text-sm font-medium theme-text mb-2">Precio Retail ($)</label>
+              <input v-model="editingComp.precio" type="number" min="0" step="1" @keydown="blockInvalidChars($event)" class="w-full theme-bg border theme-border rounded-lg px-4 py-3 text-sm theme-text focus:outline-none focus:border-accent transition-colors" />
             </div>
             <div>
-              <label class="block text-sm font-medium theme-text mb-2">Enfoque de uso</label>
-              <select v-model="editingComp.enfoque_uso" class="w-full theme-bg border theme-border rounded-lg px-4 py-3 text-sm theme-text focus:outline-none focus:border-accent transition-colors">
-                <option value="">Opcional / Mixto</option>
-                <option value="gaming">Gaming</option>
-                <option value="diseño">Diseño</option>
-                <option value="estudio">Estudio</option>
-                <option value="oficina">Oficina</option>
-              </select>
+              <label class="block text-sm font-medium theme-text mb-2">Stock</label>
+              <input v-model="editingComp.stock" type="number" min="0" step="1" @keydown="blockInvalidCharsStock($event)" class="w-full theme-bg border theme-border rounded-lg px-4 py-3 text-sm theme-text focus:outline-none focus:border-accent transition-colors" />
             </div>
-            <div>
-              <label class="block text-sm font-medium theme-text mb-2">Gama</label>
-              <select v-model="editingComp.gama" class="w-full theme-bg border theme-border rounded-lg px-4 py-3 text-sm theme-text focus:outline-none focus:border-accent transition-colors">
-                <option value="baja">Baja</option>
-                <option value="media">Media</option>
-                <option value="alta">Alta</option>
-              </select>
-            </div>
+          </div>
+          
+          <div class="grid grid-cols-2 gap-4">
             <div>
               <label class="block text-sm font-medium theme-text mb-2">Estado</label>
               <select v-model="editingComp.activo" class="w-full theme-bg border theme-border rounded-lg px-4 py-3 text-sm theme-text focus:outline-none focus:border-accent transition-colors">
@@ -396,45 +417,20 @@
                 <option :value="false">Inactivo</option>
               </select>
             </div>
+            <div>
+              <label class="block text-sm font-medium theme-text mb-2">Descuento (%)</label>
+              <input v-model="editingComp.descuento_porcentaje" type="number" min="0" max="100" step="1" class="w-full theme-bg border theme-border rounded-lg px-4 py-3 text-sm theme-text focus:outline-none focus:border-accent transition-colors" />
+            </div>
           </div>
 
-          <div class="space-y-5">
-            <div class="grid grid-cols-2 gap-4">
-              <div>
-                <label class="block text-sm font-medium theme-text mb-2">Núcleos</label>
-                <input v-model="editingComp.nucleos" type="number" min="1" class="w-full theme-bg border theme-border rounded-lg px-4 py-3 text-sm theme-text focus:outline-none focus:border-accent transition-colors" />
-              </div>
-              <div>
-                <label class="block text-sm font-medium theme-text mb-2">Hilos</label>
-                <input v-model="editingComp.hilos" type="number" min="1" class="w-full theme-bg border theme-border rounded-lg px-4 py-3 text-sm theme-text focus:outline-none focus:border-accent transition-colors" />
-              </div>
-            </div>
-            <div>
-              <label class="block text-sm font-medium theme-text mb-2">Frecuencia (GHz)</label>
-              <input v-model="editingComp.frecuencia_hz" type="number" step="0.1" min="0" class="w-full theme-bg border theme-border rounded-lg px-4 py-3 text-sm theme-text focus:outline-none focus:border-accent transition-colors" />
-            </div>
-            <div class="grid grid-cols-2 gap-4">
-              <div>
-                <label class="block text-sm font-medium theme-text mb-2">Precio ($)</label>
-                <input v-model="editingComp.precio" type="number" min="0" step="1" @keydown="blockInvalidChars($event)" class="w-full theme-bg border theme-border rounded-lg px-4 py-3 text-sm theme-text focus:outline-none focus:border-accent transition-colors" />
-              </div>
-              <div>
-                <label class="block text-sm font-medium theme-text mb-2">Stock</label>
-                <input v-model="editingComp.stock" type="number" min="0" step="1" @keydown="blockInvalidCharsStock($event)" class="w-full theme-bg border theme-border rounded-lg px-4 py-3 text-sm theme-text focus:outline-none focus:border-accent transition-colors" />
-              </div>
-            </div>
-            <div>
-              <label class="block text-sm font-medium theme-text mb-2">Imagen referencial</label>
-              <div class="relative w-full h-[3.15rem]">
-                <input type="file" @change="onFileChange($event, 'edit')" accept="image/*" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10" />
-                <div class="absolute inset-0 flex items-center justify-between px-4 theme-bg border theme-border rounded-lg group-hover:border-accent transition-colors" :class="{'border-accent': editImagePreview}">
-                  <span class="text-sm truncate mr-4" :class="editFileName ? 'theme-text' : 'theme-text-muted'">{{ editFileName || 'Cambiar imagen...' }}</span>
-                  <div v-if="editImagePreview" class="w-7 h-7 rounded bg-cover bg-center border theme-border shadow-sm flex-shrink-0" :style="{ backgroundImage: `url(${editImagePreview})` }"></div>
-                  <span v-else class="theme-text-muted">📷</span>
-                </div>
-              </div>
-            </div>
+          <div class="flex items-center mt-2">
+            <label class="flex items-center gap-3 cursor-pointer">
+              <input type="checkbox" v-model="editingComp.descuento_activo" class="sr-only peer" />
+              <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-accent relative"></div>
+              <span class="text-sm font-medium theme-text">Activar descuento en tienda</span>
+            </label>
           </div>
+          
         </div>
 
         <p v-if="editError" class="mt-5 text-xs text-red-400 bg-red-500/10 border border-red-500/20 rounded-lg px-4 py-2.5 text-center">{{ editError }}</p>
@@ -479,6 +475,7 @@ import { useToast } from '../composables/useToast'
 import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
 
 const API = '/api'
+const toast = useToast()
 
 const router = useRouter()
 const { logout, getToken, user } = useAuth()
@@ -497,6 +494,7 @@ const activeSection = ref('dashboard')
 const sections = [
   { id: 'dashboard',   icon: '📊', label: 'Dashboard',       description: 'Resumen de tu bodega',          count: null },
   { id: 'componentes', icon: '🔧', label: 'Mis componentes', description: 'Gestiona tu catálogo y stock',  count: true },
+  { id: 'proveedores', icon: '🏭', label: 'Proveedores',     description: 'Explora catálogos mayoristas',  count: null },
 ]
 const currentSection = computed(() => sections.find(s => s.id === activeSection.value))
 
@@ -508,11 +506,59 @@ const tierStyles = {
   baja:  'bg-zinc-500/10 text-zinc-400 border-zinc-500/20',
 }
 
-const tiers = [
-  { id: 'alta',  icon: '🚀', label: 'Alta gama',  desc: 'Top rendimiento',       activeBorder: 'border-purple-500/60', activeBg: 'bg-purple-500/10', activeText: 'text-purple-400' },
-  { id: 'media', icon: '⚡', label: 'Gama media', desc: 'Relación precio-valor',  activeBorder: 'border-accent/60',    activeBg: 'bg-accent/10',    activeText: 'text-accent'     },
-  { id: 'baja',  icon: '💡', label: 'Gama baja',  desc: 'Económico y funcional', activeBorder: 'border-green-500/60', activeBg: 'bg-green-500/10', activeText: 'text-green-400'  },
-]
+// ── Proveedores Flow ─────────────────────────────────────
+const proveedores = ref([])
+const loadingProveedores = ref(false)
+const selectedProveedor = ref(null)
+const proveedorCatalogo = ref([])
+const loadingCatalogo = ref(false)
+const isImporting = ref(false)
+
+async function fetchProveedores() {
+  loadingProveedores.value = true
+  try {
+    const res = await fetch(`${API}/proveedores`, { headers: { Authorization: `Bearer ${getToken()}` } })
+    const data = await res.json()
+    if (res.ok) {
+      proveedores.value = data.proveedores.data.filter(p => p.activo === true || p.activo === 1 || p.activo === 'true')
+    }
+  } catch(e) { console.error(e) } finally { loadingProveedores.value = false }
+}
+
+async function viewProveedorCatalogo(prov) {
+  selectedProveedor.value = prov
+  loadingCatalogo.value = true
+  try {
+    const res = await fetch(`${API}/proveedores/${prov.id}/productos`, { headers: { Authorization: `Bearer ${getToken()}` } })
+    const data = await res.json()
+    if (res.ok) {
+      proveedorCatalogo.value = data.productos
+    }
+  } catch(e) { console.error(e) } finally { loadingCatalogo.value = false }
+}
+
+function openImportModal(prod) {
+  isImporting.value = true
+  newComp.value = {
+    master_component_id: prod.id,
+    producto_id: prod.id,
+    nombre: prod.nombre,
+    precio_mayorista: prod.precio_mayorista,
+    categoria: prod.categoria,
+    especificacion: prod.especificacion,
+    gama: prod.gama,
+    nucleos: prod.nucleos,
+    hilos: prod.hilos,
+    frecuencia_hz: prod.frecuencia_hz,
+    enfoque_uso: prod.enfoque_uso,
+    precio: '',
+    stock: '',
+    descuento_porcentaje: 0,
+    descuento_activo: 0
+  }
+  addError.value = ''
+  showAddModal.value = true
+}
 
 // ── Componentes ──────────────────────────────────────────
 const myComponents = ref([])
@@ -586,7 +632,7 @@ async function fetchComponents() {
 }
 
 // ── Catálogo para el select buscable ─────────────────────
-const catalogo = ref([])
+const categoriasBase = ref([])
 const productoSearch = ref('')
 const showProductoDropdown = ref(false)
 
@@ -594,20 +640,27 @@ const productosFiltrados = computed(() => {
   if (!productoSearch.value.trim()) return categoriasBase.value.slice(0, 10)
   const q = productoSearch.value.toLowerCase()
   return categoriasBase.value.filter(p =>
-    p.nombre.toLowerCase().includes(q) ||
-    p.categoria.toLowerCase().includes(q)
+    (p.nombre && p.nombre.toLowerCase().includes(q)) ||
+    (p.categoria && p.categoria.toLowerCase().includes(q)) ||
+    (p.especificacion && p.especificacion.toLowerCase().includes(q))
   ).slice(0, 10)
 })
 
 function selectProducto(prod) {
+  newComp.value.master_component_id = prod.id
   newComp.value.producto_id = prod.id
   newComp.value.nombre = prod.nombre
   newComp.value.categoria = prod.categoria
-  productoSearch.value = prod.nombre
+  newComp.value.especificacion = prod.especificacion || ''
+  newComp.value.gama = prod.gama || 'media'
+  newComp.value.nucleos = prod.nucleos || ''
+  newComp.value.hilos = prod.hilos || ''
+  newComp.value.frecuencia_hz = prod.frecuencia_hz || ''
+  newComp.value.enfoque_uso = prod.enfoque_uso || ''
+  productoSearch.value = `${prod.nombre} - ${prod.especificacion}`
   showProductoDropdown.value = false
 }
 
-// Cerrar dropdown al hacer click fuera
 function handleClickOutside(e) {
   if (!e.target.closest('.relative')) showProductoDropdown.value = false
 }
@@ -615,23 +668,22 @@ function handleClickOutside(e) {
 const showAddModal = ref(false)
 const addError = ref('')
 const savingAdd = ref(false)
-const newComp = ref({ producto_id: '', especificacion: '', nucleos: '', hilos: '', frecuencia_hz: '', enfoque_uso: '', gama: 'media', precio: '', stock: '' })
+const newComp = ref({ master_component_id: '', producto_id: '', nombre: '', categoria: '', especificacion: '', nucleos: '', hilos: '', frecuencia_hz: '', enfoque_uso: '', gama: 'media', precio: '', stock: '', descuento_porcentaje: 0, descuento_activo: 0 })
 const addImageFile = ref(null)
 const addImagePreview = ref(null)
 const addFileName = ref('')
 
-const categoriasBase = ref([])
-
 async function fetchCategoriasBase() {
   try {
-    const res = await fetch(`${API}/catalogo`, { headers: { Authorization: `Bearer ${getToken()}` } })
+    const res = await fetch(`${API}/componentes/maestros`, { headers: { Authorization: `Bearer ${getToken()}` } })
     const data = await res.json()
-    if (res.ok) categoriasBase.value = data.productos
+    if (res.ok) categoriasBase.value = data.componentes || []
   } catch(e) { console.error(e) }
 }
 
 function openAddModal() {
-  newComp.value = { producto_id: '', especificacion: '', nucleos: '', hilos: '', frecuencia_hz: '', enfoque_uso: '', gama: 'media', precio: '', stock: '' }
+  isImporting.value = false
+  newComp.value = { master_component_id: '', producto_id: '', nombre: '', categoria: '', especificacion: '', nucleos: '', hilos: '', frecuencia_hz: '', enfoque_uso: '', gama: 'media', precio: '', stock: '', descuento_porcentaje: 0, descuento_activo: 0 }
   addImageFile.value = null
   addImagePreview.value = null
   addFileName.value = ''
@@ -660,8 +712,11 @@ function onFileChange(e, type) {
 
 async function saveNewComp() {
   addError.value = ''
-  if (!newComp.value.producto_id || !newComp.value.especificacion || !newComp.value.gama || !newComp.value.precio || newComp.value.stock === '') {
-    return addError.value = 'El producto, especificación, gama, precio y stock son requeridos'
+  if (!newComp.value.master_component_id && (!newComp.value.producto_id || !newComp.value.especificacion || !newComp.value.gama)) {
+    return addError.value = 'Debes seleccionar un maestro o proporcionar el producto, especificación y gama'
+  }
+  if (!newComp.value.precio || newComp.value.stock === '') {
+    return addError.value = 'El precio y stock son requeridos'
   }
 
   savingAdd.value = true
@@ -711,20 +766,19 @@ function openEditComp(comp) {
 async function saveEditComp() {
   editError.value = ''
   
-  if (editingComp.value.precio !== undefined && Number(editingComp.value.precio) <= 0) {
+  if (editingComp.value.precio !== undefined && Number(String(editingComp.value.precio).replace(',', '.')) <= 0) {
     return editError.value = 'El precio debe ser mayor a 0'
   }
-  if (editingComp.value.stock !== undefined && editingComp.value.stock !== '' && !Number.isInteger(Number(editingComp.value.stock))) {
+  if (editingComp.value.stock !== undefined && editingComp.value.stock !== '' && !Number.isInteger(Number(String(editingComp.value.stock).replace(',', '.')))) {
     return editError.value = 'El stock debe ser un número entero sin decimales'
   }
-  if (editingComp.value.stock !== undefined && Number(editingComp.value.stock) < 0) {
+  if (editingComp.value.stock !== undefined && Number(String(editingComp.value.stock).replace(',', '.')) < 0) {
     return editError.value = 'El stock no puede ser negativo'
   }
 
   savingEdit.value = true
   const formData = new FormData()
   formData.append('id', editingComp.value.id)
-  // Trick for Laravel PUT via FormData
   formData.append('_method', 'PUT')
   
   const fields = ['especificacion', 'nucleos', 'hilos', 'frecuencia_hz', 'enfoque_uso', 'gama', 'precio', 'stock', 'activo']
@@ -738,7 +792,7 @@ async function saveEditComp() {
 
   try {
     const res = await fetch(`${API}/componentes`, {
-      method: 'POST', // POST for FormData spoofing
+      method: 'POST',
       headers: { Authorization: `Bearer ${getToken()}`, Accept: 'application/json' },
       body: formData
     })
@@ -795,9 +849,9 @@ async function confirmDelete() {
   }
 }
 
-// ── Lifecycle ─────────────────────────────────────────────
 onMounted(() => {
   fetchComponents()
+  fetchProveedores()
   fetchCategoriasBase()
   document.addEventListener('click', handleClickOutside)
 })

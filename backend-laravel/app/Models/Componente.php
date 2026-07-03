@@ -18,6 +18,7 @@ class Componente extends Model
     protected $fillable = [
         'sku',
         'bodega_id',
+        'proveedor_id',
         'producto_id',
         'especificacion',
         'nucleos',
@@ -26,6 +27,8 @@ class Componente extends Model
         'enfoque_uso',
         'gama',
         'precio',
+        'descuento_porcentaje',
+        'descuento_activo',
         'stock',
         'activo',
         'imagen_url',
@@ -36,6 +39,8 @@ class Componente extends Model
         'hilos' => 'integer',
         'frecuencia_hz' => 'decimal:2',
         'precio' => 'decimal:2',
+        'descuento_porcentaje' => 'decimal:2',
+        'descuento_activo' => 'boolean',
         'stock'  => 'integer',
         'activo' => 'boolean',
     ];
@@ -53,11 +58,30 @@ class Componente extends Model
     }
 
     /**
-     * Producto del catálogo asociado (define nombre y categoría).
+     * Producto del catálogo asociado (define nombre, categoría y specs técnicas).
      */
     public function producto()
     {
         return $this->belongsTo(ProductoCatalogo::class, 'producto_id');
+    }
+
+    /**
+     * Proveedor del que la bodega adquirió este componente.
+     */
+    public function proveedor()
+    {
+        return $this->belongsTo(Proveedor::class, 'proveedor_id');
+    }
+
+    /**
+     * Precio final del componente aplicando descuento por porcentaje.
+     */
+    public function getPrecioFinalAttribute(): float
+    {
+        if ($this->descuento_activo && $this->descuento_porcentaje > 0) {
+            return round((float)$this->precio * (1 - (float)$this->descuento_porcentaje / 100), 2);
+        }
+        return (float) $this->precio;
     }
 
     // Nota: cotizacion_items no tiene modelo Eloquent propio.
@@ -197,8 +221,13 @@ class Componente extends Model
      */
     public function tieneRelacionesActivas(): bool
     {
+        $limite = \Carbon\Carbon::now()->subDays(7);
+        
         return DB::table('cotizacion_items')
-            ->where('componente_id', $this->id)
+            ->join('cotizaciones', 'cotizacion_items.cotizacion_id', '=', 'cotizaciones.id')
+            ->where('cotizacion_items.componente_id', $this->id)
+            ->where('cotizaciones.created_at', '>=', $limite)
+            ->where('cotizaciones.stock_restaurado', 'false')
             ->exists();
     }
 }

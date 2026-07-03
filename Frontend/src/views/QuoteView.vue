@@ -91,8 +91,14 @@
                       class="w-6 h-6 rounded border theme-border bg-white dark:bg-dark-bg theme-text-muted hover:text-green-500 hover:border-green-500/40 transition-colors flex items-center justify-center text-xs font-bold disabled:opacity-30 disabled:cursor-not-allowed"
                     >+</button>
                   </div>
-                  <p class="text-accent font-semibold font-mono text-sm">${{ (Number(item.precio) * (item.cantidad || 1)).toLocaleString() }}</p>
-                  <p v-if="(item.cantidad || 1) > 1" class="text-[10px] theme-text-muted">${{ Number(item.precio).toLocaleString() }} × {{ item.cantidad }}</p>
+                  <div class="flex flex-col items-end">
+                    <div v-if="item.descuento_activo && item.descuento_porcentaje > 0" class="flex items-center gap-1.5 mb-0.5">
+                      <span class="line-through text-[10px] theme-text-muted opacity-70">${{ (Number(item.precio) * (item.cantidad || 1)).toLocaleString() }}</span>
+                      <span class="text-[10px] bg-red-500/20 text-red-400 px-1.5 py-0.5 rounded font-bold">-{{ item.descuento_porcentaje }}%</span>
+                    </div>
+                    <p class="text-accent font-semibold font-mono text-sm">${{ (Number(item.precio_final || item.precio) * (item.cantidad || 1)).toLocaleString() }}</p>
+                  </div>
+                  <p v-if="(item.cantidad || 1) > 1" class="text-[10px] theme-text-muted">${{ Number(item.precio_final || item.precio).toLocaleString() }} × {{ item.cantidad }}</p>
                 </div>
               </div>
             </div>
@@ -206,7 +212,7 @@ const storeBreakdown = computed(() => {
     const qty = item.cantidad || 1
     if (!map[item.bodega]) map[item.bodega] = { name: item.bodega, count: 0, total: 0 }
     map[item.bodega].count += qty
-    map[item.bodega].total += Number(item.precio) * qty
+    map[item.bodega].total += Number(item.precio_final || item.precio) * qty
   })
   return Object.values(map)
 })
@@ -227,7 +233,7 @@ async function saveCotizacion() {
 
 const items = Object.values(selectedComponents.value).map(item => ({
   componente_id: item.id,
-  precio:        Number(item.precio),
+  precio:        Number(item.precio_final || item.precio),
   cantidad:      item.cantidad || 1,
 }))
 

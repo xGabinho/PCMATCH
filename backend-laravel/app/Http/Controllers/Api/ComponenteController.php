@@ -112,6 +112,9 @@ class ComponenteController extends Controller
                 'enfoque_uso'    => $c->enfoque_uso,
                 'gama'           => $c->gama,
                 'precio'         => $c->precio,
+                'descuento_porcentaje' => $c->descuento_porcentaje,
+                'descuento_activo' => $c->descuento_activo,
+                'precio_final'   => $c->precio_final,
                 'stock'          => $c->stock,
                 'bodega_nombre'  => $c->bodega->nombre ?? '—',
                 'bodega_id'      => $c->bodega_id,
@@ -220,6 +223,9 @@ class ComponenteController extends Controller
                 'enfoque_uso'    => $c->enfoque_uso,
                 'gama'           => $c->gama,
                 'precio'         => $c->precio,
+                'descuento_porcentaje' => $c->descuento_porcentaje,
+                'descuento_activo' => $c->descuento_activo,
+                'precio_final'   => $c->precio_final,
                 'stock'          => $c->stock,
                 'bodega_id'      => $c->bodega_id,
                 'activo'         => $c->activo,
@@ -261,6 +267,9 @@ class ComponenteController extends Controller
                 'especificacion' => $c->especificacion,
                 'gama'           => $c->gama,
                 'precio'         => $c->precio,
+                'descuento_porcentaje' => $c->descuento_porcentaje,
+                'descuento_activo' => $c->descuento_activo,
+                'precio_final'   => $c->precio_final,
                 'stock'          => $c->stock,
                 'bodega'         => $c->bodega->nombre ?? '—',
                 'imagen_url'     => $c->imagen_url,
@@ -286,6 +295,13 @@ class ComponenteController extends Controller
         $user = $request->user();
         $rol = $this->resolverRol($user);
 
+        // Fix decimal commas for numeric fields
+        foreach (['frecuencia_hz', 'precio'] as $numField) {
+            if ($request->has($numField) && is_string($request->input($numField))) {
+                $request->merge([$numField => str_replace(',', '.', $request->input($numField))]);
+            }
+        }
+
         if (!in_array($rol, ['admin', 'superadmin', 'proveedor', 'bodega'])) {
             return response()->json(['success' => false, 'message' => 'No autorizado para crear componentes'], 403);
         }
@@ -295,9 +311,12 @@ class ComponenteController extends Controller
         if ($isFromMaster) {
             // Bodega/Proveedor asocia un componente maestro a su inventario
             $validator = Validator::make($request->all(), [
-                'master_component_id' => 'required|integer|exists:componentes,id',
+                'master_component_id' => 'required|integer|exists:productos_catalogo,id',
                 'bodega_id'           => 'nullable|integer|exists:bodegas,id',
+                'proveedor_id'        => 'nullable|integer|exists:proveedores,id',
                 'precio'              => 'required|numeric|min:0',
+                'descuento_porcentaje'=> 'nullable|numeric|min:0|max:100',
+                'descuento_activo'    => 'nullable|boolean',
                 'stock'               => 'required|integer|min:0',
                 'imagen'              => 'nullable|image|mimes:jpeg,png,jpg,webp|max:2048',
             ]);
@@ -306,9 +325,9 @@ class ComponenteController extends Controller
                 return response()->json(['success' => false, 'message' => $validator->errors()->first()], 400);
             }
 
-            $master = Componente::whereNull('bodega_id')->where('id', $request->input('master_component_id'))->first();
+            $master = DB::table('productos_catalogo')->where('id', $request->input('master_component_id'))->first();
             if (!$master) {
-                return response()->json(['success' => false, 'message' => 'El componente maestro seleccionado no existe'], 404);
+                return response()->json(['success' => false, 'message' => 'El producto del catálogo no existe'], 404);
             }
 
             $bodega_id = $request->input('bodega_id');
@@ -331,10 +350,28 @@ class ComponenteController extends Controller
                 return response()->json(['success' => false, 'message' => 'No se puede registrar el componente. La bodega está inactiva.'], 403);
             }
 
+            // Descontar stock del proveedor si aplica
+            $cantidadAImportar = (int) $request->input('stock');
+            if ($bodega->proveedor_id) {
+                $proveedorCatalogoItem = DB::table('proveedor_producto_catalogo')
+                    ->where('proveedor_id', $bodega->proveedor_id)
+                    ->where('producto_catalogo_id', $master->id)
+                    ->first();
+                
+                if ($proveedorCatalogoItem) {
+                    if ($proveedorCatalogoItem->stock < $cantidadAImportar) {
+                        return response()->json(['success' => false, 'message' => "El proveedor no tiene suficiente stock. Stock disponible: {$proveedorCatalogoItem->stock}"], 400);
+                    }
+                    
+                    DB::table('proveedor_producto_catalogo')
+                        ->where('id', $proveedorCatalogoItem->id)
+                        ->decrement('stock', $cantidadAImportar);
+                }
+            }
+
             $duplicado = Componente::withTrashed()
                 ->where('bodega_id', $bodega_id)
-                ->where('producto_id', $master->producto_id)
-                ->where('especificacion', $master->especificacion)
+                ->where('producto_id', $master->id)
                 ->first();
 
             if ($duplicado) {
@@ -349,12 +386,13 @@ class ComponenteController extends Controller
                 $imagenUrl = $master->imagen_url;
             }
 
-            $sku = Componente::generarSku($master->producto_id, $bodega_id);
+            $sku = Componente::generarSku($master->id, $bodega_id);
 
             $componente = Componente::create([
                 'sku'            => $sku,
                 'bodega_id'      => $bodega_id,
-                'producto_id'    => $master->producto_id,
+                'proveedor_id'   => $request->input('proveedor_id'),
+                'producto_id'    => $master->id,
                 'especificacion' => $master->especificacion,
                 'nucleos'        => $master->nucleos,
                 'hilos'          => $master->hilos,
@@ -362,13 +400,14 @@ class ComponenteController extends Controller
                 'enfoque_uso'    => $master->enfoque_uso,
                 'gama'           => $master->gama,
                 'precio'         => $request->input('precio'),
+                'descuento_porcentaje' => $request->input('descuento_porcentaje', 0),
+                'descuento_activo' => filter_var($request->input('descuento_activo', false), FILTER_VALIDATE_BOOLEAN) ? DB::raw('true') : DB::raw('false'),
                 'stock'          => $request->input('stock'),
                 'activo'         => DB::raw('true'),
                 'imagen_url'     => $imagenUrl,
             ]);
 
-            $producto = DB::table('productos_catalogo')->where('id', $master->producto_id)->first();
-            $nombreProducto = $producto ? $producto->nombre : "ID {$master->producto_id}";
+            $nombreProducto = $master ? $master->nombre : "ID {$master->id}";
             $bodegaNombre = $bodega->nombre ?? "ID {$bodega_id}";
 
             AuditLog::log($request, "Agregó el componente «{$nombreProducto}» (Gama: {$master->gama}, SKU: {$sku}) a la bodega «{$bodegaNombre}»", 'Componentes');
@@ -500,6 +539,13 @@ class ComponenteController extends Controller
             ], 403);
         }
 
+        // Fix decimal commas for numeric fields
+        foreach (['frecuencia_hz', 'precio'] as $numField) {
+            if ($request->has($numField) && is_string($request->input($numField))) {
+                $request->merge([$numField => str_replace(',', '.', $request->input($numField))]);
+            }
+        }
+
         $id = $request->input('id');
         if (!$id) return response()->json(['success' => false, 'message' => 'id es requerido'], 400);
 
@@ -528,6 +574,8 @@ class ComponenteController extends Controller
             'enfoque_uso'    => 'nullable|in:estudio,oficina,gaming,diseño',
             'gama'           => 'nullable|in:alta,media,baja',
             'precio'         => 'nullable|numeric|gt:0',
+            'descuento_porcentaje' => 'nullable|numeric|min:0|max:100',
+            'descuento_activo' => 'nullable|boolean',
             'stock'          => 'nullable|integer|min:0',
             'activo'         => 'nullable|boolean',
             'imagen'         => 'nullable|image|mimes:jpeg,png,jpg,webp|max:2048',
@@ -567,11 +615,13 @@ class ComponenteController extends Controller
             'enfoque_uso'    => 'Enfoque de uso',
             'gama'           => 'Gama',
             'precio'         => 'Precio',
+            'descuento_porcentaje' => 'Descuento (%)',
+            'descuento_activo' => 'Descuento Activo',
             'stock'          => 'Stock',
             'activo'         => 'Estado',
         ];
 
-        foreach (['especificacion', 'nucleos', 'hilos', 'frecuencia_hz', 'enfoque_uso', 'gama', 'precio', 'stock', 'activo'] as $campo) {
+        foreach (['especificacion', 'nucleos', 'hilos', 'frecuencia_hz', 'enfoque_uso', 'gama', 'precio', 'descuento_porcentaje', 'descuento_activo', 'stock', 'activo'] as $campo) {
             if ($request->has($campo)) {
                 $nuevo = $request->input($campo);
                 $viejo = $comp->$campo;
@@ -584,7 +634,7 @@ class ComponenteController extends Controller
                         $viejoLabel = $viejo ? 'Activo' : 'Inactivo';
                         $nuevoLabel = $nuevoBool ? 'Activo' : 'Inactivo';
                         $cambios[] = "{$label}: {$viejoLabel} → {$nuevoLabel}";
-                        $data[$campo] = $nuevoBool;
+                        $data[$campo] = $nuevoBool ? \Illuminate\Support\Facades\DB::raw('true') : \Illuminate\Support\Facades\DB::raw('false');
                     } elseif ($campo === 'precio') {
                         $cambios[] = "{$label}: \$" . number_format((float)$viejo, 0, ',', '.') . " → \$" . number_format((float)$nuevo, 0, ',', '.');
                     } elseif ($campo === 'gama') {
@@ -592,8 +642,9 @@ class ComponenteController extends Controller
                     } else {
                         $cambios[] = "{$label}: '{$viejo}' → '{$nuevo}'";
                     }
-                } else if ($campo === 'activo') {
-                    $data[$campo] = filter_var($nuevo, FILTER_VALIDATE_BOOLEAN);
+                } else if (in_array($campo, ['activo', 'descuento_activo'])) {
+                    $nuevoBool = filter_var($nuevo, FILTER_VALIDATE_BOOLEAN);
+                    $data[$campo] = $nuevoBool ? \Illuminate\Support\Facades\DB::raw('true') : \Illuminate\Support\Facades\DB::raw('false');
                 }
             }
         }
@@ -666,8 +717,8 @@ class ComponenteController extends Controller
         }
 
         // ── RN02: Protección de integridad ───────────────────────
-        // Bloquear si stock > 0
-        if ($componente->stock > 0) {
+        // Bloquear si stock > 0 (solo aplica para inventario de bodegas, no maestros)
+        if ($componente->bodega_id !== null && $componente->stock > 0) {
             return response()->json([
                 'success' => false,
                 'message' => "No se puede eliminar el componente. Aún tiene {$componente->stock} unidades en stock. Reduzca el stock a 0 antes de eliminar."

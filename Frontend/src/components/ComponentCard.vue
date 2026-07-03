@@ -42,7 +42,11 @@
       <p class="text-sm theme-text-muted leading-relaxed flex-1 line-clamp-3">{{ spec }}</p>
       <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-3 border-t theme-border">
         <div>
-          <p class="text-accent font-semibold font-mono text-lg">${{ price.toLocaleString() }}</p>
+          <div v-if="discountActive && discountPercentage > 0" class="flex items-center gap-1.5 mb-0.5">
+            <span class="line-through text-[10px] theme-text-muted opacity-70">${{ price.toLocaleString() }}</span>
+            <span class="text-[10px] bg-red-500/20 text-red-400 px-1.5 py-0.5 rounded font-bold">-{{ discountPercentage }}%</span>
+          </div>
+          <p class="text-accent font-semibold font-mono text-lg">${{ finalPrice ? finalPrice.toLocaleString() : price.toLocaleString() }}</p>
           <p class="text-xs theme-text-muted mt-0.5">{{ store }}</p>
         </div>
         <div class="w-full sm:w-auto">
@@ -61,6 +65,9 @@ const props = defineProps({
   category: String,
   spec: String,
   price: Number,
+  finalPrice: { type: Number, default: null },
+  discountActive: { type: Boolean, default: false },
+  discountPercentage: { type: Number, default: 0 },
   store: String,
   image: { type: String, default: null },
   tier: { type: String, default: null },

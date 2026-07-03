@@ -25,12 +25,18 @@ class ProveedorController extends Controller
         return true;
     }
 
+    private function checkBodega(Request $request)
+    {
+        $user = $request->user();
+        return get_class($user) === \App\Models\Bodega::class;
+    }
+
     /**
      * Equivalente a GET api/proveedores/index.php
      */
     public function index(Request $request)
     {
-        if (!$this->checkSuperAdmin($request)) {
+        if (!$this->checkSuperAdmin($request) && !$this->checkBodega($request)) {
             return response()->json(['success' => false, 'message' => 'No autorizado'], 403);
         }
 
@@ -216,7 +222,7 @@ class ProveedorController extends Controller
             }
             $id = $user->id;
         } else {
-            if (!$this->checkSuperAdmin($request)) {
+            if (!$this->checkSuperAdmin($request) && !$this->checkBodega($request)) {
                 return response()->json(['success' => false, 'message' => 'No autorizado'], 403);
             }
         }
@@ -227,16 +233,38 @@ class ProveedorController extends Controller
         }
 
         return response()->json([
-            'productos' => $proveedor->productosCatalogo
+            'productos' => $proveedor->productosCatalogo->map(function ($p) {
+                return [
+                    'id' => $p->id,
+                    'nombre' => $p->nombre,
+                    'categoria' => $p->categoria,
+                    'especificacion' => $p->especificacion,
+                    'imagen_url' => $p->imagen_url,
+                    'nucleos' => $p->nucleos,
+                    'hilos' => $p->hilos,
+                    'frecuencia_hz' => $p->frecuencia_hz,
+                    'enfoque_uso' => $p->enfoque_uso,
+                    'gama' => $p->gama,
+                    'precio_mayorista' => $p->pivot->precio_mayorista,
+                    'stock' => $p->pivot->stock,
+                    'descripcion_comercial' => $p->pivot->descripcion_comercial,
+                ];
+            })
         ]);
     }
 
     /**
-     * Sincronizar productos del catálogo para un proveedor
+     * POST /api/proveedores/{id}/productos — Agregar producto al catálogo del proveedor con precio mayorista
      */
     public function syncProductos(Request $request, $id)
     {
-        if (!$this->checkSuperAdmin($request)) {
+        $user = $request->user();
+        $clase = get_class($user);
+
+        // Proveedores pueden gestionar su propio catálogo
+        if ($clase === \App\Models\Proveedor::class) {
+            $id = $user->id;
+        } elseif (!$this->checkSuperAdmin($request)) {
             return response()->json(['success' => false, 'message' => 'No autorizado'], 403);
         }
 
@@ -245,6 +273,32 @@ class ProveedorController extends Controller
             return response()->json(['success' => false, 'message' => 'Proveedor no encontrado'], 404);
         }
 
+        // Accept array of {producto_catalogo_id, precio_mayorista, descripcion_comercial}
+        if ($request->has('items')) {
+            $request->validate([
+                'items' => 'required|array',
+                'items.*.producto_catalogo_id' => 'required|integer|exists:productos_catalogo,id',
+                'items.*.precio_mayorista' => 'required|numeric|min:0',
+                'items.*.stock' => 'required|integer|min:0',
+                'items.*.descripcion_comercial' => 'nullable|string|max:500',
+            ]);
+
+            $syncData = [];
+            foreach ($request->input('items') as $item) {
+                $syncData[$item['producto_catalogo_id']] = [
+                    'precio_mayorista' => $item['precio_mayorista'],
+                    'stock' => $item['stock'],
+                    'descripcion_comercial' => $item['descripcion_comercial'] ?? null,
+                ];
+            }
+            $proveedor->productosCatalogo()->syncWithoutDetaching($syncData);
+
+            AuditLog::log($request, "Sincronizó " . count($syncData) . " productos en el catálogo del proveedor: {$proveedor->nombre}", 'Proveedores');
+
+            return response()->json(['success' => true, 'message' => 'Catálogo sincronizado correctamente']);
+        }
+
+        // Legacy: Accept flat array of product IDs (backward compatible)
         $request->validate([
             'productos' => 'array',
             'productos.*' => 'integer|exists:productos_catalogo,id'
@@ -256,5 +310,70 @@ class ProveedorController extends Controller
         AuditLog::log($request, "Asignó " . count($productos) . " productos del catálogo al proveedor: {$proveedor->nombre}", 'Proveedores');
 
         return response()->json(['success' => true, 'message' => 'Catálogo asignado correctamente']);
+    }
+
+    /**
+     * PUT /api/proveedores/catalogo/item — Actualizar precio mayorista de un producto en el catálogo del proveedor
+     */
+    public function updateCatalogoItem(Request $request)
+    {
+        $user = $request->user();
+        $clase = get_class($user);
+
+        if ($clase !== \App\Models\Proveedor::class) {
+            return response()->json(['success' => false, 'message' => 'Solo proveedores pueden actualizar su catálogo'], 403);
+        }
+
+        $request->validate([
+            'producto_catalogo_id' => 'required|integer',
+            'precio_mayorista' => 'required|numeric|min:0',
+            'stock' => 'required|integer|min:0',
+            'descripcion_comercial' => 'nullable|string|max:500',
+        ]);
+
+        $exists = DB::table('proveedor_producto_catalogo')
+            ->where('proveedor_id', $user->id)
+            ->where('producto_catalogo_id', $request->input('producto_catalogo_id'))
+            ->exists();
+
+        if (!$exists) {
+            return response()->json(['success' => false, 'message' => 'Este producto no está en tu catálogo'], 404);
+        }
+
+        DB::table('proveedor_producto_catalogo')
+            ->where('proveedor_id', $user->id)
+            ->where('producto_catalogo_id', $request->input('producto_catalogo_id'))
+            ->update([
+                'precio_mayorista' => $request->input('precio_mayorista'),
+                'stock' => $request->input('stock'),
+                'descripcion_comercial' => $request->input('descripcion_comercial'),
+            ]);
+
+        return response()->json(['success' => true, 'message' => 'Precio actualizado']);
+    }
+
+    /**
+     * DELETE /api/proveedores/catalogo/item — Quitar un producto del catálogo del proveedor
+     */
+    public function removeCatalogoItem(Request $request)
+    {
+        $user = $request->user();
+        $clase = get_class($user);
+
+        if ($clase !== \App\Models\Proveedor::class) {
+            return response()->json(['success' => false, 'message' => 'Solo proveedores'], 403);
+        }
+
+        $productoId = $request->input('producto_catalogo_id') ?? $request->query('producto_catalogo_id');
+        if (!$productoId) {
+            return response()->json(['success' => false, 'message' => 'producto_catalogo_id es requerido'], 400);
+        }
+
+        DB::table('proveedor_producto_catalogo')
+            ->where('proveedor_id', $user->id)
+            ->where('producto_catalogo_id', $productoId)
+            ->delete();
+
+        return response()->json(['success' => true, 'message' => 'Producto removido del catálogo']);
     }
 }

@@ -12,6 +12,7 @@ use App\Http\Controllers\Api\ComponenteController;
 use App\Http\Controllers\Api\CatalogoController;
 use App\Http\Controllers\Api\CotizacionController;
 use App\Http\Controllers\Api\HistorialController;
+use App\Http\Controllers\Api\RecomendacionController;
 
 Route::post('/auth/login', [AuthController::class, 'login']);
 Route::post('/auth/register', [AuthController::class, 'register']);
@@ -21,6 +22,10 @@ Route::post('/auth/reset-password', [PasswordResetController::class, 'resetPassw
 // RUTAS PÚBLICAS (Sin token)
 Route::get('/componentes/publico', [ComponenteController::class, 'indexPublic']);
 Route::get('/catalogo', [CatalogoController::class, 'index']);
+
+// RUTAS DE RECOMENDACIONES (Públicas)
+Route::get('/recomendaciones/mas-vendidos', [RecomendacionController::class, 'getMasVendidos']);
+Route::post('/recomendaciones/pc-ideal', [RecomendacionController::class, 'buildPcIdeal']);
 
 // Endpoint opcional para probar si Sanctum está funcionando
 Route::middleware('auth:sanctum')->get('/auth/me', function (Request $request) {
@@ -55,6 +60,8 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::delete('/proveedores/{id}', [ProveedorController::class, 'destroy']); // Soporte params
     Route::get('/proveedores/{id}/productos', [ProveedorController::class, 'productos']); // Obtener catálogo asignado
     Route::post('/proveedores/{id}/productos', [ProveedorController::class, 'syncProductos']); // Asignar catálogo
+    Route::put('/proveedores/catalogo/item', [ProveedorController::class, 'updateCatalogoItem']); // Editar precio mayorista
+    Route::delete('/proveedores/catalogo/item', [ProveedorController::class, 'removeCatalogoItem']); // Quitar producto del catálogo
 
     // RUTAS DE COMPONENTES (Admin/Proveedor/Bodega)
     Route::get('/componentes/admin', [ComponenteController::class, 'indexAdmin']); // Ver Componentes (admin/superadmin)

@@ -25,6 +25,17 @@
         >
           Inicio
         </router-link>
+        <router-link
+          v-if="isLoggedIn"
+          to="/asistente"
+          class="px-4 py-2 rounded-lg text-sm font-medium transition-all duration-150 flex items-center gap-1.5"
+          :class="isDark
+            ? 'text-text-muted hover:text-text-primary hover:bg-dark-card'
+            : 'text-text-light-muted hover:text-text-light hover:bg-gray-100'"
+          active-class="!text-accent"
+        >
+          🤖 Asistente
+        </router-link>
       </div>
 
       <!-- Right side -->
@@ -126,6 +137,18 @@
             : 'text-text-light-muted hover:text-text-light hover:bg-gray-100'"
         >
           Inicio
+        </router-link>
+
+        <router-link
+          v-if="isLoggedIn"
+          to="/asistente"
+          @click="mobileMenuOpen = false"
+          class="block px-4 py-3 rounded-lg text-sm font-medium transition-colors min-h-[44px] flex items-center gap-2"
+          :class="isDark
+            ? 'text-accent hover:bg-dark-card'
+            : 'text-accent hover:bg-gray-100'"
+        >
+          🤖 Asistente inteligente
         </router-link>
 
         <router-link
