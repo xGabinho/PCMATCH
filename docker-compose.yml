@@ -12,7 +12,7 @@ services:
 #      - "3307:3306"
 #    volumes:
 #      - db_data:/var/lib/mysql
-#      - ./pcmatch.sql:/docker-entrypoint-initdb.d/01-init.sql
+#      # - ./pcmatch.sql:/docker-entrypoint-initdb.d/01-init.sql
 #    networks:
 #      - pcmatch_network
 #    healthcheck:
@@ -27,7 +27,7 @@ services:
 #    container_name: pcmatch_phpmyadmin
 #    restart: unless-stopped
 #    environment:
-#      PMA_HOST: host.docker.internal
+#      PMA_HOST: db
 #      PMA_PORT: 3306
 #    ports:
 #      - "8081:80"

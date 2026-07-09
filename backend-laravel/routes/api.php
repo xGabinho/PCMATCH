@@ -13,6 +13,7 @@ use App\Http\Controllers\Api\CatalogoController;
 use App\Http\Controllers\Api\CotizacionController;
 use App\Http\Controllers\Api\HistorialController;
 use App\Http\Controllers\Api\RecomendacionController;
+use App\Http\Controllers\Api\AnaliticaController;
 
 // Health check para Railway
 Route::get('/health', function () {
@@ -105,4 +106,9 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // RUTAS DE HISTORIAL (Admin / Superadmin)
     Route::get('/historial', [HistorialController::class, 'index']);
+
+    // RUTAS DE ANALÍTICAS (Admin / Superadmin)
+    Route::get('/analiticas/selectores', [AnaliticaController::class, 'selectores']);
+    Route::get('/analiticas/rotacion-bodega', [AnaliticaController::class, 'rotacionBodega']);
+    Route::get('/analiticas/consumo-proveedor', [AnaliticaController::class, 'consumoProveedor']);
 });

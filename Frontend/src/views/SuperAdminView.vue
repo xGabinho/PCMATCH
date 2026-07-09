@@ -478,6 +478,184 @@
           </div>
         </template>
 
+        <!-- ===== REPORTES Y ANALÍTICAS ===== -->
+        <template v-if="activeSection === 'reportes'">
+          <!-- Tabs -->
+          <div class="flex gap-2 mb-6">
+            <button @click="reporteTab = 'rotacion'" class="px-4 py-2 rounded-lg text-sm font-medium transition-all" :class="reporteTab === 'rotacion' ? 'bg-accent text-white shadow-lg shadow-accent/20' : 'card-dark theme-text-muted hover:theme-text'">
+              📊 Rotación por Bodega
+            </button>
+            <button @click="reporteTab = 'consumo'" class="px-4 py-2 rounded-lg text-sm font-medium transition-all" :class="reporteTab === 'consumo' ? 'bg-accent text-white shadow-lg shadow-accent/20' : 'card-dark theme-text-muted hover:theme-text'">
+              📦 Consumo por Proveedor
+            </button>
+          </div>
+
+          <!-- ROTACIÓN POR BODEGA -->
+          <template v-if="reporteTab === 'rotacion'">
+            <div class="card-dark rounded-xl p-6 mb-6">
+              <h3 class="text-sm font-semibold theme-text mb-4">Filtros</h3>
+              <div class="flex flex-wrap gap-4 items-end">
+                <div class="flex-1 min-w-[200px]">
+                  <label class="block text-xs theme-text-muted mb-1.5">Bodega</label>
+                  <select v-model="reporteBodegaId" class="w-full theme-bg border theme-border rounded-lg px-3 py-2.5 text-sm theme-text focus:outline-none focus:border-accent transition-colors">
+                    <option value="">Seleccionar bodega...</option>
+                    <option v-for="b in reporteBodegas" :key="b.id" :value="b.id">{{ b.nombre }}</option>
+                  </select>
+                </div>
+                <div class="min-w-[180px]">
+                  <label class="block text-xs theme-text-muted mb-1.5">Rango de tiempo</label>
+                  <select v-model="reporteRango" class="w-full theme-bg border theme-border rounded-lg px-3 py-2.5 text-sm theme-text focus:outline-none focus:border-accent transition-colors">
+                    <option value="1_mes">Último mes</option>
+                    <option value="3_meses">Últimos 3 meses</option>
+                    <option value="historico">Histórico</option>
+                  </select>
+                </div>
+                <button @click="fetchRotacion" :disabled="!reporteBodegaId || loadingRotacion" class="px-5 py-2.5 rounded-lg text-sm font-medium bg-accent text-white hover:bg-accent-hover transition-colors disabled:opacity-40 disabled:cursor-not-allowed shadow-lg shadow-accent/20">
+                  {{ loadingRotacion ? 'Cargando...' : 'Generar reporte' }}
+                </button>
+              </div>
+            </div>
+
+            <div v-if="loadingRotacion" class="card-dark rounded-xl p-12 text-center">
+              <div class="inline-block w-8 h-8 border-2 border-accent/30 border-t-accent rounded-full animate-spin mb-3"></div>
+              <p class="theme-text-muted text-sm">Generando reporte...</p>
+            </div>
+
+            <div v-else-if="rotacionData.length > 0" class="space-y-6">
+              <div class="card-dark rounded-xl p-6">
+                <div class="flex items-center justify-between mb-4">
+                  <div>
+                    <h3 class="font-semibold theme-text">Top componentes — {{ rotacionBodegaNombre }}</h3>
+                    <p class="text-xs theme-text-muted mt-0.5">{{ { '1_mes': 'Último mes', '3_meses': 'Últimos 3 meses', 'historico': 'Histórico' }[reporteRango] }}</p>
+                  </div>
+                  <div class="flex gap-1">
+                    <button @click="rotacionChartType = 'bar'; renderRotacionChart()" class="px-3 py-1.5 rounded-lg text-xs font-medium transition-all" :class="rotacionChartType === 'bar' ? 'bg-accent/10 text-accent border border-accent/20' : 'theme-text-muted hover:theme-text'">Barras</button>
+                    <button @click="rotacionChartType = 'pie'; renderRotacionChart()" class="px-3 py-1.5 rounded-lg text-xs font-medium transition-all" :class="rotacionChartType === 'pie' ? 'bg-accent/10 text-accent border border-accent/20' : 'theme-text-muted hover:theme-text'">Pastel</button>
+                  </div>
+                </div>
+                <div class="relative" style="height: 350px;">
+                  <canvas ref="rotacionCanvasRef"></canvas>
+                </div>
+              </div>
+
+              <div class="card-dark rounded-xl overflow-hidden overflow-x-auto">
+                <div class="px-6 py-4 border-b theme-border">
+                  <h3 class="font-semibold theme-text">Detalle de rotación</h3>
+                </div>
+                <table class="w-full">
+                  <thead class="border-b theme-border">
+                    <tr>
+                      <th class="px-6 py-3 text-left text-xs theme-text-muted uppercase tracking-wider font-medium">#</th>
+                      <th class="px-6 py-3 text-left text-xs theme-text-muted uppercase tracking-wider font-medium">Producto</th>
+                      <th class="px-6 py-3 text-left text-xs theme-text-muted uppercase tracking-wider font-medium">Categoría</th>
+                      <th class="px-6 py-3 text-left text-xs theme-text-muted uppercase tracking-wider font-medium">Especificación</th>
+                      <th class="px-6 py-3 text-right text-xs theme-text-muted uppercase tracking-wider font-medium">Unidades vendidas</th>
+                    </tr>
+                  </thead>
+                  <tbody class="divide-y divide-dark-border">
+                    <tr v-for="(item, idx) in rotacionData" :key="idx" class="hover:bg-gray-100 dark:hover:bg-dark-bg/50 transition-colors">
+                      <td class="px-6 py-3.5 text-sm font-mono theme-text-muted">{{ idx + 1 }}</td>
+                      <td class="px-6 py-3.5 text-sm font-medium theme-text">{{ item.producto_nombre }}</td>
+                      <td class="px-6 py-3.5 text-sm theme-text-muted">{{ item.categoria }}</td>
+                      <td class="px-6 py-3.5 text-sm theme-text-muted">{{ item.especificacion }}</td>
+                      <td class="px-6 py-3.5 text-sm font-mono text-accent font-semibold text-right">{{ Number(item.total_salida).toLocaleString() }}</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            <div v-else-if="rotacionFetched && rotacionData.length === 0" class="card-dark rounded-xl p-12 text-center">
+              <p class="text-4xl mb-3">📭</p>
+              <p class="theme-text font-semibold mb-1">Sin movimientos</p>
+              <p class="theme-text-muted text-sm">No se encontraron cotizaciones para esta bodega en el rango seleccionado.</p>
+            </div>
+          </template>
+
+          <!-- CONSUMO POR PROVEEDOR -->
+          <template v-if="reporteTab === 'consumo'">
+            <div class="card-dark rounded-xl p-6 mb-6">
+              <h3 class="text-sm font-semibold theme-text mb-4">Filtros</h3>
+              <div class="flex flex-wrap gap-4 items-end">
+                <div class="flex-1 min-w-[200px]">
+                  <label class="block text-xs theme-text-muted mb-1.5">Proveedor</label>
+                  <select v-model="reporteProveedorId" class="w-full theme-bg border theme-border rounded-lg px-3 py-2.5 text-sm theme-text focus:outline-none focus:border-accent transition-colors">
+                    <option value="">Seleccionar proveedor...</option>
+                    <option v-for="p in reporteProveedores" :key="p.id" :value="p.id">{{ p.nombre }}</option>
+                  </select>
+                </div>
+                <button @click="fetchConsumo" :disabled="!reporteProveedorId || loadingConsumo" class="px-5 py-2.5 rounded-lg text-sm font-medium bg-accent text-white hover:bg-accent-hover transition-colors disabled:opacity-40 disabled:cursor-not-allowed shadow-lg shadow-accent/20">
+                  {{ loadingConsumo ? 'Cargando...' : 'Generar reporte' }}
+                </button>
+              </div>
+            </div>
+
+            <div v-if="loadingConsumo" class="card-dark rounded-xl p-12 text-center">
+              <div class="inline-block w-8 h-8 border-2 border-accent/30 border-t-accent rounded-full animate-spin mb-3"></div>
+              <p class="theme-text-muted text-sm">Generando reporte...</p>
+            </div>
+
+            <div v-else-if="consumoData.length > 0" class="space-y-6">
+              <div class="grid grid-cols-3 gap-4">
+                <div class="card-dark rounded-xl p-5">
+                  <p class="theme-text-muted text-xs uppercase tracking-wider mb-2">Proveedor</p>
+                  <p class="text-lg font-bold theme-text">{{ consumoProveedorNombre }}</p>
+                </div>
+                <div class="card-dark rounded-xl p-5">
+                  <p class="theme-text-muted text-xs uppercase tracking-wider mb-2">Total unidades consumidas</p>
+                  <p class="text-3xl font-bold text-accent font-mono">{{ consumoTotalGeneral.toLocaleString() }}</p>
+                </div>
+                <div class="card-dark rounded-xl p-5">
+                  <p class="theme-text-muted text-xs uppercase tracking-wider mb-2">Bodegas activas</p>
+                  <p class="text-3xl font-bold theme-text font-mono">{{ consumoData.length }}</p>
+                </div>
+              </div>
+
+              <div class="card-dark rounded-xl p-6">
+                <h3 class="font-semibold theme-text mb-4">Distribución de consumo por bodega</h3>
+                <div class="relative" style="height: 350px;">
+                  <canvas ref="consumoCanvasRef"></canvas>
+                </div>
+              </div>
+
+              <div class="card-dark rounded-xl overflow-hidden overflow-x-auto">
+                <div class="px-6 py-4 border-b theme-border">
+                  <h3 class="font-semibold theme-text">Detalle por bodega</h3>
+                </div>
+                <table class="w-full">
+                  <thead class="border-b theme-border">
+                    <tr>
+                      <th class="px-6 py-3 text-left text-xs theme-text-muted uppercase tracking-wider font-medium">Bodega</th>
+                      <th class="px-6 py-3 text-right text-xs theme-text-muted uppercase tracking-wider font-medium">Unidades consumidas</th>
+                      <th class="px-6 py-3 text-right text-xs theme-text-muted uppercase tracking-wider font-medium">Participación</th>
+                    </tr>
+                  </thead>
+                  <tbody class="divide-y divide-dark-border">
+                    <tr v-for="item in consumoData" :key="item.bodega_id" class="hover:bg-gray-100 dark:hover:bg-dark-bg/50 transition-colors">
+                      <td class="px-6 py-3.5 text-sm font-medium theme-text">{{ item.bodega_nombre }}</td>
+                      <td class="px-6 py-3.5 text-sm font-mono text-accent font-semibold text-right">{{ item.total_consumido.toLocaleString() }}</td>
+                      <td class="px-6 py-3.5 text-right">
+                        <div class="flex items-center justify-end gap-2">
+                          <div class="w-20 h-2 rounded-full bg-gray-700 overflow-hidden">
+                            <div class="h-full rounded-full bg-accent transition-all duration-500" :style="{ width: item.porcentaje + '%' }"></div>
+                          </div>
+                          <span class="text-sm font-mono theme-text-muted">{{ item.porcentaje }}%</span>
+                        </div>
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            <div v-else-if="consumoFetched && consumoData.length === 0" class="card-dark rounded-xl p-12 text-center">
+              <p class="text-4xl mb-3">📭</p>
+              <p class="theme-text font-semibold mb-1">Sin consumo registrado</p>
+              <p class="theme-text-muted text-sm">Este proveedor aún no tiene componentes cotizados en sus bodegas.</p>
+            </div>
+          </template>
+        </template>
+
       </div>
     </main>
 
@@ -1114,10 +1292,12 @@
 </template>
 
 <script setup>
-import { UserPlus, Check, Trash2, Pencil, Sun, Moon, Info, Package, Wrench, FileText, Shield, Briefcase, Gamepad2, Palette, BookOpen, Building2, Store, Users, Lock, ClipboardList, Crown, User } from '@lucide/vue'
+import { UserPlus, Check, Trash2, Pencil, Sun, Moon, Info, Package, Wrench, FileText, Shield, Briefcase, Gamepad2, Palette, BookOpen, Building2, Store, Users, Lock, ClipboardList, Crown, User, BarChart3 } from '@lucide/vue'
 import { useTheme } from '../composables/useTheme'
 const { isDark, toggleTheme } = useTheme()
-import { ref, markRaw, computed, onMounted } from 'vue'
+import { ref, markRaw, computed, onMounted, nextTick, watch } from 'vue'
+import { Chart, BarController, PieController, ArcElement, BarElement, CategoryScale, LinearScale, Tooltip, Legend } from 'chart.js'
+Chart.register(BarController, PieController, ArcElement, BarElement, CategoryScale, LinearScale, Tooltip, Legend)
 import { useRouter } from 'vue-router'
 import { useAuth } from '../composables/useAuth'
 import { useToast } from '../composables/useToast'
@@ -1160,6 +1340,7 @@ const sections = computed(() => [
   { id: 'gestionar-usuarios',icon: markRaw(Users), label: 'Gestionar usuarios',description: `${usuarios.value.length} usuarios`,            cta: '+ Crear usuario',     count: usuarios.value.length       },
   { id: 'perfiles',          icon: markRaw(Lock), label: 'Perfiles y Permisos',description: `${perfiles.value.length} perfiles`,           cta: '+ Crear perfil',      count: perfiles.value.length       },
   { id: 'historial',         icon: markRaw(ClipboardList), label: 'Historial',         description: 'Registro global de acciones',                   cta: null,                  count: historial.value.length      },
+  { id: 'reportes',          icon: markRaw(BarChart3), label: 'Reportes',          description: 'Analíticas y estadísticas',                     cta: null,                  count: null                        },
 ])
 
 const currentSection = computed(() => sections.value.find(s => s.id === activeSection.value))
@@ -2506,6 +2687,121 @@ async function deletePerfil() {
   }
 }
 
+// ── Analíticas ────────────────────────────────────────────
+const reporteTab = ref('rotacion')
+const reporteBodegas = ref([])
+const reporteProveedores = ref([])
+
+const reporteBodegaId = ref('')
+const reporteRango = ref('historico')
+const loadingRotacion = ref(false)
+const rotacionData = ref([])
+const rotacionBodegaNombre = ref('')
+const rotacionFetched = ref(false)
+const rotacionChartType = ref('bar')
+const rotacionCanvasRef = ref(null)
+let rotacionChartInstance = null
+
+const reporteProveedorId = ref('')
+const loadingConsumo = ref(false)
+const consumoData = ref([])
+const consumoProveedorNombre = ref('')
+const consumoTotalGeneral = ref(0)
+const consumoFetched = ref(false)
+const consumoCanvasRef = ref(null)
+let consumoChartInstance = null
+
+const chartColors = [
+  'rgba(99, 102, 241, 0.8)', 'rgba(16, 185, 129, 0.8)', 'rgba(245, 158, 11, 0.8)',
+  'rgba(239, 68, 68, 0.8)', 'rgba(139, 92, 246, 0.8)', 'rgba(6, 182, 212, 0.8)',
+  'rgba(236, 72, 153, 0.8)', 'rgba(34, 197, 94, 0.8)', 'rgba(251, 146, 60, 0.8)',
+  'rgba(168, 85, 247, 0.8)',
+]
+
+async function fetchSelectores() {
+  try {
+    const res = await fetch(`${API}/analiticas/selectores`, { headers: { Authorization: `Bearer ${getToken()}` } })
+    const data = await res.json()
+    if (res.ok) {
+      reporteBodegas.value = data.bodegas || []
+      reporteProveedores.value = data.proveedores || []
+    }
+  } catch (e) { console.error(e) }
+}
+
+async function fetchRotacion() {
+  if (!reporteBodegaId.value) return
+  loadingRotacion.value = true
+  rotacionFetched.value = false
+  try {
+    const res = await fetch(`${API}/analiticas/rotacion-bodega?bodega_id=${reporteBodegaId.value}&rango_fecha=${reporteRango.value}&limit=10`, { headers: { Authorization: `Bearer ${getToken()}` } })
+    const data = await res.json()
+    if (res.ok) {
+      rotacionData.value = data.data || []
+      rotacionBodegaNombre.value = data.bodega_nombre || ''
+      rotacionFetched.value = true
+      await nextTick()
+      renderRotacionChart()
+    }
+  } catch (e) { console.error(e) } finally { loadingRotacion.value = false }
+}
+
+function renderRotacionChart() {
+  if (!rotacionCanvasRef.value || rotacionData.value.length === 0) return
+  if (rotacionChartInstance) rotacionChartInstance.destroy()
+  const labels = rotacionData.value.map(d => d.producto_nombre.length > 20 ? d.producto_nombre.slice(0, 20) + '…' : d.producto_nombre)
+  const values = rotacionData.value.map(d => Number(d.total_salida))
+  const colors = rotacionData.value.map((_, i) => chartColors[i % chartColors.length])
+  const textColor = isDark.value ? '#94a3b8' : '#64748b'
+  const gridColor = isDark.value ? 'rgba(148, 163, 184, 0.08)' : 'rgba(100, 116, 139, 0.1)'
+  const config = rotacionChartType.value === 'bar'
+    ? { type: 'bar', data: { labels, datasets: [{ label: 'Unidades vendidas', data: values, backgroundColor: colors, borderRadius: 6, borderSkipped: false, maxBarThickness: 48 }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false }, tooltip: { backgroundColor: isDark.value ? '#1e293b' : '#fff', titleColor: isDark.value ? '#e2e8f0' : '#1e293b', bodyColor: isDark.value ? '#94a3b8' : '#64748b', borderColor: isDark.value ? '#334155' : '#e2e8f0', borderWidth: 1, padding: 12, cornerRadius: 8 } }, scales: { x: { ticks: { color: textColor, font: { size: 11 } }, grid: { display: false } }, y: { beginAtZero: true, ticks: { color: textColor, font: { size: 11 } }, grid: { color: gridColor } } }, animation: { duration: 700, easing: 'easeOutQuart' } } }
+    : { type: 'pie', data: { labels, datasets: [{ data: values, backgroundColor: colors, borderWidth: 0 }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'right', labels: { color: textColor, font: { size: 12 }, padding: 12 } }, tooltip: { backgroundColor: isDark.value ? '#1e293b' : '#fff', titleColor: isDark.value ? '#e2e8f0' : '#1e293b', bodyColor: isDark.value ? '#94a3b8' : '#64748b', borderColor: isDark.value ? '#334155' : '#e2e8f0', borderWidth: 1, padding: 12, cornerRadius: 8 } }, animation: { duration: 700, easing: 'easeOutQuart' } } }
+  rotacionChartInstance = new Chart(rotacionCanvasRef.value, config)
+}
+
+async function fetchConsumo() {
+  if (!reporteProveedorId.value) return
+  loadingConsumo.value = true
+  consumoFetched.value = false
+  try {
+    const res = await fetch(`${API}/analiticas/consumo-proveedor?proveedor_id=${reporteProveedorId.value}`, { headers: { Authorization: `Bearer ${getToken()}` } })
+    const data = await res.json()
+    if (res.ok) {
+      consumoData.value = data.data || []
+      consumoProveedorNombre.value = data.proveedor_nombre || ''
+      consumoTotalGeneral.value = data.total_general || 0
+      consumoFetched.value = true
+      await nextTick()
+      renderConsumoChart()
+    }
+  } catch (e) { console.error(e) } finally { loadingConsumo.value = false }
+}
+
+function renderConsumoChart() {
+  if (!consumoCanvasRef.value || consumoData.value.length === 0) return
+  if (consumoChartInstance) consumoChartInstance.destroy()
+  const labels = consumoData.value.map(d => d.bodega_nombre)
+  const values = consumoData.value.map(d => d.total_consumido)
+  const colors = consumoData.value.map((_, i) => chartColors[i % chartColors.length])
+  const textColor = isDark.value ? '#94a3b8' : '#64748b'
+  consumoChartInstance = new Chart(consumoCanvasRef.value, {
+    type: 'pie',
+    data: { labels, datasets: [{ data: values, backgroundColor: colors, borderWidth: 0 }] },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: {
+        legend: { position: 'right', labels: { color: textColor, font: { size: 12 }, padding: 12, generateLabels(chart) {
+          const ds = chart.data.datasets[0]
+          return chart.data.labels.map((label, i) => ({ text: `${label} (${consumoData.value[i]?.porcentaje ?? 0}%)`, fillStyle: ds.backgroundColor[i], hidden: false, index: i }))
+        } } },
+        tooltip: { backgroundColor: isDark.value ? '#1e293b' : '#fff', titleColor: isDark.value ? '#e2e8f0' : '#1e293b', bodyColor: isDark.value ? '#94a3b8' : '#64748b', borderColor: isDark.value ? '#334155' : '#e2e8f0', borderWidth: 1, padding: 12, cornerRadius: 8 }
+      },
+      animation: { duration: 700, easing: 'easeOutQuart' }
+    }
+  })
+}
+
 // ── Lifecycle ─────────────────────────────────────────────
 onMounted(() => {
   fetchProveedores()
@@ -2517,5 +2813,6 @@ onMounted(() => {
   fetchPermisosDisponibles()
   fetchHistorial()
   fetchCatalogo()
+  fetchSelectores()
 })
 </script>

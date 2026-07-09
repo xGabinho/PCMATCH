@@ -42,20 +42,20 @@ class PasswordResetController extends Controller
             ], 422);
         }
 
-        $email = $request->input('correo');
+        $email = strtolower($request->input('correo'));
 
         // Buscar en las 3 tablas
         $tipo = null;
         $nombre = null;
 
-        $usuario = Usuario::where('correo', $email)->first();
+        $usuario = Usuario::whereRaw('LOWER(correo) = ?', [$email])->first();
         if ($usuario) {
             $tipo = 'usuario';
             $nombre = $usuario->nombre;
         }
 
         if (!$tipo) {
-            $bodega = Bodega::where('correo', $email)->first();
+            $bodega = Bodega::whereRaw('LOWER(correo) = ?', [$email])->first();
             if ($bodega) {
                 $tipo = 'bodega';
                 $nombre = $bodega->nombre;
@@ -63,7 +63,7 @@ class PasswordResetController extends Controller
         }
 
         if (!$tipo) {
-            $proveedor = Proveedor::where('correo', $email)->first();
+            $proveedor = Proveedor::whereRaw('LOWER(correo) = ?', [$email])->first();
             if ($proveedor) {
                 $tipo = 'proveedor';
                 $nombre = $proveedor->nombre;
@@ -83,7 +83,7 @@ class PasswordResetController extends Controller
 
         // Eliminar tokens anteriores para este email+tipo
         DB::table('password_reset_tokens')
-            ->where('email', $email)
+            ->whereRaw('LOWER(email) = ?', [$email])
             ->where('tipo', $tipo)
             ->delete();
 
@@ -148,13 +148,13 @@ class PasswordResetController extends Controller
             ], 422);
         }
 
-        $email = $request->input('email');
+        $email = strtolower($request->input('email'));
         $token = $request->input('token');
         $password = $request->input('password');
 
         // Buscar todos los tokens para este email
         $records = DB::table('password_reset_tokens')
-            ->where('email', $email)
+            ->whereRaw('LOWER(email) = ?', [$email])
             ->get();
 
         if ($records->isEmpty()) {
@@ -199,19 +199,19 @@ class PasswordResetController extends Controller
 
         switch ($matchedRecord->tipo) {
             case 'usuario':
-                Usuario::where('correo', $email)->update(['password' => $hashedPassword]);
+                Usuario::whereRaw('LOWER(correo) = ?', [$email])->update(['password' => $hashedPassword]);
                 break;
             case 'bodega':
-                Bodega::where('correo', $email)->update(['password' => $hashedPassword]);
+                Bodega::whereRaw('LOWER(correo) = ?', [$email])->update(['password' => $hashedPassword]);
                 break;
             case 'proveedor':
-                Proveedor::where('correo', $email)->update(['password' => $hashedPassword]);
+                Proveedor::whereRaw('LOWER(correo) = ?', [$email])->update(['password' => $hashedPassword]);
                 break;
         }
 
         // Limpiar token usado
         DB::table('password_reset_tokens')
-            ->where('email', $email)
+            ->whereRaw('LOWER(email) = ?', [$email])
             ->where('tipo', $matchedRecord->tipo)
             ->delete();
 

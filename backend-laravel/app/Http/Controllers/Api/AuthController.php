@@ -37,11 +37,11 @@ class AuthController extends Controller
             ], 422);
         }
 
-        $email = $request->input('correo');
+        $email = strtolower($request->input('correo'));
         $password = $request->input('password');
 
         // 1. Buscar en usuarios
-        $usuario = Usuario::where('correo', $email)->first();
+        $usuario = Usuario::whereRaw('LOWER(correo) = ?', [$email])->first();
         if ($usuario && password_verify($password, $usuario->password)) {
             if (!$usuario->activo) {
                 return response()->json(['success' => false, 'message' => 'Este usuario está desactivado'], 403);
@@ -70,7 +70,7 @@ class AuthController extends Controller
         }
 
         // 2. Buscar en bodegas
-        $bodega = Bodega::where('correo', $email)->first();
+        $bodega = Bodega::whereRaw('LOWER(correo) = ?', [$email])->first();
         if ($bodega && password_verify($password, $bodega->password)) {
             if (!$bodega->activa) {
                 return response()->json(['success' => false, 'message' => 'Esta bodega está desactivada'], 403);
@@ -88,7 +88,7 @@ class AuthController extends Controller
         }
 
         // 3. Buscar en proveedores
-        $proveedor = Proveedor::where('correo', $email)->first();
+        $proveedor = Proveedor::whereRaw('LOWER(correo) = ?', [$email])->first();
         if ($proveedor && password_verify($password, $proveedor->password)) {
             if (!$proveedor->activo) {
                 return response()->json(['success' => false, 'message' => 'Este proveedor está desactivado'], 403);
