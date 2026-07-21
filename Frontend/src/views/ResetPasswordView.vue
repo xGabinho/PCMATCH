@@ -136,9 +136,11 @@
 </template>
 
 <script setup>
+import { AlertTriangle, Check, Eye, EyeOff } from 'lucide-vue-next';
+
 import { ref, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { AlertTriangle, Check, Eye, EyeOff } from '@lucide/vue'
+
 import { API } from '@/config/api'
 
 const route = useRoute()

@@ -27,9 +27,11 @@
 </template>
 
 <script setup>
+import { Check, AlertCircle, Info } from 'lucide-vue-next';
+
 import { useToast } from '../composables/useToast'
 import { useTheme } from '../composables/useTheme'
-import { Check, AlertCircle, Info } from '@lucide/vue'
+
 
 const { toasts, removeToast } = useToast()
 const { isDark } = useTheme()

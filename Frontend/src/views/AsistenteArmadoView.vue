@@ -133,7 +133,7 @@
 
         <div class="max-w-md mx-auto">
           <div class="card-dark rounded-2xl p-8 text-center">
-            <div class="text-5xl mb-4">💰</div>
+            <Coins class="w-14 h-14 mx-auto mb-4 text-yellow-500" />
             <div class="relative mb-6">
               <span class="absolute left-4 top-1/2 -translate-y-1/2 text-accent font-bold text-xl">$</span>
               <input
@@ -189,7 +189,7 @@
         <!-- Error -->
         <div v-else-if="buildError" class="max-w-lg mx-auto">
           <div class="card-dark rounded-2xl p-8 text-center">
-            <div class="text-5xl mb-4">😕</div>
+            <Frown class="w-14 h-14 mx-auto mb-4 text-orange-500" />
             <h3 class="text-xl font-bold theme-text mb-3">Presupuesto insuficiente</h3>
             <p class="theme-text-muted text-sm mb-4">{{ buildError.message }}</p>
             <p v-if="buildError.detalle" class="text-xs theme-text-muted mb-4">{{ buildError.detalle }}</p>
@@ -213,7 +213,7 @@
         <!-- Success: Build result -->
         <div v-else-if="buildResult">
           <div class="text-center mb-8">
-            <div class="text-4xl mb-3">🎉</div>
+            <PartyPopper class="w-12 h-12 mx-auto mb-3 text-accent" />
             <h2 class="text-2xl font-bold theme-text mb-2">¡Tu PC ideal está lista!</h2>
             <p class="theme-text-muted text-sm">
               Configuración optimizada para <span class="text-accent font-medium">{{ usoLabel }}</span> con
@@ -250,7 +250,7 @@
                   <img :src="comp.imagen_url" :alt="comp.nombre" class="w-full h-full object-contain" />
                 </template>
                 <template v-else>
-                  <span class="text-2xl opacity-30">{{ categoryIcons[comp.categoria] ?? '🔧' }}</span>
+                  <component :is="categoryIcons[comp.categoria] ?? Wrench" class="w-8 h-8 opacity-30" />
                 </template>
               </div>
 
@@ -286,10 +286,10 @@
           <!-- Actions -->
           <div class="flex flex-col sm:flex-row gap-3 justify-center max-w-md mx-auto">
             <button @click="applyBuildToBuilder" class="btn-primary text-sm flex-1">
-              ⚡ Usar esta configuración
+              <Zap class="w-4 h-4 mr-2 inline-block" /> Usar esta configuración
             </button>
             <button @click="resetWizard" class="btn-secondary text-sm flex-1">
-              🔄 Armar otra vez
+              <RefreshCw class="w-4 h-4 mr-2 inline-block" /> Armar otra vez
             </button>
           </div>
         </div>
@@ -325,7 +325,7 @@
           :disabled="!canAdvance"
           :class="{ 'opacity-40 cursor-not-allowed': !canAdvance }"
         >
-          {{ currentStep === 2 ? '🚀 Armar mi PC' : 'Siguiente →' }}
+          <span v-if="currentStep === 2" class="flex items-center"><Rocket class="w-4 h-4 mr-2 inline-block" /> Armar mi PC</span><span v-else>Siguiente →</span>
         </button>
       </div>
 
@@ -334,6 +334,9 @@
 </template>
 
 <script setup>
+import { Coins, Frown, PartyPopper, Wrench, Zap, RefreshCw, Rocket, Gamepad2, BookOpen, Briefcase, Palette, Lightbulb, Settings, Save, Disc, Plug, Snowflake, Monitor } from 'lucide-vue-next';
+
+
 import { ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { useBuilder } from '../composables/useBuilder'
@@ -365,25 +368,25 @@ const wizardSteps = [
 const usoCases = [
   {
     value: 'gaming',
-    icon: '🎮',
+    icon: Gamepad2,
     label: 'Gaming',
     desc: 'Juegos AAA, streaming, VR. Prioridad en GPU y CPU de alto rendimiento.',
   },
   {
     value: 'estudio',
-    icon: '📚',
+    icon: BookOpen,
     label: 'Estudio',
     desc: 'Programación, investigación, multitarea. Balance entre RAM y procesador.',
   },
   {
     value: 'oficina',
-    icon: '💼',
+    icon: Briefcase,
     label: 'Oficina',
     desc: 'Office, navegación, correo. Prioridad en fiabilidad y almacenamiento.',
   },
   {
     value: 'diseño',
-    icon: '🎨',
+    icon: Palette,
     label: 'Diseño',
     desc: 'Photoshop, Premiere, renderizado 3D. Prioridad en CPU y GPU profesional.',
   },
@@ -393,21 +396,21 @@ const usoCases = [
 const desempenoOptions = [
   {
     value: 'alta',
-    icon: '🚀',
+    icon: Rocket,
     label: 'Alto',
     desc: 'La mejor experiencia posible sin compromisos.',
     tags: ['Gama alta', 'Máximo rendimiento'],
   },
   {
     value: 'media',
-    icon: '⚡',
+    icon: Zap,
     label: 'Medio',
     desc: 'Buen rendimiento con excelente relación calidad-precio.',
     tags: ['Gama media', 'Mejor valor'],
   },
   {
     value: 'baja',
-    icon: '💡',
+    icon: Lightbulb,
     label: 'Básico',
     desc: 'Cubre lo esencial de forma eficiente y económica.',
     tags: ['Gama entrada', 'Económico'],
@@ -437,8 +440,8 @@ const canAdvance = computed(() => {
 
 // ── Helpers ──
 const categoryIcons = {
-  CPU: '⚙️', GPU: '🎮', RAM: '💾', Storage: '💿',
-  Motherboard: '🔌', PSU: '⚡', Cooler: '❄️', Case: '🖥️'
+  CPU: Settings, GPU: Gamepad2, RAM: Save, Storage: Disc,
+  Motherboard: Plug, PSU: Zap, Cooler: Snowflake, Case: Monitor
 }
 
 const tierStyles = {

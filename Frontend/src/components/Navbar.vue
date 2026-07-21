@@ -34,7 +34,7 @@
             : 'text-text-light-muted hover:text-text-light hover:bg-gray-100'"
           active-class="!text-accent"
         >
-          🤖 Asistente
+          <Bot class="w-5 h-5" /> Asistente
         </router-link>
         <router-link
           to="/sobre-nosotros"
@@ -168,7 +168,7 @@
             ? 'text-accent hover:bg-dark-card'
             : 'text-accent hover:bg-gray-100'"
         >
-          🤖 Asistente inteligente
+          <Bot class="w-5 h-5 text-accent" /> Asistente inteligente
         </router-link>
         <router-link
           to="/sobre-nosotros"
@@ -243,9 +243,11 @@
 </template>
 
 <script setup>
+import { Monitor, Bot } from 'lucide-vue-next';
+
 import { ref } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
-import { Monitor } from '@lucide/vue'
+
 import { useAuth } from '../composables/useAuth'
 import { useTheme } from '../composables/useTheme'
 

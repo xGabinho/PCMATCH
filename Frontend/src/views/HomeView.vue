@@ -34,7 +34,7 @@
               Armar mi PC →
             </router-link>
             <router-link v-if="isLoggedIn" to="/asistente" class="btn-secondary text-base px-8 py-4 w-full sm:w-auto text-center">
-              🤖 Asistente inteligente
+              <Bot class="w-5 h-5 inline-block" /> Asistente inteligente
             </router-link>
             <router-link to="/ejemplo-cotizacion" class="btn-secondary text-base px-8 py-4 w-full sm:w-auto text-center">
               Ver ejemplo
@@ -67,7 +67,7 @@
           <div class="relative z-10 flex flex-col lg:flex-row items-center gap-8">
             <div class="flex-1 text-center lg:text-left">
               <div class="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-accent/20 bg-accent/10 text-accent text-xs font-medium mb-4">
-                <span>🤖</span> Nuevo: Asistente inteligente
+                <span><Bot class="w-5 h-5 inline-block" /></span> Nuevo: Asistente inteligente
               </div>
               <h2 class="text-2xl sm:text-3xl font-bold theme-text tracking-tight mb-3">
                 ¿No sabes de tecnología? <span class="text-accent">No hay problema</span>
@@ -94,7 +94,7 @@
 
             <div class="flex-shrink-0">
               <router-link to="/asistente" class="btn-primary text-base px-8 py-4 inline-flex items-center gap-2">
-                <span>🚀</span> Probar asistente
+                <Rocket class="w-5 h-5 inline-block" /> Probar asistente
               </router-link>
             </div>
           </div>
@@ -125,10 +125,13 @@
 </template>
 
 <script setup>
+import { Bot, Rocket, Zap, Wrench, FileText } from 'lucide-vue-next';
+
+
 import SeccionMasVendidos from '../components/Recomendaciones/SeccionMasVendidos.vue'
 import { useTheme } from '../composables/useTheme'
 import { useAuth } from '../composables/useAuth'
-import { Zap, Wrench, FileText } from '@lucide/vue'
+
 
 const { isDark } = useTheme()
 const { isLoggedIn } = useAuth()

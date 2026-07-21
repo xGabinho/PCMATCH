@@ -187,9 +187,11 @@
 </template>
 
 <script setup>
+import { Monitor, Save, Check, Trash2, AlertTriangle } from 'lucide-vue-next';
+
 import { computed, ref } from 'vue'
 import { useRouter } from 'vue-router'
-import { Monitor, Save, Check, Trash2, AlertTriangle } from '@lucide/vue'
+
 import { useBuilder } from '../composables/useBuilder'
 import { useAuth } from '../composables/useAuth'
 

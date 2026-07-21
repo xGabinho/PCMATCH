@@ -58,8 +58,10 @@
 </template>
 
 <script setup>
+import { Cpu, Gamepad2, Save, Disc, Plug, Zap, Snowflake, Monitor, Wrench } from 'lucide-vue-next';
+
 import { computed } from 'vue'
-import { Cpu, Gamepad2, Save, Disc, Plug, Zap, Snowflake, Monitor, Wrench } from '@lucide/vue'
+
 
 const props = defineProps({
   name: String,

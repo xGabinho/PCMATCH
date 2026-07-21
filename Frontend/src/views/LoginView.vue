@@ -130,7 +130,7 @@
             <label class="block text-sm font-medium theme-text mb-2">Número de celular</label>
             <div class="flex gap-2">
               <div class="flex items-center px-3 rounded-lg theme-bg theme-border border theme-text-muted text-sm select-none flex-shrink-0">
-                🇨🇴 +57
+                <MapPin class="w-4 h-4 mr-1 inline-block" /> +57
               </div>
               <input
                 type="tel"
@@ -321,9 +321,12 @@
 </template>
 
 <script setup>
+import { MapPin, Eye, EyeOff, Check, FileText, Lock } from 'lucide-vue-next';
+
+
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
-import { Eye, EyeOff, Check, FileText, Lock } from '@lucide/vue'
+
 import { useAuth } from '../composables/useAuth'
 
 const tab = ref('login')

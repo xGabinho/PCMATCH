@@ -79,8 +79,10 @@
 </template>
 
 <script setup>
+import { Mail } from 'lucide-vue-next';
+
 import { ref } from 'vue'
-import { Mail } from '@lucide/vue'
+
 import { API } from '@/config/api'
 
 const correo = ref('')

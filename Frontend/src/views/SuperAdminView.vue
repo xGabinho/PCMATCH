@@ -92,7 +92,7 @@
                   </td>
                   <td class="px-6 py-4">
                     <a v-if="p.documento_soporte_url" :href="p.documento_soporte_url" target="_blank" class="text-xs text-accent hover:underline flex items-center gap-1">
-                      📄 Ver Doc
+                      <FileText class="w-4 h-4 mr-1 inline-block" /> Ver Doc
                     </a>
                     <span v-else class="text-xs theme-text-muted">—</span>
                   </td>
@@ -331,7 +331,7 @@
                 <label class="block text-sm font-medium theme-text mb-2">Número de celular</label>
                 <div class="flex gap-2">
                   <div class="flex items-center px-3 rounded-lg theme-bg theme-border border theme-text-muted text-sm select-none flex-shrink-0">
-                    🇨🇴 +57
+                    <MapPin class="w-4 h-4 mr-1 inline-block" /> +57
                   </div>
                   <input v-model="newUser.telefonoLocal" @input="handleTelefonoInput(newUser, 'telefonoLocal')" type="tel" placeholder="300 123 4567" maxlength="13" class="flex-1 theme-bg border theme-border rounded-lg px-4 py-3 text-sm theme-text placeholder-text-muted focus:outline-none focus:border-accent transition-colors" />
                 </div>
@@ -483,10 +483,10 @@
           <!-- Tabs -->
           <div class="flex gap-2 mb-6">
             <button @click="reporteTab = 'rotacion'" class="px-4 py-2 rounded-lg text-sm font-medium transition-all" :class="reporteTab === 'rotacion' ? 'bg-accent text-white shadow-lg shadow-accent/20' : 'card-dark theme-text-muted hover:theme-text'">
-              📊 Rotación por Bodega
+              <BarChart3 class="w-5 h-5 mr-2 inline-block text-accent" /> Rotación por Bodega
             </button>
             <button @click="reporteTab = 'consumo'" class="px-4 py-2 rounded-lg text-sm font-medium transition-all" :class="reporteTab === 'consumo' ? 'bg-accent text-white shadow-lg shadow-accent/20' : 'card-dark theme-text-muted hover:theme-text'">
-              📦 Consumo por Proveedor
+              <Package class="w-5 h-5 mr-2 inline-block text-accent" /> Consumo por Proveedor
             </button>
           </div>
 
@@ -566,7 +566,7 @@
             </div>
 
             <div v-else-if="rotacionFetched && rotacionData.length === 0" class="card-dark rounded-xl p-12 text-center">
-              <p class="text-4xl mb-3">📭</p>
+              <Mailbox class="w-10 h-10 mx-auto mb-3 text-text-muted" stroke-width="1.5" />
               <p class="theme-text font-semibold mb-1">Sin movimientos</p>
               <p class="theme-text-muted text-sm">No se encontraron cotizaciones para esta bodega en el rango seleccionado.</p>
             </div>
@@ -649,7 +649,7 @@
             </div>
 
             <div v-else-if="consumoFetched && consumoData.length === 0" class="card-dark rounded-xl p-12 text-center">
-              <p class="text-4xl mb-3">📭</p>
+              <Mailbox class="w-10 h-10 mx-auto mb-3 text-text-muted" stroke-width="1.5" />
               <p class="theme-text font-semibold mb-1">Sin consumo registrado</p>
               <p class="theme-text-muted text-sm">Este proveedor aún no tiene componentes cotizados en sus bodegas.</p>
             </div>
@@ -806,7 +806,7 @@
             <label class="block text-sm font-medium theme-text mb-2">Número de celular</label>
             <div class="flex gap-2">
               <div class="flex items-center px-3 rounded-lg theme-bg theme-border border theme-text-muted text-sm select-none flex-shrink-0">
-                🇨🇴 +57
+                <MapPin class="w-4 h-4 mr-1 inline-block" /> +57
               </div>
               <input v-model="editingBodega.telefonoLocal" @input="handleTelefonoInput(editingBodega, 'telefonoLocal')" type="tel" placeholder="300 123 4567" maxlength="13" class="flex-1 theme-bg border theme-border rounded-lg px-4 py-3 text-sm theme-text focus:outline-none focus:border-accent transition-colors" />
             </div>
@@ -864,7 +864,7 @@
             <label class="block text-sm font-medium theme-text mb-2">Número de celular</label>
             <div class="flex gap-2">
               <div class="flex items-center px-3 rounded-lg theme-bg theme-border border theme-text-muted text-sm select-none flex-shrink-0">
-                🇨🇴 +57
+                <MapPin class="w-4 h-4 mr-1 inline-block" /> +57
               </div>
               <input v-model="newBodega.telefonoLocal" @input="handleTelefonoInput(newBodega, 'telefonoLocal')" type="tel" placeholder="300 123 4567" maxlength="13" class="flex-1 theme-bg border theme-border rounded-lg px-4 py-3 text-sm theme-text placeholder-text-muted focus:outline-none focus:border-accent transition-colors" />
             </div>
@@ -934,7 +934,7 @@
             <label class="block text-sm font-medium theme-text mb-2">Número de celular</label>
             <div class="flex gap-2">
               <div class="flex items-center px-3 rounded-lg theme-bg theme-border border theme-text-muted text-sm select-none flex-shrink-0">
-                🇨🇴 +57
+                <MapPin class="w-4 h-4 mr-1 inline-block" /> +57
               </div>
               <input v-model="editingUsuario.telefonoLocal" @input="handleTelefonoInput(editingUsuario, 'telefonoLocal')" type="tel" placeholder="300 123 4567" maxlength="13" class="flex-1 theme-bg border theme-border rounded-lg px-4 py-3 text-sm theme-text focus:outline-none focus:border-accent transition-colors" />
             </div>
@@ -1292,7 +1292,10 @@
 </template>
 
 <script setup>
-import { UserPlus, Check, Trash2, Pencil, Sun, Moon, Info, Package, Wrench, FileText, Shield, Briefcase, Gamepad2, Palette, BookOpen, Building2, Store, Users, Lock, ClipboardList, Crown, User, BarChart3 } from '@lucide/vue'
+import { FileText, MapPin, BarChart3, Package, Mailbox, UserPlus, Check, Trash2, Pencil, Sun, Moon, Info, Wrench, Shield, Briefcase, Gamepad2, Palette, BookOpen, Building2, Store, Users, Lock, ClipboardList, Crown, User } from 'lucide-vue-next';
+
+
+
 import { useTheme } from '../composables/useTheme'
 const { isDark, toggleTheme } = useTheme()
 import { ref, markRaw, computed, onMounted, nextTick, watch } from 'vue'

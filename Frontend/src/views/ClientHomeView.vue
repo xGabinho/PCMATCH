@@ -11,7 +11,7 @@
       <div class="max-w-7xl mx-auto px-6 py-10 relative z-10">
         <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6">
           <div>
-            <p class="theme-text-muted text-sm mb-1">Bienvenido de vuelta 👋</p>
+            <p class="theme-text-muted text-sm mb-1">Bienvenido de vuelta <Hand class="w-4 h-4 inline-block text-amber-500" /></p>
             <h1 class="text-3xl font-bold theme-text tracking-tight">
               Hola, <span class="text-accent">{{ user?.nombre }}</span>
             </h1>
@@ -34,7 +34,7 @@
                 <Zap class="w-4 h-4" /> Armar mi PC
               </router-link>
               <router-link to="/asistente" class="btn-secondary text-sm px-5 py-2.5 flex items-center justify-center gap-2 w-full sm:w-auto">
-                <span>🤖</span> Usar asistente
+                <Bot class="w-5 h-5 inline-block" /> Usar asistente
               </router-link>
             </div>
           </div>
@@ -250,7 +250,7 @@
           <div class="relative z-10 flex flex-col lg:flex-row items-center gap-8">
             <div class="flex-1 text-center lg:text-left">
               <div class="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-accent/20 bg-accent/10 text-accent text-xs font-medium mb-4">
-                <span>🤖</span> Nuevo: Asistente inteligente
+                <Bot class="w-5 h-5 inline-block" /> Nuevo: Asistente inteligente
               </div>
               <h2 class="text-2xl sm:text-3xl font-bold theme-text tracking-tight mb-3">
                 ¿No sabes de tecnología? <span class="text-accent">No hay problema</span>
@@ -277,7 +277,7 @@
 
             <div class="flex-shrink-0 flex flex-col gap-3">
               <router-link to="/asistente" class="btn-primary text-base px-8 py-4 inline-flex items-center justify-center gap-2">
-                <span>🚀</span> Probar asistente
+                <Rocket class="w-5 h-5 inline-block" /> Probar asistente
               </router-link>
               <router-link to="/armar" class="btn-secondary text-sm px-6 py-3">
                 O armar manualmente →
@@ -295,11 +295,14 @@
 </template>
 
 <script setup>
+import { Hand, Bot, Rocket, Zap, Search, Settings, Wrench, Settings as CpuIcon, Gamepad2, Save, Disc, Plug, Snowflake, Monitor } from 'lucide-vue-next';
+
+
 import { ref, computed, onMounted, markRaw } from 'vue'
 import { useAuth } from '../composables/useAuth'
 import { useTheme } from '../composables/useTheme'
 import SeccionMasVendidos from '../components/Recomendaciones/SeccionMasVendidos.vue'
-import { Zap, Search, Settings, Wrench, Settings as CpuIcon, Gamepad2, Save, Disc, Plug, Snowflake, Monitor } from '@lucide/vue'
+
 
 import { API } from '@/config/api'
 const { user } = useAuth()

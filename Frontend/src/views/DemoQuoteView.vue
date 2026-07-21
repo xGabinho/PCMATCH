@@ -132,8 +132,9 @@
 </template>
 
 <script setup>
+import { Info, AlertTriangle, Cpu, CircuitBoard, Zap, Gamepad2, Save, Battery, Package } from 'lucide-vue-next';
+
 import { ref, markRaw } from 'vue'
-import { Info, AlertTriangle, Cpu, CircuitBoard, Zap, Gamepad2, Save, Battery, Package } from '@lucide/vue'
 
 const today = new Date().toLocaleDateString('es-CL', { day: 'numeric', month: 'long', year: 'numeric' })
 

@@ -50,5 +50,6 @@
 </template>
 
 <script setup>
-import { Rocket, Shield, CircleDollarSign, Zap } from '@lucide/vue'
+import { Rocket, Shield, CircleDollarSign, Zap } from 'lucide-vue-next';
+
 </script>

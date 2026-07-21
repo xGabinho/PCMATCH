@@ -301,9 +301,11 @@
 </template>
 
 <script setup>
+import { Check, X, Search, Settings, Monitor } from 'lucide-vue-next';
+
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import { Check, X, Search, Settings, Monitor } from '@lucide/vue'
+
 import ComponentCard from '../components/ComponentCard.vue'
 import { useBuilder } from '../composables/useBuilder'
 
