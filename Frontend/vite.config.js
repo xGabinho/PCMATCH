@@ -17,7 +17,7 @@ export default defineConfig({
     },
     proxy: {
       '/api': {
-        target: 'http://webserver',
+        target: process.env.VITE_API_TARGET || 'http://webserver',
         changeOrigin: true
       }
     }

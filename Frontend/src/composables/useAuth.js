@@ -7,14 +7,35 @@ const user = ref(JSON.parse(localStorage.getItem('usuario') ?? 'null'))
 
 export function useAuth() {
 
-  async function login(correo, password) {
-    const res = await fetch(`${API}/auth/login`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
-      body: JSON.stringify({ correo, password })
-    })
+  /**
+   * Parsea la respuesta JSON de forma segura.
+   * Si el body está vacío o no es JSON válido, lanza un error descriptivo.
+   */
+  async function safeJson(res) {
+    const text = await res.text()
+    if (!text) {
+      throw new Error('El servidor no respondió. Verifica que el backend esté en ejecución.')
+    }
+    try {
+      return JSON.parse(text)
+    } catch {
+      throw new Error('Respuesta inesperada del servidor. Intenta de nuevo más tarde.')
+    }
+  }
 
-    const data = await res.json()
+  async function login(correo, password) {
+    let res
+    try {
+      res = await fetch(`${API}/auth/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+        body: JSON.stringify({ correo, password })
+      })
+    } catch {
+      throw new Error('No se pudo conectar al servidor. Verifica tu conexión o que el backend esté activo.')
+    }
+
+    const data = await safeJson(res)
 
     if (!res.ok) {
       throw new Error(data.message ?? data.error ?? 'Error al iniciar sesión')
@@ -30,13 +51,18 @@ export function useAuth() {
   }
 
   async function register(nombre, apellido, correo, telefono, password) {
-    const res = await fetch(`${API}/auth/register`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
-      body: JSON.stringify({ nombre, apellido, correo, telefono, password })
-    })
+    let res
+    try {
+      res = await fetch(`${API}/auth/register`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+        body: JSON.stringify({ nombre, apellido, correo, telefono, password })
+      })
+    } catch {
+      throw new Error('No se pudo conectar al servidor. Verifica tu conexión o que el backend esté activo.')
+    }
 
-    const data = await res.json()
+    const data = await safeJson(res)
 
     if (!res.ok) {
       throw new Error(data.message ?? data.error ?? 'Error al registrarse')

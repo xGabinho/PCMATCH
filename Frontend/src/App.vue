@@ -3,6 +3,7 @@
     <Navbar v-if="!isAdminRoute" />
     <router-view />
     <ToastContainer />
+    <ChatbotWidget v-if="!isAdminRoute" />
   </div>
 </template>
 
@@ -11,6 +12,7 @@ import { computed, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 import Navbar from './components/Navbar.vue'
 import ToastContainer from './components/ToastContainer.vue'
+import ChatbotWidget from './components/ChatbotWidget.vue'
 import { useTheme } from './composables/useTheme'
 
 // Initialize theme on app mount

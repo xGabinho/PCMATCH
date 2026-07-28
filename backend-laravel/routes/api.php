@@ -37,6 +37,7 @@ Route::get('/catalogo', [CatalogoController::class, 'index']);
 // RUTAS DE RECOMENDACIONES (Públicas)
 Route::get('/recomendaciones/mas-vendidos', [RecomendacionController::class, 'getMasVendidos']);
 Route::post('/recomendaciones/pc-ideal', [RecomendacionController::class, 'buildPcIdeal']);
+Route::post('/chat', [\App\Http\Controllers\Api\ChatbotController::class, 'chat']);
 
 // Endpoint opcional para probar si Sanctum está funcionando
 Route::middleware('auth:sanctum')->get('/auth/me', function (Request $request) {
