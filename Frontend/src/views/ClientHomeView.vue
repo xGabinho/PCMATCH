@@ -8,7 +8,7 @@
       </div>
       <div class="absolute right-0 top-0 w-[500px] h-[300px] bg-accent/5 rounded-full blur-3xl pointer-events-none"></div>
 
-      <div class="max-w-7xl mx-auto px-6 py-10 relative z-10">
+      <div class="max-w-7xl mx-auto px-6 pt-24 pb-10 relative z-10">
         <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6">
           <div>
             <p class="theme-text-muted text-sm mb-1">Bienvenido de vuelta <Hand class="w-4 h-4 inline-block text-amber-500" /></p>
@@ -32,9 +32,6 @@
             <div class="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
               <router-link to="/armar" class="btn-primary text-sm px-5 py-2.5 flex items-center justify-center gap-2 w-full sm:w-auto">
                 <Zap class="w-4 h-4" /> Armar mi PC
-              </router-link>
-              <router-link to="/asistente" class="btn-secondary text-sm px-5 py-2.5 flex items-center justify-center gap-2 w-full sm:w-auto">
-                <Bot class="w-5 h-5 inline-block" /> Usar asistente
               </router-link>
             </div>
           </div>
@@ -163,7 +160,7 @@
       <!-- Components Grid -->
       <div v-else class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
         <div
-          v-for="comp in filteredComponents"
+          v-for="comp in paginatedComponents"
           :key="comp.id"
           class="card-dark rounded-xl flex flex-col card-hover group overflow-hidden"
         >
@@ -232,61 +229,49 @@
         </div>
       </div>
 
-    </div>
+      <!-- Pagination Controls -->
+      <div v-if="filteredComponents.length > 0" class="flex flex-col sm:flex-row items-center justify-between gap-4 mt-8 pt-6 border-t theme-border">
+        <p class="text-xs theme-text-muted">
+          Página <span class="font-semibold theme-text">{{ currentPage }}</span> de <span class="font-semibold theme-text">{{ totalPages }}</span>
+          ({{ filteredComponents.length }} componentes en total)
+        </p>
 
-    <!-- Bottom CTA Banner -->
-    <!-- ════ Asistente CTA Section ════ -->
-    <section class="border-t theme-border py-16">
-      <div class="max-w-7xl mx-auto px-6">
-        <div class="relative overflow-hidden rounded-2xl p-8 sm:p-12"
-          :class="isDark
-            ? 'bg-gradient-to-br from-accent/10 via-dark-card to-purple-500/10 border border-accent/20'
-            : 'bg-gradient-to-br from-blue-50 via-white to-purple-50 border border-accent/20 shadow-lg'"
-        >
-          <!-- Decorative glow -->
-          <div class="absolute -right-20 -top-20 w-64 h-64 bg-accent/10 rounded-full blur-3xl pointer-events-none"></div>
-          <div class="absolute -left-10 -bottom-10 w-40 h-40 bg-purple-500/10 rounded-full blur-3xl pointer-events-none"></div>
+        <div class="flex items-center gap-1.5">
+          <button
+            @click="goToPage(currentPage - 1)"
+            :disabled="currentPage === 1"
+            class="px-3 py-2 rounded-lg text-xs font-medium border theme-border theme-card theme-text hover:border-accent disabled:opacity-40 disabled:pointer-events-none transition-all flex items-center gap-1 min-h-[38px] cursor-pointer"
+          >
+            <ChevronLeft class="w-4 h-4" /> Anterior
+          </button>
 
-          <div class="relative z-10 flex flex-col lg:flex-row items-center gap-8">
-            <div class="flex-1 text-center lg:text-left">
-              <div class="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-accent/20 bg-accent/10 text-accent text-xs font-medium mb-4">
-                <Bot class="w-5 h-5 inline-block" /> Nuevo: Asistente inteligente
-              </div>
-              <h2 class="text-2xl sm:text-3xl font-bold theme-text tracking-tight mb-3">
-                ¿No sabes de tecnología? <span class="text-accent">No hay problema</span>
-              </h2>
-              <p class="theme-text-muted text-sm leading-relaxed max-w-lg mx-auto lg:mx-0">
-                Nuestro asistente te hace 3 preguntas simples y te recomienda la combinación perfecta de componentes según tu presupuesto y lo que necesitas. Sin jerga técnica, sin complicaciones.
-              </p>
-
-              <div class="flex flex-wrap justify-center lg:justify-start gap-4 mt-6 text-xs theme-text-muted">
-                <div class="flex items-center gap-1.5">
-                  <span class="w-1.5 h-1.5 rounded-full bg-green-500"></span>
-                  3 preguntas simples
-                </div>
-                <div class="flex items-center gap-1.5">
-                  <span class="w-1.5 h-1.5 rounded-full bg-green-500"></span>
-                  Recomendación instantánea
-                </div>
-                <div class="flex items-center gap-1.5">
-                  <span class="w-1.5 h-1.5 rounded-full bg-green-500"></span>
-                  Optimizado a tu presupuesto
-                </div>
-              </div>
-            </div>
-
-            <div class="flex-shrink-0 flex flex-col gap-3">
-              <router-link to="/asistente" class="btn-primary text-base px-8 py-4 inline-flex items-center justify-center gap-2">
-                <Rocket class="w-5 h-5 inline-block" /> Probar asistente
-              </router-link>
-              <router-link to="/armar" class="btn-secondary text-sm px-6 py-3">
-                O armar manualmente →
-              </router-link>
-            </div>
+          <div class="flex items-center gap-1">
+            <template v-for="(p, idx) in displayedPages" :key="idx">
+              <span v-if="p === '...'" class="px-1.5 text-xs theme-text-muted">...</span>
+              <button
+                v-else
+                @click="goToPage(p)"
+                class="w-9 h-9 rounded-lg text-xs font-medium transition-all flex items-center justify-center cursor-pointer min-h-[36px]"
+                :class="currentPage === p
+                  ? 'bg-accent text-white font-bold shadow-md shadow-accent/20'
+                  : 'theme-card border theme-border theme-text-muted hover:theme-text hover:border-accent/40'"
+              >
+                {{ p }}
+              </button>
+            </template>
           </div>
+
+          <button
+            @click="goToPage(currentPage + 1)"
+            :disabled="currentPage === totalPages"
+            class="px-3 py-2 rounded-lg text-xs font-medium border theme-border theme-card theme-text hover:border-accent disabled:opacity-40 disabled:pointer-events-none transition-all flex items-center gap-1 min-h-[38px] cursor-pointer"
+          >
+            Siguiente <ChevronRight class="w-4 h-4" />
+          </button>
         </div>
       </div>
-    </section>
+
+    </div>
 
     <!-- ════ Más Vendidos ════ -->
     <SeccionMasVendidos />
@@ -295,10 +280,10 @@
 </template>
 
 <script setup>
-import { Hand, Bot, Rocket, Zap, Search, Settings, Wrench, Settings as CpuIcon, Gamepad2, Save, Disc, Plug, Snowflake, Monitor } from 'lucide-vue-next';
+import { Hand, Bot, Rocket, Zap, Search, Settings, Wrench, Settings as CpuIcon, Gamepad2, Save, Disc, Plug, Snowflake, Monitor, ChevronLeft, ChevronRight } from 'lucide-vue-next';
 
 
-import { ref, computed, onMounted, markRaw } from 'vue'
+import { ref, computed, watch, onMounted, markRaw } from 'vue'
 import { useAuth } from '../composables/useAuth'
 import { useTheme } from '../composables/useTheme'
 import SeccionMasVendidos from '../components/Recomendaciones/SeccionMasVendidos.vue'
@@ -313,6 +298,9 @@ const activeCategory = ref('Todos')
 const sortBy         = ref('name')
 const allComponents  = ref([])
 const loading        = ref(false)
+
+const currentPage  = ref(1)
+const itemsPerPage = ref(10)
 
 const categories = ['CPU', 'GPU', 'RAM', 'Storage', 'PSU', 'Motherboard', 'Cooler', 'Case']
 
@@ -370,6 +358,46 @@ const filteredComponents = computed(() => {
   if (sortBy.value === 'name')       result.sort((a, b) => a.nombre.localeCompare(b.nombre))
 
   return result
+})
+
+const totalPages = computed(() => {
+  return Math.ceil(filteredComponents.value.length / itemsPerPage.value) || 1
+})
+
+const paginatedComponents = computed(() => {
+  const start = (currentPage.value - 1) * itemsPerPage.value
+  return filteredComponents.value.slice(start, start + itemsPerPage.value)
+})
+
+const displayedPages = computed(() => {
+  const total = totalPages.value
+  const current = currentPage.value
+  if (total <= 7) {
+    return Array.from({ length: total }, (_, i) => i + 1)
+  }
+  const pages = new Set([1, total, current, current - 1, current + 1])
+  const sorted = Array.from(pages).filter(p => p > 0 && p <= total).sort((a, b) => a - b)
+  const result = []
+  let prev = null
+  for (const p of sorted) {
+    if (prev && p - prev > 1) {
+      result.push('...')
+    }
+    result.push(p)
+    prev = p
+  }
+  return result
+})
+
+function goToPage(page) {
+  if (page >= 1 && page <= totalPages.value) {
+    currentPage.value = page
+    window.scrollTo({ top: 300, behavior: 'smooth' })
+  }
+}
+
+watch([searchQuery, activeCategory, sortBy, filterGama, filterEnfoque, filterNucleos, filterHilos, filterFrecuenciaMin], () => {
+  currentPage.value = 1
 })
 
 /**

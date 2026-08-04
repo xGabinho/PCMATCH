@@ -3,7 +3,15 @@
 
     <!-- Main Content -->
     <div class="flex-1 overflow-auto">
-      <div class="max-w-4xl mx-auto px-6 py-10">
+      <div class="max-w-4xl mx-auto px-6 pt-24 pb-10">
+
+        <!-- Back to products link -->
+        <router-link
+          to="/inicio"
+          class="inline-flex items-center gap-2 text-sm theme-text-muted hover:text-accent mb-6 transition-colors font-medium"
+        >
+          <ArrowLeft class="w-4 h-4" /> Volver a productos
+        </router-link>
 
         <!-- Stepper -->
         <div class="flex items-center gap-2 mb-10 overflow-x-auto pb-2 scrollbar-hide">
@@ -140,9 +148,9 @@
         </div>
 
         <!-- Components Grid -->
-        <div v-else class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
+        <div v-else class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
           <ComponentCard
-            v-for="item in filteredItems"
+            v-for="item in paginatedStepItems"
             :key="item.id"
             :name="item.nombre"
             :category="steps[activeStep].label"
@@ -159,16 +167,64 @@
           />
         </div>
 
+        <!-- Step Pagination Controls -->
+        <div v-if="filteredItems.length > 0" class="flex flex-col sm:flex-row items-center justify-between gap-4 mb-8 pt-4 border-t theme-border">
+          <p class="text-xs theme-text-muted">
+            Página <span class="font-semibold theme-text">{{ stepCurrentPage }}</span> de <span class="font-semibold theme-text">{{ stepTotalPages }}</span>
+            ({{ filteredItems.length }} componentes disponibles)
+          </p>
+
+          <div class="flex items-center gap-1.5">
+            <button
+              @click="stepCurrentPage--"
+              :disabled="stepCurrentPage === 1"
+              class="px-3 py-1.5 rounded-lg text-xs font-medium border theme-border theme-card theme-text hover:border-accent disabled:opacity-40 disabled:pointer-events-none transition-all flex items-center gap-1 min-h-[34px] cursor-pointer"
+            >
+              <ChevronLeft class="w-3.5 h-3.5" /> Anterior
+            </button>
+
+            <div class="flex items-center gap-1">
+              <template v-for="(p, idx) in displayedStepPages" :key="idx">
+                <span v-if="p === '...'" class="px-1 text-xs theme-text-muted">...</span>
+                <button
+                  v-else
+                  @click="stepCurrentPage = p"
+                  class="w-8 h-8 rounded-lg text-xs font-medium transition-all flex items-center justify-center cursor-pointer min-h-[32px]"
+                  :class="stepCurrentPage === p
+                    ? 'bg-accent text-white font-bold shadow-sm shadow-accent/20'
+                    : 'theme-card border theme-border theme-text-muted hover:theme-text hover:border-accent/40'"
+                >
+                  {{ p }}
+                </button>
+              </template>
+            </div>
+
+            <button
+              @click="stepCurrentPage++"
+              :disabled="stepCurrentPage === stepTotalPages"
+              class="px-3 py-1.5 rounded-lg text-xs font-medium border theme-border theme-card theme-text hover:border-accent disabled:opacity-40 disabled:pointer-events-none transition-all flex items-center gap-1 min-h-[34px] cursor-pointer"
+            >
+              Siguiente <ChevronRight class="w-3.5 h-3.5" />
+            </button>
+          </div>
+        </div>
+
         <!-- Navigation -->
         <div class="flex flex-col-reverse sm:flex-row items-center justify-between gap-4 pt-6 border-t theme-border pb-24 lg:pb-0">
           <button
-            @click="activeStep = Math.max(0, activeStep - 1); stepSearch = ''"
+            v-if="activeStep > 0"
+            @click="activeStep--; stepSearch = ''"
             class="btn-secondary text-sm w-full sm:w-auto"
-            :disabled="activeStep === 0"
-            :class="{ 'opacity-40 cursor-not-allowed': activeStep === 0 }"
           >
             ← Anterior
           </button>
+          <router-link
+            v-else
+            to="/inicio"
+            class="btn-secondary text-sm w-full sm:w-auto text-center"
+          >
+            ← Volver a productos
+          </router-link>
 
           <div class="flex items-center gap-1.5 hidden sm:flex">
             <div
@@ -214,7 +270,7 @@
 
     <!-- Sidebar -->
     <aside
-      class="fixed inset-y-0 right-0 w-full sm:w-96 lg:w-80 border-l theme-border theme-card flex-shrink-0 flex flex-col z-50 lg:z-auto transition-transform duration-300 ease-in-out lg:static lg:translate-x-0"
+      class="fixed inset-y-0 right-0 w-full sm:w-96 lg:w-80 theme-card flex-shrink-0 flex flex-col z-50 lg:z-10 transition-transform duration-300 ease-in-out border-l lg:border theme-border lg:rounded-2xl lg:sticky lg:top-24 lg:my-6 lg:mr-6 lg:h-[calc(100vh-7rem)] shadow-sm lg:translate-x-0"
       :class="mobileSidebarOpen ? 'translate-x-0' : 'translate-x-full'"
     >
       <div class="p-4 sm:p-6 border-b theme-border flex items-center justify-between">
@@ -272,7 +328,7 @@
                   class="w-6 h-6 rounded border theme-border theme-text-muted hover:text-green-500 hover:border-green-500/40 bg-white dark:bg-dark-bg transition-colors flex items-center justify-center text-xs font-bold disabled:opacity-30 disabled:cursor-not-allowed"
                 >+</button>
               </div>
-              <p class="text-accent text-sm font-semibold font-mono mt-1">${{ (Number(selectedComponents[step.id].precio) * (selectedComponents[step.id].cantidad || 1)).toLocaleString() }}</p>
+              <p class="text-accent text-sm font-semibold font-mono mt-1">${{ (Number(selectedComponents[step.id].precio_final || selectedComponents[step.id].precio) * (selectedComponents[step.id].cantidad || 1)).toLocaleString() }}</p>
             </div>
           </div>
           <div
@@ -301,9 +357,9 @@
 </template>
 
 <script setup>
-import { Check, X, Search, Settings, Monitor } from 'lucide-vue-next';
+import { Check, X, Search, Settings, Monitor, ArrowLeft, ChevronLeft, ChevronRight } from 'lucide-vue-next';
 
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, watch, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 
 import ComponentCard from '../components/ComponentCard.vue'
@@ -325,6 +381,9 @@ const filterHilos = ref('')
 const filterFrecuenciaMin = ref('')
 const loading       = ref(false)
 const componentesPorCategoria = ref({})
+
+const stepCurrentPage  = ref(1)
+const stepItemsPerPage = ref(4)
 
 function clearFilters() {
   filterGama.value = ''
@@ -369,6 +428,39 @@ const filteredItems = computed(() => {
   if (stepSort.value === 'price-desc') items.sort((a, b) => b.precio - a.precio)
   if (stepSort.value === 'name')       items.sort((a, b) => a.nombre.localeCompare(b.nombre))
   return items
+})
+
+const stepTotalPages = computed(() => {
+  return Math.ceil(filteredItems.value.length / stepItemsPerPage.value) || 1
+})
+
+const paginatedStepItems = computed(() => {
+  const start = (stepCurrentPage.value - 1) * stepItemsPerPage.value
+  return filteredItems.value.slice(start, start + stepItemsPerPage.value)
+})
+
+const displayedStepPages = computed(() => {
+  const total = stepTotalPages.value
+  const current = stepCurrentPage.value
+  if (total <= 7) {
+    return Array.from({ length: total }, (_, i) => i + 1)
+  }
+  const pages = new Set([1, total, current, current - 1, current + 1])
+  const sorted = Array.from(pages).filter(p => p > 0 && p <= total).sort((a, b) => a - b)
+  const result = []
+  let prev = null
+  for (const p of sorted) {
+    if (prev && p - prev > 1) {
+      result.push('...')
+    }
+    result.push(p)
+    prev = p
+  }
+  return result
+})
+
+watch([activeStep, stepSearch, stepSort, filterGama, filterEnfoque, filterNucleos, filterHilos, filterFrecuenciaMin], () => {
+  stepCurrentPage.value = 1
 })
 
 /**

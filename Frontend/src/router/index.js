@@ -17,13 +17,11 @@ import BodegaView     from '../views/BodegaView.vue'
 import ProveedorView  from '../views/ProveedorView.vue'
 import ProfileView    from '../views/ProfileView.vue'
 import UserProfileView from '../views/UserProfileView.vue'
-import AsistenteArmadoView from '../views/AsistenteArmadoView.vue'
 
 const routes = [
   // Públicas
   { path: '/',          component: HomeView  },
   { path: '/login',     component: LoginView },
-  { path: '/asistente', component: AsistenteArmadoView },
   { path: '/recuperar-password',   component: ForgotPasswordView },
   { path: '/restablecer-password', component: ResetPasswordView },
   { path: '/ejemplo-cotizacion',   component: DemoQuoteView },
@@ -56,17 +54,22 @@ const router = createRouter({
   routes,
 })
 
-router.beforeEach((to) => {
-  const { isLoggedIn, user } = useAuth()
+router.beforeEach(async (to) => {
+  const { isLoggedIn, user, checkAuth } = useAuth()
 
   // Ruta requiere auth
   if (to.meta.requiresAuth) {
     if (!isLoggedIn.value) {
       return { path: '/login' }
     }
+
+    const isValid = await checkAuth()
+    if (!isValid) {
+      return { path: '/login' }
+    }
+
     // Verificar rol
     if (to.meta.roles && !to.meta.roles.includes(user.value?.rol)) {
-      // Redirigir a su home según rol
       if (user.value?.rol === 'superadmin') return { path: '/superadmin' }
       if (user.value?.rol === 'admin')  return { path: '/admin'  }
       if (user.value?.rol === 'bodega') return { path: '/bodega' }
@@ -76,8 +79,11 @@ router.beforeEach((to) => {
     }
   }
 
-  // Si ya está logueado y va al login, redirigir a su home
-  if (to.path === '/login' && isLoggedIn.value) {
+  // Si ya está logueado y va a la landing ('/') o al login ('/login'), redirigir a su home según rol
+  if ((to.path === '/' || to.path === '/login') && isLoggedIn.value) {
+    const isValid = await checkAuth()
+    if (!isValid) return
+
     if (user.value?.rol === 'superadmin') return { path: '/superadmin' }
     if (user.value?.rol === 'admin')  return { path: '/admin'  }
     if (user.value?.rol === 'bodega') return { path: '/bodega' }

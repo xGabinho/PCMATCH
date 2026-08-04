@@ -18,8 +18,9 @@ class ComponenteController extends Controller
 
     private function resolverRol($user): string
     {
+        if (!$user) return 'cliente';
         $clase = get_class($user);
-        if ($clase === \App\Models\Usuario::class)   return $user->rol;
+        if ($clase === \App\Models\Usuario::class)   return $user->rol ?? 'cliente';
         if ($clase === \App\Models\Proveedor::class)  return 'proveedor';
         if ($clase === \App\Models\Bodega::class)     return 'bodega';
         return 'cliente';
@@ -50,6 +51,10 @@ class ComponenteController extends Controller
 
         if (!in_array($rol, ['admin', 'superadmin'])) {
             return response()->json(['success' => false, 'message' => 'No autorizado. Solo administradores pueden consultar componentes.'], 403);
+        }
+
+        if ($rol === 'admin' && !$user->hasPermission('componentes.ver')) {
+            return response()->json(['success' => false, 'message' => 'No autorizado. Se requiere el permiso: componentes.ver'], 403);
         }
 
         // ── RN03: Query con relaciones cargadas ──────────────────
@@ -347,6 +352,10 @@ class ComponenteController extends Controller
             return response()->json(['success' => false, 'message' => 'No autorizado para crear componentes'], 403);
         }
 
+        if ($rol === 'admin' && !$user->hasPermission('componentes.crear')) {
+            return response()->json(['success' => false, 'message' => 'No autorizado. Se requiere el permiso: componentes.crear'], 403);
+        }
+
         $isFromMaster = $request->has('master_component_id') && $request->input('master_component_id') !== null && $request->input('master_component_id') !== '';
 
         if ($isFromMaster) {
@@ -585,6 +594,10 @@ class ComponenteController extends Controller
             ], 403);
         }
 
+        if ($rol === 'admin' && !$user->hasPermission('componentes.editar')) {
+            return response()->json(['success' => false, 'message' => 'No autorizado. Se requiere el permiso: componentes.editar'], 403);
+        }
+
         // Fix decimal commas for numeric fields
         foreach (['frecuencia_hz', 'precio'] as $numField) {
             if ($request->has($numField) && is_string($request->input($numField))) {
@@ -743,6 +756,10 @@ class ComponenteController extends Controller
                 'success' => false,
                 'message' => 'No autorizado. Solo el rol Admin, SuperAdmin, Bodega o Proveedor puede eliminar componentes.'
             ], 403);
+        }
+
+        if ($rol === 'admin' && !$user->hasPermission('componentes.eliminar')) {
+            return response()->json(['success' => false, 'message' => 'No autorizado. Se requiere el permiso: componentes.eliminar'], 403);
         }
 
         $id = $id ?? $request->query('id');

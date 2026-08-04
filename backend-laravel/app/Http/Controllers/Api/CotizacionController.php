@@ -33,6 +33,9 @@ class CotizacionController extends Controller
         }
 
         if ($rol === 'admin' || $rol === 'superadmin') {
+            if ($rol === 'admin' && !$user->hasPermission('cotizaciones.ver')) {
+                return response()->json(['success' => false, 'message' => 'No autorizado. Se requiere el permiso: cotizaciones.ver'], 403);
+            }
             $query = DB::table('cotizaciones as c')
                 ->join('usuarios as u', 'c.usuario_id', '=', 'u.id')
                 ->leftJoin('cotizacion_items as ci', 'ci.cotizacion_id', '=', 'c.id')
@@ -220,6 +223,10 @@ class CotizacionController extends Controller
             return response()->json(['success' => false, 'message' => 'No autorizado'], 403);
         }
 
+        if ($rol === 'admin' && !$user->hasPermission('cotizaciones.eliminar')) {
+            return response()->json(['success' => false, 'message' => 'No autorizado. Se requiere el permiso: cotizaciones.eliminar'], 403);
+        }
+
         $id = $id ?? $request->query('id');
         if (!$id) {
             return response()->json(['success' => false, 'message' => 'id es requerido'], 400);
@@ -244,5 +251,16 @@ class CotizacionController extends Controller
         AuditLog::log($request, "Eliminó la cotización (ID: {$id})", 'Cotizaciones');
 
         return response()->json(['message' => 'Cotización eliminada']);
+    }
+
+    private function getRole(Request $request): ?string
+    {
+        $user = $request->user();
+        if (!$user) return null;
+        if (isset($user->rol)) return $user->rol;
+        $class = get_class($user);
+        if ($class === \App\Models\Bodega::class) return 'bodega';
+        if ($class === \App\Models\Proveedor::class) return 'proveedor';
+        return null;
     }
 }

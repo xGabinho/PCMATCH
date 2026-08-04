@@ -524,7 +524,9 @@ async function fetchProveedores() {
     const res = await fetch(`${API}/proveedores`, { headers: { Authorization: `Bearer ${getToken()}` } })
     const data = await res.json()
     if (res.ok) {
-      proveedores.value = data.proveedores.data.filter(p => p.activo === true || p.activo === 1 || p.activo === 'true')
+      const list = data.proveedores?.data || data.proveedores || []
+      const arr = Array.isArray(list) ? list : []
+      proveedores.value = arr.filter(p => p.activo === true || p.activo === 1 || p.activo === 'true')
     }
   } catch(e) { console.error(e) } finally { loadingProveedores.value = false }
 }

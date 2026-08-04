@@ -79,8 +79,10 @@ export function useAuth() {
   function logout() {
     localStorage.removeItem('token')
     localStorage.removeItem('usuario')
+    localStorage.clear()
     isLoggedIn.value = false
     user.value = null
+    window.location.href = '/login'
   }
 
   function getToken() {
@@ -93,5 +95,39 @@ export function useAuth() {
     user.value = updated
   }
 
-  return { isLoggedIn, user, login, register, logout, getToken, updateUser }
+  function hasPermission(code) {
+    if (!user.value) return false
+    if (user.value.rol === 'superadmin') return true
+    if (user.value.rol === 'admin') {
+      if (!user.value.perfil_id) return true
+      return Array.isArray(user.value.permisos) && user.value.permisos.includes(code)
+    }
+    return false
+  }
+
+  async function checkAuth() {
+    const token = getToken()
+    if (!token) return false
+    try {
+      const res = await fetch(`${API}/auth/profile`, {
+        headers: { Authorization: `Bearer ${token}` }
+      })
+      if (res.status === 401) {
+        logout()
+        return false
+      }
+      if (res.ok) {
+        const data = await res.json()
+        if (data.perfil) {
+          updateUser(data.perfil)
+        }
+        return true
+      }
+    } catch (e) {
+      console.error('Error al verificar sesión:', e)
+    }
+    return true
+  }
+
+  return { isLoggedIn, user, login, register, logout, getToken, updateUser, hasPermission, checkAuth }
 }

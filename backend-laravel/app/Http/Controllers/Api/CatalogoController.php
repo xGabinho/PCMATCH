@@ -62,6 +62,10 @@ class CatalogoController extends Controller
             return response()->json(['success' => false, 'message' => 'No autorizado'], 403);
         }
 
+        if ($user->rol === 'admin' && !$user->hasPermission('componentes.crear')) {
+            return response()->json(['success' => false, 'message' => 'No autorizado. Se requiere el permiso: componentes.crear'], 403);
+        }
+
         $validator = Validator::make($request->all(), [
             'nombre'        => 'required|string|max:255',
             'categoria'     => 'required|string|in:CPU,GPU,RAM,Storage,PSU,Motherboard,Cooler,Case',
@@ -115,6 +119,10 @@ class CatalogoController extends Controller
         $user = $request->user();
         if (!$user || !in_array($user->rol ?? '', ['admin', 'superadmin'])) {
             return response()->json(['success' => false, 'message' => 'No autorizado'], 403);
+        }
+
+        if ($user->rol === 'admin' && !$user->hasPermission('componentes.editar')) {
+            return response()->json(['success' => false, 'message' => 'No autorizado. Se requiere el permiso: componentes.editar'], 403);
         }
 
         $id = $request->input('id');
@@ -174,6 +182,10 @@ class CatalogoController extends Controller
         $user = $request->user();
         if (!$user || !in_array($user->rol ?? '', ['admin', 'superadmin'])) {
             return response()->json(['success' => false, 'message' => 'No autorizado'], 403);
+        }
+
+        if ($user->rol === 'admin' && !$user->hasPermission('componentes.eliminar')) {
+            return response()->json(['success' => false, 'message' => 'No autorizado. Se requiere el permiso: componentes.eliminar'], 403);
         }
 
         $id = $id ?? $request->query('id');

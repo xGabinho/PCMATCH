@@ -44,10 +44,10 @@
       <!-- Topbar -->
       <div class="h-16 border-b theme-border px-8 flex items-center justify-between sticky top-0 bg-light-bg/90 dark:bg-dark-bg/90 backdrop-blur z-10">
         <div>
-          <h1 class="font-semibold theme-text">{{ currentSection.label }}</h1>
-          <p class="text-xs theme-text-muted mt-0.5">{{ currentSection.description }}</p>
+          <h1 class="font-semibold theme-text">{{ currentSection?.label || 'Super Admin' }}</h1>
+          <p class="text-xs theme-text-muted mt-0.5">{{ currentSection?.description || '' }}</p>
         </div>
-        <button v-if="currentSection.cta" @click="handleCta" class="btn-primary text-sm">
+        <button v-if="currentSection?.cta" @click="handleCta" class="btn-primary text-sm">
           {{ currentSection.cta }}
         </button>
       </div>
@@ -233,14 +233,20 @@
             <div v-if="loadingComponentes" class="px-6 py-12 text-center theme-text-muted text-sm">Cargando componentes...</div>
             <table v-else class="w-full min-w-[640px]">
               <thead class="border-b theme-border">
-                <tr><th v-for="h in ['Componente','Categoría','Gama','Estado','Acciones']" :key="h" class="px-6 py-3 text-left text-xs theme-text-muted uppercase tracking-wider font-medium">{{ h }}</th></tr>
+                <tr><th v-for="h in ['Componente','Categoría','Gama','Bodega','Precio','Stock','Estado','Acciones']" :key="h" class="px-6 py-3 text-left text-xs theme-text-muted uppercase tracking-wider font-medium">{{ h }}</th></tr>
               </thead>
               <tbody class="divide-y divide-dark-border">
-                <tr v-if="filteredComponentes.length === 0"><td colspan="7" class="px-6 py-12 text-center theme-text-muted text-sm">Sin componentes</td></tr>
+                <tr v-if="filteredComponentes.length === 0"><td colspan="8" class="px-6 py-12 text-center theme-text-muted text-sm">Sin componentes registrados</td></tr>
                 <tr v-for="c in filteredComponentes" :key="c.id" class="hover:bg-gray-100 dark:bg-dark-bg/50 transition-colors">
-                  <td class="px-6 py-4 text-sm font-medium theme-text">{{ c.nombre }}</td>
+                  <td class="px-6 py-4 text-sm font-medium theme-text">
+                    <div>{{ c.nombre }}</div>
+                    <div class="text-xs theme-text-muted opacity-75 truncate max-w-xs">{{ c.especificacion }}</div>
+                  </td>
                   <td class="px-6 py-4"><span class="badge text-xs bg-accent/10 text-accent border border-accent/20">{{ c.categoria }}</span></td>
                   <td class="px-6 py-4"><span class="text-xs px-2 py-0.5 rounded-full font-medium border" :class="tierStyles[c.gama]">{{ c.gama }}</span></td>
+                  <td class="px-6 py-4 text-sm theme-text-muted">{{ c.bodega_nombre || c.bodega?.nombre || 'General' }}</td>
+                  <td class="px-6 py-4 text-sm font-mono text-accent font-medium">${{ Number(c.precio_final || c.precio || 0).toLocaleString() }}</td>
+                  <td class="px-6 py-4 text-sm font-mono theme-text">{{ c.stock ?? 0 }} unid.</td>
                   <td class="px-6 py-4">
                     <span class="badge text-xs px-2.5 py-1" :class="c.activo == 1 ? 'bg-green-500/10 text-green-400 border border-green-500/20' : 'bg-red-500/10 text-red-400 border border-red-500/20'">
                       {{ c.activo == 1 ? 'Activo' : 'Inactivo' }}
@@ -289,65 +295,209 @@
 
         <!-- ===== CREAR USUARIO ===== -->
         <template v-if="activeSection === 'crear-usuario'">
-          <div class="max-w-xl">
-            <div class="card-dark rounded-2xl p-8 space-y-6">
-              <div>
-                <label class="block text-sm font-medium theme-text mb-3">Rol del usuario</label>
-                <div class="grid grid-cols-3 gap-3">
-                  <button v-for="role in roles" :key="role.id" @click="newUser.rol = role.id"
-                    class="flex flex-col items-center gap-2 p-4 rounded-xl border transition-all duration-150"
-                    :class="newUser.rol === role.id ? 'border-accent bg-accent/5 text-accent' : 'theme-border theme-text-muted hover:border-accent/40 hover:theme-text'"
-                  >
-                    <component :is="role.icon" class="text-2xl inline-block" />
-                    <span class="text-xs font-medium">{{ role.label }}</span>
-                  </button>
+          <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+
+            <!-- Columna Izquierda: Formulario (col-span-7) -->
+            <div class="lg:col-span-7 space-y-6">
+
+              <!-- Card 1: Selección de Rol y Permisos -->
+              <div class="card-dark rounded-2xl p-6 border theme-border space-y-5">
+                <h3 class="text-xs font-semibold theme-text-muted uppercase tracking-wider flex items-center gap-2">
+                  <Crown class="w-4 h-4 text-accent" /> Configuración de Rol y Accesos
+                </h3>
+
+                <div>
+                  <label class="block text-xs font-medium theme-text-muted mb-2.5">Rol del usuario *</label>
+                  <div class="grid grid-cols-3 gap-3">
+                    <button
+                      v-for="role in roles"
+                      :key="role.id"
+                      @click="newUser.rol = role.id"
+                      type="button"
+                      class="flex flex-col items-center justify-center gap-2 p-3.5 rounded-xl border transition-all duration-150"
+                      :class="newUser.rol === role.id ? 'border-accent bg-accent/10 text-accent font-semibold shadow-sm' : 'theme-border theme-text-muted hover:border-accent/40 hover:theme-text theme-bg'"
+                    >
+                      <component :is="role.icon" class="text-xl inline-block" />
+                      <span class="text-xs font-medium">{{ role.label }}</span>
+                    </button>
+                  </div>
                 </div>
-              </div>
-              
-              <div>
-                <label class="block text-sm font-medium theme-text mb-2">Perfil de Permisos (Opcional)</label>
-                <select v-model="newUser.perfil_id" class="w-full theme-bg border theme-border rounded-lg px-4 py-3 text-sm theme-text focus:outline-none focus:border-accent transition-colors">
-                  <option :value="null">Sin perfil</option>
-                  <option v-for="p in perfiles.filter(p => p.activo == 1)" :key="p.id" :value="p.id">{{ p.nombre }}</option>
-                </select>
+
+                <div>
+                  <label class="block text-xs font-medium theme-text-muted mb-2">Perfil de Permisos <span class="text-xs font-normal opacity-70">(Opcional)</span></label>
+                  <select
+                    v-model="newUser.perfil_id"
+                    class="w-full theme-bg border theme-border rounded-xl px-4 py-3 text-sm theme-text focus:outline-none focus:border-accent transition-colors"
+                  >
+                    <option :value="null">Sin perfil asignado</option>
+                    <option v-for="p in perfiles.filter(p => p.activo == 1)" :key="p.id" :value="p.id">{{ p.nombre }}</option>
+                  </select>
+                </div>
               </div>
 
-              <div class="border-t theme-border"></div>
-              <div class="grid grid-cols-2 gap-4">
-                <div>
-                  <label class="block text-sm font-medium theme-text mb-2">Nombre</label>
-                  <input v-model="newUser.nombre" type="text" placeholder="Juan" class="w-full theme-bg border theme-border rounded-lg px-4 py-3 text-sm theme-text placeholder-text-muted focus:outline-none focus:border-accent transition-colors" />
-                </div>
-                <div>
-                  <label class="block text-sm font-medium theme-text mb-2">Apellido</label>
-                  <input v-model="newUser.apellido" type="text" placeholder="Pérez" class="w-full theme-bg border theme-border rounded-lg px-4 py-3 text-sm theme-text placeholder-text-muted focus:outline-none focus:border-accent transition-colors" />
-                </div>
-              </div>
-              <div>
-                <label class="block text-sm font-medium theme-text mb-2">Correo electrónico</label>
-                <input v-model="newUser.correo" type="email" placeholder="usuario@email.com" class="w-full theme-bg border theme-border rounded-lg px-4 py-3 text-sm theme-text placeholder-text-muted focus:outline-none focus:border-accent transition-colors" />
-              </div>
-              <div>
-                <label class="block text-sm font-medium theme-text mb-2">Número de celular</label>
-                <div class="flex gap-2">
-                  <div class="flex items-center px-3 rounded-lg theme-bg theme-border border theme-text-muted text-sm select-none flex-shrink-0">
-                    <MapPin class="w-4 h-4 mr-1 inline-block" /> +57
+              <!-- Card 2: Información Personal -->
+              <div class="card-dark rounded-2xl p-6 border theme-border space-y-5">
+                <h3 class="text-xs font-semibold theme-text-muted uppercase tracking-wider flex items-center gap-2">
+                  <User class="w-4 h-4 text-accent" /> Datos de Identificación y Acceso
+                </h3>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label class="block text-xs font-medium theme-text-muted mb-1.5">Nombre *</label>
+                    <input
+                      v-model="newUser.nombre"
+                      type="text"
+                      placeholder="Ej: Juan"
+                      class="w-full theme-bg border theme-border rounded-xl px-4 py-2.5 text-sm theme-text placeholder-text-muted focus:outline-none focus:border-accent transition-colors"
+                    />
                   </div>
-                  <input v-model="newUser.telefonoLocal" @input="handleTelefonoInput(newUser, 'telefonoLocal')" type="tel" placeholder="300 123 4567" maxlength="13" class="flex-1 theme-bg border theme-border rounded-lg px-4 py-3 text-sm theme-text placeholder-text-muted focus:outline-none focus:border-accent transition-colors" />
+
+                  <div>
+                    <label class="block text-xs font-medium theme-text-muted mb-1.5">Apellido</label>
+                    <input
+                      v-model="newUser.apellido"
+                      type="text"
+                      placeholder="Ej: Pérez"
+                      class="w-full theme-bg border theme-border rounded-xl px-4 py-2.5 text-sm theme-text placeholder-text-muted focus:outline-none focus:border-accent transition-colors"
+                    />
+                  </div>
                 </div>
-                <p class="text-xs theme-text-muted mt-1">Debe ser un número colombiano válido (3XX XXX XXXX)</p>
+
+                <div>
+                  <label class="block text-xs font-medium theme-text-muted mb-1.5">Correo electrónico *</label>
+                  <input
+                    v-model="newUser.correo"
+                    type="email"
+                    placeholder="usuario@email.com"
+                    class="w-full theme-bg border theme-border rounded-xl px-4 py-2.5 text-sm theme-text placeholder-text-muted focus:outline-none focus:border-accent transition-colors"
+                  />
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label class="block text-xs font-medium theme-text-muted mb-1.5">Teléfono celular</label>
+                    <div class="flex gap-2">
+                      <div class="flex items-center px-3 rounded-xl theme-bg theme-border border theme-text-muted text-xs select-none flex-shrink-0">
+                        +57
+                      </div>
+                      <input
+                        v-model="newUser.telefonoLocal"
+                        @input="handleTelefonoInput(newUser, 'telefonoLocal')"
+                        type="tel"
+                        placeholder="300 123 4567"
+                        maxlength="13"
+                        class="flex-1 theme-bg border theme-border rounded-xl px-3.5 py-2.5 text-sm theme-text placeholder-text-muted focus:outline-none focus:border-accent transition-colors"
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label class="block text-xs font-medium theme-text-muted mb-1.5">Contraseña temporal *</label>
+                    <input
+                      v-model="newUser.password"
+                      type="password"
+                      placeholder="Mínimo 8 caracteres"
+                      class="w-full theme-bg border theme-border rounded-xl px-4 py-2.5 text-sm theme-text placeholder-text-muted focus:outline-none focus:border-accent transition-colors"
+                    />
+                  </div>
+                </div>
               </div>
-              <div>
-                <label class="block text-sm font-medium theme-text mb-2">Contraseña temporal</label>
-                <input v-model="newUser.password" type="password" placeholder="Mínimo 8 caracteres" class="w-full theme-bg border theme-border rounded-lg px-4 py-3 text-sm theme-text placeholder-text-muted focus:outline-none focus:border-accent transition-colors" />
-              </div>
-              <p v-if="createUserError"   class="text-xs text-red-400 bg-red-500/10 border border-red-500/20 rounded-lg px-4 py-2.5">{{ createUserError }}</p>
-              <p v-if="createUserSuccess" class="text-xs text-green-400 bg-green-500/10 border border-green-500/20 rounded-lg px-4 py-2.5">{{ createUserSuccess }}</p>
-              <div class="flex gap-3 pt-2">
-                <button @click="saveNewUser" :disabled="savingUser" class="btn-primary flex-1 text-sm">{{ savingUser ? 'Creando...' : 'Crear usuario' }}</button>
-                <button @click="resetNewUser" class="btn-secondary text-sm px-5">Limpiar</button>
+
+            </div>
+
+            <!-- Columna Derecha: Vista Previa en Tiempo Real y Acciones (col-span-5) -->
+            <div class="lg:col-span-5">
+              <div class="sticky top-20 card-dark rounded-2xl p-6 border theme-border space-y-6 shadow-lg">
+                <div class="flex items-center justify-between border-b theme-border pb-4">
+                  <div class="flex items-center gap-2">
+                    <span class="w-2 h-2 rounded-full bg-accent animate-pulse"></span>
+                    <h4 class="text-xs font-semibold theme-text uppercase tracking-wider">Vista previa de la cuenta</h4>
+                  </div>
+                  <span class="badge text-[10px] px-2 py-0.5" :class="roleStyles[newUser.rol]?.badge">
+                    {{ roleStyles[newUser.rol]?.label }}
+                  </span>
+                </div>
+
+                <!-- Avatar y Nombre -->
+                <div class="flex flex-col items-center text-center py-2">
+                  <div
+                    class="w-16 h-16 rounded-2xl flex items-center justify-center text-xl font-bold mb-3 transition-colors shadow-inner"
+                    :class="roleStyles[newUser.rol]?.avatar || 'theme-bg theme-text'"
+                  >
+                    {{ (newUser.nombre || 'U').charAt(0).toUpperCase() }}{{ (newUser.apellido || '').charAt(0).toUpperCase() }}
+                  </div>
+                  <h3 class="text-base font-bold theme-text leading-snug">
+                    {{ (newUser.nombre || newUser.apellido) ? `${newUser.nombre || ''} ${newUser.apellido || ''}`.trim() : 'Nombre del Usuario' }}
+                  </h3>
+                  <p class="text-xs theme-text-muted mt-1 font-mono">
+                    {{ newUser.correo || 'correo@ejemplo.com' }}
+                  </p>
+                </div>
+
+                <!-- Detalles resumen -->
+                <div class="space-y-3 pt-2 text-xs border-t theme-border">
+                  <div class="flex items-center justify-between py-1">
+                    <span class="theme-text-muted">Rol asignado:</span>
+                    <span class="font-medium theme-text capitalize">{{ roleStyles[newUser.rol]?.label }}</span>
+                  </div>
+
+                  <div class="flex items-center justify-between py-1">
+                    <span class="theme-text-muted">Perfil de permisos:</span>
+                    <span class="font-medium theme-text">
+                      {{ perfiles.find(p => p.id === newUser.perfil_id)?.nombre || 'Sin perfil asignado' }}
+                    </span>
+                  </div>
+
+                  <div class="flex items-center justify-between py-1">
+                    <span class="theme-text-muted">Teléfono:</span>
+                    <span class="font-mono theme-text">
+                      {{ newUser.telefonoLocal ? '+57 ' + newUser.telefonoLocal : '—' }}
+                    </span>
+                  </div>
+
+                  <div class="flex items-center justify-between py-1">
+                    <span class="theme-text-muted">Estado inicial:</span>
+                    <span class="badge text-[10px] px-2 py-0.5 bg-green-500/10 text-green-400 border border-green-500/20">
+                      Activo
+                    </span>
+                  </div>
+                </div>
+
+                <!-- Info note -->
+                <div class="bg-accent/5 border border-accent/20 rounded-xl p-3.5 text-xs text-accent flex items-start gap-2.5">
+                  <ShieldCheck class="w-4 h-4 flex-shrink-0 mt-0.5" />
+                  <p class="leading-relaxed text-[11px]">
+                    El usuario podrá autenticarse inmediatamente usando el correo y la contraseña temporal establecida.
+                  </p>
+                </div>
+
+                <!-- Mensajes de feedback -->
+                <p v-if="createUserError"   class="text-xs text-red-400 bg-red-500/10 border border-red-500/20 rounded-xl px-4 py-3">{{ createUserError }}</p>
+                <p v-if="createUserSuccess" class="text-xs text-green-400 bg-green-500/10 border border-green-500/20 rounded-xl px-4 py-3">{{ createUserSuccess }}</p>
+
+                <!-- Botones de Acción al pie de la tarjeta -->
+                <div class="pt-2 border-t theme-border space-y-3">
+                  <button
+                    @click="saveNewUser"
+                    :disabled="savingUser"
+                    class="w-full btn-primary py-3.5 rounded-xl flex items-center justify-center gap-2 font-semibold text-sm shadow-lg shadow-accent/25 transition-all hover:scale-[1.01]"
+                  >
+                    <UserPlus class="w-4 h-4" />
+                    {{ savingUser ? 'Creando usuario...' : 'Crear usuario' }}
+                  </button>
+
+                  <button
+                    @click="resetNewUser"
+                    type="button"
+                    class="w-full btn-secondary py-2.5 rounded-xl text-xs font-medium transition-all text-center opacity-80 hover:opacity-100"
+                  >
+                    Limpiar campos
+                  </button>
+                </div>
+
               </div>
             </div>
+
           </div>
         </template>
 
@@ -1264,8 +1414,8 @@
                 <div class="space-y-2">
                   <label v-for="(label, code) in permisos" :key="code" class="flex items-start gap-2 cursor-pointer group">
                     <div class="relative flex items-center justify-center mt-0.5">
-                      <input type="checkbox" :checked="editingPerfil.permisos.includes(code)" @change="togglePermiso(code)" class="appearance-none w-4 h-4 rounded border theme-border theme-bg checked:bg-accent checked:border-accent transition-colors" />
-                      <svg v-if="editingPerfil.permisos.includes(code)" class="absolute w-2.5 h-2.5 text-white pointer-events-none" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3">
+                      <input type="checkbox" :checked="editingPerfil.permisos && editingPerfil.permisos.includes(code)" @change="togglePermiso(code)" class="appearance-none w-4 h-4 rounded border theme-border theme-bg checked:bg-accent checked:border-accent transition-colors" />
+                      <svg v-if="editingPerfil.permisos && editingPerfil.permisos.includes(code)" class="absolute w-2.5 h-2.5 text-white pointer-events-none" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
                       </svg>
                     </div>
@@ -1326,7 +1476,7 @@ const { getToken, logout, user } = useAuth()
 const router = useRouter()
 const toast = useToast()
 
-function handleLogout() { logout(); router.push('/login') }
+function handleLogout() { logout() }
 function formatDate(d) { return d ? new Date(d).toLocaleDateString('es-CL', { day: '2-digit', month: 'short', year: 'numeric' }) : '—' }
 function perfilLabel(p) { return ({ office: 'Oficina', gaming: 'Gaming', design: 'Diseño', study: 'Estudio' })[p] ?? p ?? '—' }
 
@@ -1398,11 +1548,12 @@ const editingProveedor = ref({})
  */
 
 const filteredProveedores = computed(() => {
+  if (!Array.isArray(proveedores.value)) return []
   if (!filterProveedor.value.trim()) return proveedores.value
   const q = filterProveedor.value.toLowerCase()
   return proveedores.value.filter(p => 
-    p.nombre.toLowerCase().includes(q) || 
-    p.correo.toLowerCase().includes(q) || 
+    (p.nombre && p.nombre.toLowerCase().includes(q)) || 
+    (p.correo && p.correo.toLowerCase().includes(q)) || 
     (p.razon_social && p.razon_social.toLowerCase().includes(q)) || 
     (p.identificacion_legal && p.identificacion_legal.toLowerCase().includes(q))
   )
@@ -1421,7 +1572,10 @@ async function fetchProveedores() {
   try {
     const res = await fetch(`${API}/proveedores`, { headers: { Authorization: `Bearer ${getToken()}` } })
     const data = await res.json()
-    if (res.ok) proveedores.value = data.proveedores.data || data.proveedores
+    if (res.ok) {
+      const list = data.proveedores?.data || data.proveedores
+      proveedores.value = Array.isArray(list) ? list : []
+    }
   } catch(e) { console.error(e) } finally { loadingProveedores.value = false }
 }
 
@@ -2019,11 +2173,16 @@ const filterGama = ref('')
 
 
 const filteredComponentes = computed(() => {
-  let result = componentes.value.filter(c => c.bodega_id === null)
+  let result = [...componentes.value]
   
   if (filterComponente.value.trim()) {
     const q = filterComponente.value.toLowerCase()
-    result = result.filter(c => c.nombre.toLowerCase().includes(q) || c.categoria.toLowerCase().includes(q))
+    result = result.filter(c =>
+      c.nombre?.toLowerCase().includes(q) ||
+      c.categoria?.toLowerCase().includes(q) ||
+      c.especificacion?.toLowerCase().includes(q) ||
+      (c.bodega_nombre || c.bodega?.nombre)?.toLowerCase().includes(q)
+    )
   }
   
   if (filterNucleos.value) result = result.filter(c => c.nucleos === parseInt(filterNucleos.value))
@@ -2617,6 +2776,9 @@ function closePerfilModal() {
  */
 
 function togglePermiso(code) {
+  if (!Array.isArray(editingPerfil.value.permisos)) {
+    editingPerfil.value.permisos = []
+  }
   const idx = editingPerfil.value.permisos.indexOf(code)
   if (idx === -1) editingPerfil.value.permisos.push(code)
   else editingPerfil.value.permisos.splice(idx, 1)
@@ -2816,6 +2978,5 @@ onMounted(() => {
   fetchPermisosDisponibles()
   fetchHistorial()
   fetchCatalogo()
-  fetchSelectores()
 })
 </script>

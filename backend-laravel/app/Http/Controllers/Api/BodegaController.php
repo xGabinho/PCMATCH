@@ -38,6 +38,10 @@ class BodegaController extends Controller
             return response()->json(['success' => false, 'message' => 'No autorizado'], 403);
         }
 
+        if ($rol === 'admin' && !$user->hasPermission('bodegas.ver')) {
+            return response()->json(['success' => false, 'message' => 'No autorizado. Se requiere el permiso: bodegas.ver'], 403);
+        }
+
         // 3. Recrear las consultas Left Join usando DB Builder (evitamos crear el modelo Componentes prematuramente)
         $query = DB::table('bodegas as b')
             ->leftJoin('componentes as c', function ($join) {
@@ -93,6 +97,10 @@ class BodegaController extends Controller
         // admin, superadmin y proveedor pueden crear bodegas. 'bodega' no puede.
         if ($rol === 'bodega') {
             return response()->json(['success' => false, 'message' => 'No tienes permiso para crear bodegas'], 403);
+        }
+
+        if ($rol === 'admin' && !$user->hasPermission('bodegas.crear')) {
+            return response()->json(['success' => false, 'message' => 'No autorizado. Se requiere el permiso: bodegas.crear'], 403);
         }
 
         $validator = \Illuminate\Support\Facades\Validator::make($request->all(), [
@@ -158,6 +166,10 @@ class BodegaController extends Controller
         $user = $request->user();
         $clase = get_class($user);
         $rol = $clase === \App\Models\Proveedor::class ? 'proveedor' : ($clase === \App\Models\Usuario::class ? $user->rol : 'bodega');
+
+        if ($rol === 'admin' && !$user->hasPermission('bodegas.editar')) {
+            return response()->json(['success' => false, 'message' => 'No autorizado. Se requiere el permiso: bodegas.editar'], 403);
+        }
 
         $id = $request->input('id');
         if (!$id) {
@@ -236,8 +248,13 @@ class BodegaController extends Controller
         $clase = get_class($user);
         $rol = $clase === \App\Models\Proveedor::class ? 'proveedor' : ($clase === \App\Models\Usuario::class ? $user->rol : 'bodega');
 
+        // admin, superadmin y proveedor pueden crear bodegas. 'bodega' no puede.
         if ($rol === 'bodega') {
             return response()->json(['success' => false, 'message' => 'No tienes permiso para eliminar bodegas'], 403);
+        }
+
+        if ($rol === 'admin' && !$user->hasPermission('bodegas.eliminar')) {
+            return response()->json(['success' => false, 'message' => 'No autorizado. Se requiere el permiso: bodegas.eliminar'], 403);
         }
 
         $id = $id ?? $request->query('id');

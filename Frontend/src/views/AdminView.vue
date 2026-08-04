@@ -44,11 +44,11 @@
       <!-- Topbar -->
       <div class="h-16 border-b theme-border px-8 flex items-center justify-between sticky top-0 bg-light-bg/90 dark:bg-dark-bg/90 backdrop-blur z-10">
         <div>
-          <h1 class="font-semibold theme-text">{{ currentSection.label }}</h1>
-          <p class="text-xs theme-text-muted mt-0.5">{{ currentSection.description }}</p>
+          <h1 class="font-semibold theme-text">{{ currentSection?.label || 'Panel Admin' }}</h1>
+          <p class="text-xs theme-text-muted mt-0.5">{{ currentSection?.description || 'Administración de sistema' }}</p>
         </div>
         <button
-          v-if="currentSection.cta"
+          v-if="currentSection?.cta"
           @click="activeSection === 'bodegas' ? openBodegaModal() : activeSection === 'gestionar-usuarios' ? activeSection = 'crear-usuario' : null"
           class="btn-primary text-sm"
         >
@@ -57,6 +57,12 @@
       </div>
 
       <div class="p-8">
+
+        <div v-if="sections.length === 0" class="card-dark rounded-xl p-12 text-center theme-text-muted my-12 max-w-lg mx-auto border theme-border">
+          <Lock class="w-12 h-12 mx-auto mb-4 text-accent" />
+          <h3 class="text-lg font-bold theme-text mb-2">Sin módulos habilitados</h3>
+          <p class="text-sm leading-relaxed">Tu perfil no cuenta con permisos suficientes para administrar los módulos habilitados. Contacta a un administrador principal.</p>
+        </div>
 
         <!-- ===== BODEGAS ===== -->
         <template v-if="activeSection === 'bodegas'">
@@ -1117,13 +1123,12 @@ function handleTelefonoInput(obj, key) {
 }
 
 import { API } from '@/config/api'
-const { getToken, logout } = useAuth()
+const { getToken, logout, user, hasPermission } = useAuth()
 const router = useRouter()
 const toast = useToast()
 
 function handleLogout() {
   logout()
-  router.push('/login')
 }
 
 function formatDate(dateStr) {
@@ -1136,21 +1141,17 @@ function perfilLabel(p) { return ({ office: 'Oficina', gaming: 'Gaming', design:
 // ── Secciones ─────────────────────────────────────────────
 const activeSection = ref('bodegas')
 
-/**
- * Configuración dinámica de las secciones del menú lateral.
- * Utiliza 'computed' para mantener reactivos los contadores (ej. cantidad de bodegas).
- */
-const sections = computed(() => [
-  { id: 'bodegas',            icon: markRaw(Store), label: 'Bodegas',            description: `${bodegas.value.length} bodegas registradas`,    cta: '+ Agregar bodega', count: bodegas.value.length    },
-  { id: 'componentes',        icon: markRaw(Wrench), label: 'Componentes',        description: `${componentes.value.length} componentes en total`, cta: '+ Nuevo Componente Maestro',               count: componentes.value.length },
-  { id: 'cotizaciones',       icon: markRaw(FileText), label: 'Cotizaciones',       description: 'Historial de cotizaciones',                       cta: null,               count: null },
-  { id: 'crear-usuario',      icon: markRaw(UserPlus), label: 'Crear usuario',      description: 'Registrar nuevo usuario',                        cta: null,               count: null },
-  { id: 'gestionar-usuarios', icon: markRaw(Users), label: 'Gestionar usuarios', description: `${usuarios.value.length} usuarios registrados`,   cta: '+ Crear usuario',  count: usuarios.value.length   },
-  { id: 'perfiles', icon: markRaw(Lock), label: 'Perfiles y Permisos', description: `${perfiles.value.length} perfiles`, cta: '+ Crear perfil', count: perfiles.value.length },
-  { id: 'reportes', icon: markRaw(BarChart3), label: 'Reportes', description: 'Analíticas y estadísticas', cta: null, count: null },
-])
+const sectionPermissions = {
+  bodegas: 'bodegas.ver',
+  componentes: 'componentes.ver',
+  cotizaciones: 'cotizaciones.ver',
+  'crear-usuario': 'usuarios.crear',
+  'gestionar-usuarios': 'usuarios.ver',
+  perfiles: 'perfiles.ver',
+  reportes: 'reportes.ver'
+}
 
-const currentSection = computed(() => sections.value.find(s => s.id === activeSection.value))
+
 
 // ── Estilos ───────────────────────────────────────────────
 const roles = [
@@ -1200,7 +1201,10 @@ async function fetchProveedores() {
   try {
     const res = await fetch(`${API}/proveedores`, { headers: { Authorization: `Bearer ${getToken()}` } })
     const data = await res.json()
-    if (res.ok) proveedores.value = data.proveedores
+    if (res.ok) {
+      const list = data.proveedores?.data || data.proveedores
+      proveedores.value = Array.isArray(list) ? list : []
+    }
   } catch(e) { console.error(e) }
 }
 
@@ -2210,13 +2214,41 @@ function renderConsumoChart() {
   })
 }
 
+/**
+ * Configuración dinámica de las secciones del menú lateral.
+ * Filtra las secciones visibles según el perfil de permisos asignado al usuario.
+ */
+const sections = computed(() => {
+  const all = [
+    { id: 'bodegas',            icon: markRaw(Store), label: 'Bodegas',            description: `${bodegas.value.length} bodegas registradas`,    cta: '+ Agregar bodega', count: bodegas.value.length    },
+    { id: 'componentes',        icon: markRaw(Wrench), label: 'Componentes',        description: `${componentes.value.length} componentes en total`, cta: '+ Nuevo Componente Maestro',               count: componentes.value.length },
+    { id: 'cotizaciones',       icon: markRaw(FileText), label: 'Cotizaciones',       description: 'Historial de cotizaciones',                       cta: null,               count: null },
+    { id: 'crear-usuario',      icon: markRaw(UserPlus), label: 'Crear usuario',      description: 'Registrar nuevo usuario',                        cta: null,               count: null },
+    { id: 'gestionar-usuarios', icon: markRaw(Users), label: 'Gestionar usuarios', description: `${usuarios.value.length} usuarios registrados`,   cta: '+ Crear usuario',  count: usuarios.value.length   },
+    { id: 'perfiles', icon: markRaw(Lock), label: 'Perfiles y Permisos', description: `${perfiles.value.length} perfiles`, cta: '+ Crear perfil', count: perfiles.value.length },
+    { id: 'reportes', icon: markRaw(BarChart3), label: 'Reportes', description: 'Analíticas y estadísticas', cta: null, count: null },
+  ]
+  return all.filter(s => {
+    const code = sectionPermissions[s.id]
+    return !code || hasPermission(code)
+  })
+})
+
+watch(sections, (newSections) => {
+  if (newSections.length > 0 && !newSections.some(s => s.id === activeSection.value)) {
+    activeSection.value = newSections[0].id
+  }
+}, { immediate: true })
+
+const currentSection = computed(() => sections.value.find(s => s.id === activeSection.value) || sections.value[0] || {})
+
 // ── Lifecycle ─────────────────────────────────────────────
 onMounted(() => {
-  fetchBodegas()
-  fetchUsuarios()
-  fetchComponentes()
-  fetchCotizaciones()
-  fetchProveedores()
-  fetchSelectores()
+  if (hasPermission('bodegas.ver')) fetchBodegas()
+  if (hasPermission('usuarios.ver')) fetchUsuarios()
+  if (hasPermission('componentes.ver')) fetchComponentes()
+  if (hasPermission('cotizaciones.ver')) fetchCotizaciones()
+  if (hasPermission('proveedores.ver')) fetchProveedores()
+  if (hasPermission('perfiles.ver')) fetchPerfiles()
 })
 </script>

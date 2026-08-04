@@ -19,6 +19,10 @@ class AnaliticaController extends Controller
             return response()->json(['success' => false, 'message' => 'No autorizado'], 403);
         }
 
+        if ($user->rol === 'admin' && !$user->hasPermission('reportes.ver')) {
+            return response()->json(['success' => false, 'message' => 'No autorizado. Se requiere el permiso: reportes.ver'], 403);
+        }
+
         $bodegas = DB::table('bodegas')
             ->whereRaw('activa = true')
             ->select('id', 'nombre')
@@ -48,6 +52,10 @@ class AnaliticaController extends Controller
 
         if (!isset($user->rol) || !in_array($user->rol, ['admin', 'superadmin'])) {
             return response()->json(['success' => false, 'message' => 'No autorizado'], 403);
+        }
+
+        if ($user->rol === 'admin' && !$user->hasPermission('reportes.ver')) {
+            return response()->json(['success' => false, 'message' => 'No autorizado. Se requiere el permiso: reportes.ver'], 403);
         }
 
         $bodegaId = $request->query('bodega_id');
@@ -112,6 +120,10 @@ class AnaliticaController extends Controller
 
         if (!isset($user->rol) || !in_array($user->rol, ['admin', 'superadmin'])) {
             return response()->json(['success' => false, 'message' => 'No autorizado'], 403);
+        }
+
+        if ($user->rol === 'admin' && !$user->hasPermission('reportes.ver')) {
+            return response()->json(['success' => false, 'message' => 'No autorizado. Se requiere el permiso: reportes.ver'], 403);
         }
 
         $proveedorId = $request->query('proveedor_id');

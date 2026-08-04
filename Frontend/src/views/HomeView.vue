@@ -9,7 +9,7 @@
       <!-- Glow -->
       <div class="absolute top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[400px] bg-accent/5 rounded-full blur-3xl pointer-events-none"></div>
 
-      <div class="max-w-7xl mx-auto px-6 py-24 relative z-10">
+      <div class="max-w-7xl mx-auto px-6 pt-32 pb-24 relative z-10">
         <div class="max-w-3xl">
           <!-- Badge -->
           <div class="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-accent/20 bg-accent/5 text-accent text-xs font-medium mb-8">
@@ -33,9 +33,6 @@
             <router-link to="/login" class="btn-primary text-base px-8 py-4 w-full sm:w-auto text-center">
               Armar mi PC →
             </router-link>
-            <router-link v-if="isLoggedIn" to="/asistente" class="btn-secondary text-base px-8 py-4 w-full sm:w-auto text-center">
-              <Bot class="w-5 h-5 inline-block" /> Asistente inteligente
-            </router-link>
             <router-link to="/ejemplo-cotizacion" class="btn-secondary text-base px-8 py-4 w-full sm:w-auto text-center">
               Ver ejemplo
             </router-link>
@@ -46,56 +43,6 @@
             <div v-for="stat in stats" :key="stat.label">
               <p class="text-2xl font-bold theme-text font-mono">{{ stat.value }}</p>
               <p class="text-sm theme-text-muted mt-0.5">{{ stat.label }}</p>
-            </div>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <!-- ════ Asistente CTA Section ════ -->
-    <section v-if="isLoggedIn" class="border-t theme-border py-16">
-      <div class="max-w-7xl mx-auto px-6">
-        <div class="relative overflow-hidden rounded-2xl p-8 sm:p-12"
-          :class="isDark
-            ? 'bg-gradient-to-br from-accent/10 via-dark-card to-purple-500/10 border border-accent/20'
-            : 'bg-gradient-to-br from-blue-50 via-white to-purple-50 border border-accent/20 shadow-lg'"
-        >
-          <!-- Decorative glow -->
-          <div class="absolute -right-20 -top-20 w-64 h-64 bg-accent/10 rounded-full blur-3xl pointer-events-none"></div>
-          <div class="absolute -left-10 -bottom-10 w-40 h-40 bg-purple-500/10 rounded-full blur-3xl pointer-events-none"></div>
-
-          <div class="relative z-10 flex flex-col lg:flex-row items-center gap-8">
-            <div class="flex-1 text-center lg:text-left">
-              <div class="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-accent/20 bg-accent/10 text-accent text-xs font-medium mb-4">
-                <span><Bot class="w-5 h-5 inline-block" /></span> Nuevo: Asistente inteligente
-              </div>
-              <h2 class="text-2xl sm:text-3xl font-bold theme-text tracking-tight mb-3">
-                ¿No sabes de tecnología? <span class="text-accent">No hay problema</span>
-              </h2>
-              <p class="theme-text-muted text-sm leading-relaxed max-w-lg mx-auto lg:mx-0">
-                Nuestro asistente te hace 3 preguntas simples y te recomienda la combinación perfecta de componentes según tu presupuesto y lo que necesitas. Sin jerga técnica, sin complicaciones.
-              </p>
-
-              <div class="flex flex-wrap justify-center lg:justify-start gap-4 mt-6 text-xs theme-text-muted">
-                <div class="flex items-center gap-1.5">
-                  <span class="w-1.5 h-1.5 rounded-full bg-green-500"></span>
-                  3 preguntas simples
-                </div>
-                <div class="flex items-center gap-1.5">
-                  <span class="w-1.5 h-1.5 rounded-full bg-green-500"></span>
-                  Recomendación instantánea
-                </div>
-                <div class="flex items-center gap-1.5">
-                  <span class="w-1.5 h-1.5 rounded-full bg-green-500"></span>
-                  Optimizado a tu presupuesto
-                </div>
-              </div>
-            </div>
-
-            <div class="flex-shrink-0">
-              <router-link to="/asistente" class="btn-primary text-base px-8 py-4 inline-flex items-center gap-2">
-                <Rocket class="w-5 h-5 inline-block" /> Probar asistente
-              </router-link>
             </div>
           </div>
         </div>

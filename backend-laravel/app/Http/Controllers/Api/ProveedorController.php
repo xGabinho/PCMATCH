@@ -15,21 +15,25 @@ class ProveedorController extends Controller
     /**
      * Verifica que el usuario sea admin o superadmin
      */
-    private function checkSuperAdmin(Request $request)
+    private function checkSuperAdmin(Request $request, ?string $permission = null): bool
     {
         $user = $request->user();
+        if (!$user) return false;
         $clase = get_class($user);
-        
-        if ($clase !== \App\Models\Usuario::class || !in_array($user->rol, ['admin', 'superadmin'])) {
-            return false;
+        if ($clase === \App\Models\Usuario::class && in_array($user->rol, ['admin', 'superadmin'])) {
+            if ($user->rol === 'admin' && $permission) {
+                return $user->hasPermission($permission);
+            }
+            return true;
         }
-        return true;
+        return false;
     }
 
-    private function checkBodega(Request $request)
+    private function checkBodega(Request $request): bool
     {
         $user = $request->user();
-        return get_class($user) === \App\Models\Bodega::class;
+        if (!$user) return false;
+        return get_class($user) === \App\Models\Bodega::class || (isset($user->rol) && $user->rol === 'bodega');
     }
 
     /**
@@ -40,23 +44,25 @@ class ProveedorController extends Controller
     
     public function index(Request $request)
     {
-        if (!$this->checkSuperAdmin($request) && !$this->checkBodega($request)) {
+        if (!$this->checkSuperAdmin($request, 'proveedores.ver') && !$this->checkBodega($request)) {
             return response()->json(['success' => false, 'message' => 'No autorizado'], 403);
         }
 
-        $proveedores = DB::table('proveedores as p')
+        $query = DB::table('proveedores as p')
             ->leftJoin('bodegas as b', 'b.proveedor_id', '=', 'p.id')
             ->groupBy('p.id', 'p.nombre', 'p.correo', 'p.activo', 'p.created_at', 'p.identificacion_legal', 'p.razon_social', 'p.estado_aprobacion', 'p.documento_soporte')
             ->select('p.id', 'p.nombre', 'p.correo', 'p.activo', 'p.created_at', 'p.identificacion_legal', 'p.razon_social', 'p.estado_aprobacion', 'p.documento_soporte', DB::raw('COUNT(b.id) AS total_bodegas'))
-            ->orderBy('p.created_at', 'DESC')
-            ->paginate(15);
+            ->orderBy('p.created_at', 'DESC');
 
-        // Convert the relative path of documents to full URLs
-        foreach ($proveedores->items() as $prov) {
-            if (isset($prov->documento_soporte) && $prov->documento_soporte) {
-                $prov->documento_soporte_url = url('storage/' . $prov->documento_soporte);
-            } else {
-                $prov->documento_soporte_url = null;
+        if ($request->has('page') || $request->boolean('paginate')) {
+            $proveedores = $query->paginate(15);
+            foreach ($proveedores->items() as $prov) {
+                $prov->documento_soporte_url = (isset($prov->documento_soporte) && $prov->documento_soporte) ? url('storage/' . $prov->documento_soporte) : null;
+            }
+        } else {
+            $proveedores = $query->get();
+            foreach ($proveedores as $prov) {
+                $prov->documento_soporte_url = (isset($prov->documento_soporte) && $prov->documento_soporte) ? url('storage/' . $prov->documento_soporte) : null;
             }
         }
 
@@ -80,7 +86,7 @@ class ProveedorController extends Controller
     
     public function store(Request $request)
     {
-        if (!$this->checkSuperAdmin($request)) {
+        if (!$this->checkSuperAdmin($request, 'proveedores.crear')) {
             return response()->json(['success' => false, 'message' => 'No autorizado'], 403);
         }
 
@@ -148,7 +154,7 @@ class ProveedorController extends Controller
     
     public function update(Request $request)
     {
-        if (!$this->checkSuperAdmin($request)) {
+        if (!$this->checkSuperAdmin($request, 'proveedores.editar')) {
             return response()->json(['success' => false, 'message' => 'No autorizado'], 403);
         }
 
@@ -188,8 +194,9 @@ class ProveedorController extends Controller
             $proveedor->activo = filter_var($request->input('activo'), FILTER_VALIDATE_BOOLEAN) ? DB::raw('true') : DB::raw('false');
         }
         if ($request->has('estado_aprobacion')) {
-            if ($request->user()->rol !== 'superadmin') {
-                return response()->json(['success' => false, 'message' => 'Solo el Super Administrador puede aprobar o rechazar proveedores'], 403);
+            $user = $request->user();
+            if ($user->rol !== 'superadmin' && !$user->hasPermission('proveedores.aprobar')) {
+                return response()->json(['success' => false, 'message' => 'Solo el Super Administrador o usuarios autorizados pueden aprobar o rechazar proveedores.'], 403);
             }
             $proveedor->estado_aprobacion = $request->input('estado_aprobacion');
         }
@@ -218,7 +225,7 @@ class ProveedorController extends Controller
     
     public function destroy(Request $request, $id = null)
     {
-        if (!$this->checkSuperAdmin($request)) {
+        if (!$this->checkSuperAdmin($request, 'proveedores.eliminar')) {
             return response()->json(['success' => false, 'message' => 'No autorizado'], 403);
         }
 
@@ -266,7 +273,7 @@ class ProveedorController extends Controller
             }
             $id = $user->id;
         } else {
-            if (!$this->checkSuperAdmin($request) && !$this->checkBodega($request)) {
+            if (!$this->checkSuperAdmin($request, 'proveedores.ver') && !$this->checkBodega($request)) {
                 return response()->json(['success' => false, 'message' => 'No autorizado'], 403);
             }
         }
@@ -313,7 +320,7 @@ class ProveedorController extends Controller
         // Proveedores pueden gestionar su propio catálogo
         if ($clase === \App\Models\Proveedor::class) {
             $id = $user->id;
-        } elseif (!$this->checkSuperAdmin($request)) {
+        } elseif (!$this->checkSuperAdmin($request, 'proveedores.editar')) {
             return response()->json(['success' => false, 'message' => 'No autorizado'], 403);
         }
 
