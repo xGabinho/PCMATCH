@@ -6,12 +6,12 @@
       <div class="max-w-4xl mx-auto px-6 pt-24 pb-10">
 
         <!-- Back to products link -->
-        <router-link
-          to="/inicio"
-          class="inline-flex items-center gap-2 text-sm theme-text-muted hover:text-accent mb-6 transition-colors font-medium"
+        <button
+          @click="goBackToProducts"
+          class="inline-flex items-center gap-2 text-sm theme-text-muted hover:text-accent mb-6 transition-colors font-medium cursor-pointer"
         >
           <ArrowLeft class="w-4 h-4" /> Volver a productos
-        </router-link>
+        </button>
 
         <!-- Stepper -->
         <div class="flex items-center gap-2 mb-10 overflow-x-auto pb-2 scrollbar-hide">
@@ -218,13 +218,13 @@
           >
             ← Anterior
           </button>
-          <router-link
+          <button
             v-else
-            to="/inicio"
-            class="btn-secondary text-sm w-full sm:w-auto text-center"
+            @click="goBackToProducts"
+            class="btn-secondary text-sm w-full sm:w-auto text-center cursor-pointer"
           >
             ← Volver a productos
-          </router-link>
+          </button>
 
           <div class="flex items-center gap-1.5 hidden sm:flex">
             <div
@@ -364,10 +364,24 @@ import { useRouter } from 'vue-router'
 
 import ComponentCard from '../components/ComponentCard.vue'
 import { useBuilder } from '../composables/useBuilder'
+import { useAuth } from '../composables/useAuth'
+import { useComponentes } from '../composables/useComponentes'
 
 import { API } from '@/config/api'
 const router = useRouter()
+const { isLoggedIn, user } = useAuth()
 const { steps, selectedItems, selectedComponents, totalPrice, selectItem, removeItem, updateQuantity } = useBuilder()
+
+const goBackToProducts = async () => {
+  try {
+    const isClientOrLoggedIn = isLoggedIn.value || (user.value && user.value.rol === 'cliente')
+    const targetPath = isClientOrLoggedIn ? '/inicio' : '/'
+    await router.push(targetPath)
+  } catch (error) {
+    console.error('Error al navegar a productos:', error)
+    window.location.href = (isLoggedIn.value || user.value) ? '/inicio' : '/'
+  }
+}
 
 const activeStep    = ref(0)
 const mobileSidebarOpen = ref(false)
@@ -379,8 +393,7 @@ const showAdvancedFilters = ref(false)
 const filterNucleos = ref('')
 const filterHilos = ref('')
 const filterFrecuenciaMin = ref('')
-const loading       = ref(false)
-const componentesPorCategoria = ref({})
+const { componentesPorCategoria, isLoading: loading, fetchComponentes } = useComponentes()
 
 const stepCurrentPage  = ref(1)
 const stepItemsPerPage = ref(4)
@@ -471,21 +484,5 @@ watch([activeStep, stepSearch, stepSort, filterGama, filterEnfoque, filterNucleo
 
  */
 
-async function fetchTodos() {
-  loading.value = true
-  try {
-    const res = await fetch(`${API}/componentes/publico`)
-    const data = await res.json()
-    if (res.ok) {
-      const agrupado = {}
-      for (const comp of data.componentes) {
-        if (!agrupado[comp.categoria]) agrupado[comp.categoria] = []
-        agrupado[comp.categoria].push(comp)
-      }
-      componentesPorCategoria.value = agrupado
-    }
-  } catch(e) { console.error(e) } finally { loading.value = false }
-}
-
-onMounted(fetchTodos)
+onMounted(fetchComponentes)
 </script>

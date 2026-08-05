@@ -82,21 +82,37 @@ class RecomendacionService
             }
         }
 
-        // Si ninguna build pudo armarse por falta de presupuesto
+        // Si ninguna build pudo armarse por proporciones estrictas, intentar opción económica base con el mínimo real
         if (empty($opciones)) {
             $categoriasRequeridas = ['CPU', 'GPU', 'RAM', 'Storage', 'Motherboard', 'PSU', 'Cooler', 'Case'];
             if ($uso === 'oficina') {
-                $categoriasRequeridas = array_diff($categoriasRequeridas, ['GPU']);
+                $categoriasRequeridas = array_values(array_diff($categoriasRequeridas, ['GPU']));
             }
             $costoMinimo = $this->calcularCostoMinimo($categoriasRequeridas);
+            $buildMinimaData = $this->obtenerBuildMinima($categoriasRequeridas);
 
-            throw new Exception(json_encode([
-                'success'       => false,
-                'message'       => 'El presupuesto indicado es insuficiente para armar un PC completo con las características seleccionadas.',
-                'detalle'       => 'Revisa los precios mínimos requeridos para armar la PC.',
-                'presupuesto_minimo_estimado' => $costoMinimo,
-                'sugerencia'    => 'Intenta aumentar tu presupuesto a al menos $' . number_format($costoMinimo, 2) . ' o selecciona un nivel de desempeño más bajo.',
-            ]));
+            if ($presupuestoMax >= $costoMinimo && !empty($buildMinimaData['build'])) {
+                $opciones[] = [
+                    'id'          => 'economica_minima',
+                    'nombre'      => 'Opción Económica Base',
+                    'tag'         => 'Mínimo Requerido',
+                    'descripcion' => 'Configuración de entrada optimizada al costo mínimo disponible.',
+                    'build'       => $buildMinimaData['build'],
+                    'total'       => $buildMinimaData['total'],
+                    'ahorro'      => round($presupuestoMax - $buildMinimaData['total'], 2),
+                ];
+            } else {
+                $diferencia = max(0, $costoMinimo - $presupuestoMax);
+                throw new Exception(json_encode([
+                    'success'       => false,
+                    'message'       => 'El presupuesto de $' . number_format($presupuestoMax, 0, ',', '.') . ' es inferior al mínimo real de $' . number_format($costoMinimo, 0, ',', '.') . ' requerido para armar un PC de ' . $uso . '.',
+                    'detalle'       => 'La opción más económica disponible requiere una diferencia de $' . number_format($diferencia, 0, ',', '.') . '.',
+                    'presupuesto_minimo_estimado' => $costoMinimo,
+                    'diferencia'    => $diferencia,
+                    'build_economica' => $buildMinimaData['build'] ?? [],
+                    'sugerencia'    => '¿Deseas aumentar tu presupuesto a $' . number_format($costoMinimo, 0, ',', '.') . ' o prefieres prescindir de algún componente?',
+                ]));
+            }
         }
 
         $opcionPrincipal = $opciones[0];
@@ -137,15 +153,18 @@ class RecomendacionService
             $categoriasOpcionales[] = 'GPU';
         }
 
+        $categoriasConStock = DB::table('componentes as c')
+            ->join('productos_catalogo as pc', 'c.producto_id', '=', 'pc.id')
+            ->whereIn('pc.categoria', $categoriasRequeridas)
+            ->where('c.activo', true)
+            ->where('c.stock', '>', 0)
+            ->whereNull('c.deleted_at')
+            ->pluck('pc.categoria')
+            ->unique()
+            ->toArray();
+
         foreach ($categoriasRequeridas as $cat) {
-            $hasStock = DB::table('componentes as c')
-                ->join('productos_catalogo as pc', 'c.producto_id', '=', 'pc.id')
-                ->where('pc.categoria', $cat)
-                ->whereRaw("c.activo IS TRUE")
-                ->where('c.stock', '>', 0)
-                ->whereNull('c.deleted_at')
-                ->exists();
-            if (!$hasStock) {
+            if (!in_array($cat, $categoriasConStock)) {
                 $categoriasOpcionales[] = $cat;
             }
         }
@@ -250,14 +269,14 @@ class RecomendacionService
             ->join('productos_catalogo as pc', 'c.producto_id', '=', 'pc.id')
             ->leftJoin('bodegas as b', 'c.bodega_id', '=', 'b.id')
             ->where('pc.categoria', $categoria)
-            ->whereRaw("c.activo IS TRUE")
+            ->where('c.activo', true)
             ->where('c.stock', '>', 0)
             ->whereNull('c.deleted_at')
             ->select(
                 'c.id', 'pc.nombre', 'pc.categoria', 'c.especificacion',
                 'c.gama', 'c.enfoque_uso', 'c.precio', 'c.descuento_porcentaje',
                 'c.descuento_activo', 'c.stock', 'c.imagen_url', 'b.nombre as bodega',
-                DB::raw('CASE WHEN c.descuento_activo = true AND c.descuento_porcentaje > 0 THEN ROUND(c.precio * (1 - c.descuento_porcentaje / 100), 2) ELSE c.precio END as precio_final')
+                DB::raw('CASE WHEN (c.descuento_activo = true OR c.descuento_activo = 1) AND c.descuento_porcentaje > 0 THEN ROUND(c.precio * (1 - c.descuento_porcentaje / 100), 2) ELSE c.precio END as precio_final')
             );
 
         if ($uso) {
@@ -269,10 +288,10 @@ class RecomendacionService
         }
 
         if ($precioMax !== null) {
-            $query->where(DB::raw('CASE WHEN c.descuento_activo = true AND c.descuento_porcentaje > 0 THEN ROUND(c.precio * (1 - c.descuento_porcentaje / 100), 2) ELSE c.precio END'), '<=', $precioMax);
+            $query->where(DB::raw('CASE WHEN (c.descuento_activo = true OR c.descuento_activo = 1) AND c.descuento_porcentaje > 0 THEN ROUND(c.precio * (1 - c.descuento_porcentaje / 100), 2) ELSE c.precio END'), '<=', $precioMax);
         }
 
-        return $query->orderBy(DB::raw('CASE WHEN c.descuento_activo = true AND c.descuento_porcentaje > 0 THEN ROUND(c.precio * (1 - c.descuento_porcentaje / 100), 2) ELSE c.precio END'), 'DESC')->first();
+        return $query->orderBy(DB::raw('CASE WHEN (c.descuento_activo = true OR c.descuento_activo = 1) AND c.descuento_porcentaje > 0 THEN ROUND(c.precio * (1 - c.descuento_porcentaje / 100), 2) ELSE c.precio END'), 'DESC')->first();
     }
 
     private function getProporcionesPorUso(string $uso): array
@@ -316,22 +335,73 @@ class RecomendacionService
 
     private function calcularCostoMinimo(array $categorias): float
     {
-        $costoMinimo = 0;
-        foreach ($categorias as $cat) {
+        $preciosMinimos = DB::table('componentes as c')
+            ->join('productos_catalogo as pc', 'c.producto_id', '=', 'pc.id')
+            ->whereIn('pc.categoria', $categorias)
+            ->where('c.activo', true)
+            ->where('c.stock', '>', 0)
+            ->whereNull('c.deleted_at')
+            ->select(
+                'pc.categoria',
+                DB::raw('MIN(CASE WHEN (c.descuento_activo = true OR c.descuento_activo = 1) AND c.descuento_porcentaje > 0 THEN ROUND(c.precio * (1 - c.descuento_porcentaje / 100), 2) ELSE c.precio END) as min_precio')
+            )
+            ->groupBy('pc.categoria')
+            ->pluck('min_precio');
+
+        return round((float) $preciosMinimos->sum(), 2);
+    }
+
+    public function obtenerBuildMinima(array $categoriasRequeridas): array
+    {
+        $build = [];
+        $total = 0;
+        $mapCategoriaStep = [
+            'CPU' => 'cpu', 'GPU' => 'gpu', 'RAM' => 'ram', 'Storage' => 'storage',
+            'Motherboard' => 'motherboard', 'PSU' => 'psu', 'Cooler' => 'cooler', 'Case' => 'case',
+        ];
+
+        foreach ($categoriasRequeridas as $cat) {
             $comp = DB::table('componentes as c')
                 ->join('productos_catalogo as pc', 'c.producto_id', '=', 'pc.id')
+                ->leftJoin('bodegas as b', 'c.bodega_id', '=', 'b.id')
                 ->where('pc.categoria', $cat)
                 ->whereRaw("c.activo IS TRUE")
                 ->where('c.stock', '>', 0)
                 ->whereNull('c.deleted_at')
-                ->select(DB::raw('CASE WHEN c.descuento_activo = true AND c.descuento_porcentaje > 0 THEN ROUND(c.precio * (1 - c.descuento_porcentaje / 100), 2) ELSE c.precio END as precio_final'))
+                ->select(
+                    'c.id', 'pc.nombre', 'pc.categoria', 'c.especificacion',
+                    'c.gama', 'c.enfoque_uso', 'c.precio', 'c.descuento_porcentaje',
+                    'c.descuento_activo', 'c.stock', 'c.imagen_url', 'b.nombre as bodega',
+                    DB::raw('CASE WHEN c.descuento_activo = true AND c.descuento_porcentaje > 0 THEN ROUND(c.precio * (1 - c.descuento_porcentaje / 100), 2) ELSE c.precio END as precio_final')
+                )
                 ->orderBy(DB::raw('CASE WHEN c.descuento_activo = true AND c.descuento_porcentaje > 0 THEN ROUND(c.precio * (1 - c.descuento_porcentaje / 100), 2) ELSE c.precio END'), 'ASC')
                 ->first();
 
             if ($comp) {
-                $costoMinimo += (float) $comp->precio_final;
+                $precioFinal = (float) $comp->precio_final;
+                $total += $precioFinal;
+                $build[] = [
+                    'step_id'        => $mapCategoriaStep[$cat] ?? strtolower($cat),
+                    'id'             => $comp->id,
+                    'nombre'         => $comp->nombre,
+                    'categoria'      => $comp->categoria,
+                    'especificacion' => $comp->especificacion,
+                    'gama'           => $comp->gama,
+                    'enfoque_uso'    => $comp->enfoque_uso,
+                    'precio'         => $comp->precio,
+                    'precio_final'   => $precioFinal,
+                    'descuento_porcentaje' => $comp->descuento_porcentaje,
+                    'descuento_activo' => $comp->descuento_activo,
+                    'stock'          => $comp->stock,
+                    'imagen_url'     => $comp->imagen_url,
+                    'bodega'         => $comp->bodega,
+                ];
             }
         }
-        return round($costoMinimo, 2);
+
+        return [
+            'build' => $build,
+            'total' => round($total, 2)
+        ];
     }
 }

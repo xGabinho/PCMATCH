@@ -217,13 +217,13 @@
                   {{ comp.stock }} unid.
                 </div>
               </div>
-              <router-link
-                to="/armar"
-                class="w-full text-center text-sm font-medium py-2.5 rounded-lg border theme-border theme-text-muted hover:border-accent hover:text-accent transition-all duration-150 block"
-                :class="{ 'opacity-40 pointer-events-none': comp.stock == 0 }"
+              <button
+                @click="addToBuilder(comp)"
+                :disabled="comp.stock == 0"
+                class="w-full text-center text-sm font-medium py-2.5 rounded-lg border theme-border theme-text-muted hover:border-accent hover:text-accent transition-all duration-150 block disabled:opacity-40 disabled:pointer-events-none cursor-pointer"
               >
                 {{ comp.stock == 0 ? 'Sin stock' : 'Usar en mi PC →' }}
-              </router-link>
+              </button>
             </div>
           </div>
         </div>
@@ -284,20 +284,67 @@ import { Hand, Bot, Rocket, Zap, Search, Settings, Wrench, Settings as CpuIcon, 
 
 
 import { ref, computed, watch, onMounted, markRaw } from 'vue'
+import { useRouter } from 'vue-router'
 import { useAuth } from '../composables/useAuth'
 import { useTheme } from '../composables/useTheme'
+import { useBuilder } from '../composables/useBuilder'
+import { useComponentes } from '../composables/useComponentes'
 import SeccionMasVendidos from '../components/Recomendaciones/SeccionMasVendidos.vue'
 
-
 import { API } from '@/config/api'
+const router = useRouter()
 const { user } = useAuth()
 const { isDark } = useTheme()
+const { selectItem } = useBuilder()
+
+const getStepIdFromCategory = (comp) => {
+  if (comp.step_id && ['cpu', 'gpu', 'ram', 'storage', 'motherboard', 'psu', 'cooler', 'case'].includes(comp.step_id)) {
+    return comp.step_id
+  }
+  const cat = (comp.categoria || '').toLowerCase().trim()
+  if (cat.includes('cpu') || cat.includes('procesador')) return 'cpu'
+  if (cat.includes('gpu') || cat.includes('gráfica') || cat.includes('grafica') || cat.includes('video')) return 'gpu'
+  if (cat.includes('ram') || cat.includes('memoria')) return 'ram'
+  if (cat.includes('storage') || cat.includes('almacenamiento') || cat.includes('ssd') || cat.includes('disco')) return 'storage'
+  if (cat.includes('motherboard') || cat.includes('placa') || cat.includes('mobo')) return 'motherboard'
+  if (cat.includes('psu') || cat.includes('fuente')) return 'psu'
+  if (cat.includes('cooler') || cat.includes('refrigeracion') || cat.includes('disipador')) return 'cooler'
+  if (cat.includes('case') || cat.includes('gabinete') || cat.includes('chasis')) return 'case'
+  return null
+}
+
+const addToBuilder = async (comp) => {
+  try {
+    if (!comp) return
+    const stepId = getStepIdFromCategory(comp)
+    if (stepId) {
+      selectItem(stepId, {
+        id: comp.id,
+        nombre: comp.nombre,
+        categoria: comp.categoria,
+        especificacion: comp.especificacion,
+        gama: comp.gama,
+        enfoque_uso: comp.enfoque_uso,
+        precio: comp.precio,
+        precio_final: comp.precio_final || comp.precio,
+        stock: comp.stock,
+        imagen_url: comp.imagen_url,
+        bodega: comp.bodega,
+      })
+    }
+    await router.push('/armar').catch(() => {
+      window.location.href = '/armar'
+    })
+  } catch (e) {
+    console.error('Error al agregar al ensamblador:', e)
+    window.location.href = '/armar'
+  }
+}
 
 const searchQuery    = ref('')
 const activeCategory = ref('Todos')
 const sortBy         = ref('name')
-const allComponents  = ref([])
-const loading        = ref(false)
+const { allComponents, isLoading: loading, fetchComponentes } = useComponentes()
 
 const currentPage  = ref(1)
 const itemsPerPage = ref(10)
@@ -340,10 +387,10 @@ const filteredComponents = computed(() => {
   if (searchQuery.value.trim()) {
     const q = searchQuery.value.toLowerCase()
     result = result.filter(c =>
-      c.nombre.toLowerCase().includes(q) ||
-      c.especificacion?.toLowerCase().includes(q) ||
-      c.categoria.toLowerCase().includes(q) ||
-      c.bodega.toLowerCase().includes(q)
+      (c.nombre || '').toLowerCase().includes(q) ||
+      (c.especificacion || '').toLowerCase().includes(q) ||
+      (c.categoria || '').toLowerCase().includes(q) ||
+      (c.bodega || '').toLowerCase().includes(q)
     )
   }
 
@@ -407,19 +454,6 @@ watch([searchQuery, activeCategory, sortBy, filterGama, filterEnfoque, filterNuc
  * Mantiene sincronizada la vista con la base de datos.
 
  */
-
-async function fetchComponentes() {
-  loading.value = true
-  try {
-    const res = await fetch(`${API}/componentes/publico`)
-    const data = await res.json()
-    if (res.ok) allComponents.value = data.componentes
-  } catch(e) {
-    console.error(e)
-  } finally {
-    loading.value = false
-  }
-}
 
 onMounted(fetchComponentes)
 </script>

@@ -24,6 +24,12 @@ class ChatbotController extends Controller
 
         $userMessages = $request->input('messages');
 
+        // Fast-path para consultas de solo-lectura de catálogo
+        $lastUserMsg = end($userMessages)['content'] ?? '';
+        if ($this->esConsultaSoloCatalogo($lastUserMsg)) {
+            return response()->json($this->generarRespuestaRapidaCatalogo($lastUserMsg));
+        }
+
         // Formatear mensajes para Gemini API
         $geminiContents = [];
         $firstUserFound = false;
@@ -45,11 +51,13 @@ class ChatbotController extends Controller
         $systemInstruction = "Eres el asistente inteligente de PCMATCH, experto en hardware de computadoras y ensamblajes. Responde siempre en español, de forma clara, amable y directa.
 
 REGLAS OBLIGATORIAS:
-1. NUNCA inventes componentes, precios, marcas ni especificaciones. Todo debe proceder únicamente de la herramienta 'ver_inventario' o 'build_pc'.
-2. PREGUNTAS INTRODUCTORIAS DE ARMADO: Si el usuario desea armar una PC o recibir recomendación de equipo completo y NO ha especificado alguno de los 3 datos principales (Gama/Nivel, Presupuesto máximo, y Enfoque de uso), pregúntaselos amablemente.
-3. BÚSQUEDA DE COMPONENTES: Si el usuario pregunta por piezas específicas, disponibilidad, precios o stock (ej: '¿tienen tarjetas RTX 3060?'), usa INMEDIATAMENTE 'ver_inventario' sin exigir presupuesto obligatoriamente.
-4. RECOMENDACIÓN DE PC COMPLETA: Usa 'build_pc' únicamente cuando tengas o el usuario te provea el uso principal, gama/desempeño y presupuesto aproximado.
-5. DUDAS GENERALES: Para preguntas teóricas sobre hardware, responde breve y concisamente. No repitas lo que el usuario dijo.";
+1. NUNCA inventes componentes, precios, marcas ni especificaciones. Todo debe proceder únicamente de las herramientas de PCMATCH ('ver_inventario' o 'build_pc').
+2. NUNCA respondas con un mensaje de error, límite o falla sin acompañarlo de al menos una alternativa concreta o una pregunta que permita avanzar.
+3. PREGUNTAS INTRODUCTORIAS DE ARMADO: Si el usuario desea armar una PC o recibir recomendación de equipo completo y NO ha especificado alguno de los 3 datos principales (Gama/Nivel, Presupuesto máximo, y Enfoque de uso), pregúntaselos amablemente.
+4. BÚSQUEDA DE COMPONENTES Y CATÁLOGO: Si el usuario pregunta por piezas específicas, disponibilidad, precios o stock (ej: '¿tienen tarjetas RTX 3060?'), usa INMEDIATAMENTE 'ver_inventario' sin exigir presupuesto obligatoriamente.
+5. RECOMENDACIÓN DE PC COMPLETA: Usa 'build_pc' únicamente cuando tengas o el usuario te provea el uso principal, gama/desempeño y/o presupuesto aproximado. Para juegos de bajos requisitos (ej. Roblox), verifica el mínimo real antes de rechazar.
+6. PRESUPUESTO INSUFICIENTE: Si el presupuesto no alcanza para una PC nueva completa, indica el monto mínimo real necesario con cifra exacta, ofrece la configuración más económica disponible, la diferencia de precio y pregunta si puede ajustar el presupuesto o sacrificar algún componente.
+7. TONO Y FORMATO: Respuestas breves y claras, cifras concretas del catálogo y cerrando SIEMPRE con una pregunta accionable o propuesta de siguiente paso.";
 
         $payload = [
             'systemInstruction' => [
@@ -213,15 +221,47 @@ REGLAS OBLIGATORIAS:
                         ]);
                     } catch (Exception $e) {
                         $errorData = json_decode($e->getMessage(), true);
-                        if(is_array($errorData)) {
-                             return response()->json([
+                        if (is_array($errorData) && isset($errorData['presupuesto_minimo_estimado'])) {
+                            $costoMinimo = $errorData['presupuesto_minimo_estimado'];
+                            $diferencia = $errorData['diferencia'] ?? max(0, $costoMinimo - $presupuesto);
+                            $buildEconomica = $errorData['build_economica'] ?? [];
+                            $uso = $args['uso'] ?? 'el uso solicitado';
+
+                            $msg = "El presupuesto indicado (" . $this->formatMoney($presupuesto) . ") es inferior al mínimo real necesario para armar un PC completo de " . $uso . ".\n\n";
+                            $msg .= "• **Presupuesto mínimo real requerido:** " . $this->formatMoney($costoMinimo) . "\n";
+                            if ($presupuesto > 0) {
+                                $msg .= "• **Diferencia con tu presupuesto:** " . $this->formatMoney($diferencia) . "\n\n";
+                            } else {
+                                $msg .= "\n";
+                            }
+
+                            if (!empty($buildEconomica)) {
+                                $msg .= "**Configuración más económica disponible en inventario:**\n";
+                                foreach ($buildEconomica as $item) {
+                                    $msg .= "- **" . $item['categoria'] . ":** " . $item['nombre'] . " (" . $this->formatMoney($item['precio_final']) . ")\n";
+                                }
+                                $msg .= "\n";
+                            }
+
+                            $msg .= "💡 **Opciones para continuar:**\n";
+                            $msg .= "1. Incrementar tu presupuesto a " . $this->formatMoney($costoMinimo) . " para armar este equipo completo.\n";
+                            $msg .= "2. Reutilizar o ajustar algún componente (ej. gabinete o almacenamiento).\n\n";
+                            $msg .= "¿Te gustaría ajustar tu presupuesto a " . $this->formatMoney($costoMinimo) . " para armar esta configuración o prefieres ver alternativas de componentes?";
+
+                            return response()->json([
                                 'type' => 'text',
-                                'message' => "Lo siento, hubo un problema al armar tu PC: " . ($errorData['message'] ?? '') . " " . ($errorData['detalle'] ?? '')
+                                'message' => $msg
+                            ]);
+                        } elseif (is_array($errorData)) {
+                            return response()->json([
+                                'type' => 'text',
+                                'message' => "No pudimos completar la recomendación con la configuración seleccionada: " . ($errorData['message'] ?? '') . " ¿Te gustaría probar con otro nivel de desempeño o ajustar componentes?"
                             ]);
                         }
+
                         return response()->json([
                             'type' => 'text',
-                            'message' => 'Hubo un error interno al intentar armar la PC con el inventario actual.'
+                            'message' => 'Hubo un problema al intentar armar la PC con el inventario actual. ¿Te gustaría consultar componentes específicos o probar con otro presupuesto?'
                         ]);
                     }
                 }
@@ -261,13 +301,13 @@ REGLAS OBLIGATORIAS:
             // Si llegamos aquí y hay texto (o se superó max loops), devolvemos el texto
             return response()->json([
                 'type' => 'text',
-                'message' => $textResponse ?? 'No pude generar una respuesta.'
+                'message' => $textResponse ?? 'No pude generar una respuesta. ¿Deseas consultar componentes de nuestro catálogo o probar con una búsqueda de componentes?'
             ]);
         }
 
         return response()->json([
             'type' => 'text',
-            'message' => 'El asistente tardó demasiado en procesar la información. Inténtalo de nuevo.'
+            'message' => 'Tuve una pequeña demora al procesar tu solicitud. ¿Te gustaría consultar sobre alguno de nuestros componentes en catálogo o ver las recomendaciones de armado?'
         ]);
     }
 
@@ -275,17 +315,18 @@ REGLAS OBLIGATORIAS:
     {
         $query = DB::table('componentes as c')
             ->join('productos_catalogo as pc', 'c.producto_id', '=', 'pc.id')
-            ->whereRaw("c.activo IS TRUE")
+            ->where('c.activo', true)
             ->where('c.stock', '>', 0)
             ->whereNull('c.deleted_at')
             ->select(
                 'pc.nombre', 'pc.categoria', 'c.especificacion',
-                DB::raw('CASE WHEN c.descuento_activo = true AND c.descuento_porcentaje > 0 THEN ROUND(c.precio * (1 - c.descuento_porcentaje / 100), 2) ELSE c.precio END as precio_final'),
+                DB::raw('CASE WHEN (c.descuento_activo = true OR c.descuento_activo = 1) AND c.descuento_porcentaje > 0 THEN ROUND(c.precio * (1 - c.descuento_porcentaje / 100), 2) ELSE c.precio END as precio_final'),
                 'c.stock'
             );
 
         if (!empty($args['categoria'])) {
-            $query->where('pc.categoria', 'ILIKE', '%' . $args['categoria'] . '%');
+            $catLower = strtolower($args['categoria']);
+            $query->where(DB::raw('LOWER(pc.categoria)'), 'LIKE', '%' . $catLower . '%');
         }
 
         if (!empty($args['palabra_clave'])) {
@@ -297,7 +338,7 @@ REGLAS OBLIGATORIAS:
         }
 
         if (!empty($args['precio_maximo'])) {
-            $query->where(DB::raw('CASE WHEN c.descuento_activo = true AND c.descuento_porcentaje > 0 THEN ROUND(c.precio * (1 - c.descuento_porcentaje / 100), 2) ELSE c.precio END'), '<=', $args['precio_maximo']);
+            $query->where(DB::raw('CASE WHEN (c.descuento_activo = true OR c.descuento_activo = 1) AND c.descuento_porcentaje > 0 THEN ROUND(c.precio * (1 - c.descuento_porcentaje / 100), 2) ELSE c.precio END'), '<=', $args['precio_maximo']);
         }
 
         // Limitar a los 10 más baratos o relevantes para evitar sobrecargar a Gemini
@@ -308,5 +349,143 @@ REGLAS OBLIGATORIAS:
         }
 
         return $resultados->toArray();
+    }
+
+    private function esConsultaSoloCatalogo(string $message): bool
+    {
+        $msg = mb_strtolower(trim($message));
+
+        // Si pide armar o recomienda equipo completo, NO es solo catálogo
+        $palabrasArmado = ['armame', 'arma una', 'armar', 'recomiendame una pc', 'recomienda una pc', 'configurar pc', 'configura una pc', 'build pc', 'presupuesto de', 'mi presupuesto'];
+        foreach ($palabrasArmado as $palabra) {
+            if (str_contains($msg, $palabra)) {
+                return false;
+            }
+        }
+
+        // Patrones o palabras clave de consulta de catálogo
+        $patronesCatalogo = [
+            'procesador', 'procesadores', 'tarjeta de video', 'tarjetas de video', 'gpu', 'gpus',
+            'cpu', 'cpus', 'placa madre', 'placas madre', 'motherboard', 'ram', 'memorias',
+            'almacenamiento', 'disco', 'ssd', 'fuente de poder', 'psu', 'gabinete', 'case',
+            'tienen disponible', 'tienen disponibles', 'que tienen', 'cuales tienen',
+            'mostrar catalogo', 'ver catalogo', 'lista de', 'stock de', 'precios de'
+        ];
+
+        $coincidencias = 0;
+        foreach ($patronesCatalogo as $patron) {
+            if (str_contains($msg, $patron)) {
+                $coincidencias++;
+            }
+        }
+
+        return $coincidencias >= 1 && (
+            str_contains($msg, '?') ||
+            str_contains($msg, 'que') ||
+            str_contains($msg, 'qué') ||
+            str_contains($msg, 'tienen') ||
+            str_contains($msg, 'muestra') ||
+            str_contains($msg, 'mostrar') ||
+            str_contains($msg, 'lista') ||
+            str_contains($msg, 'disponible') ||
+            str_contains($msg, 'catalogo') ||
+            str_contains($msg, 'catálogo')
+        );
+    }
+
+    private function generarRespuestaRapidaCatalogo(string $message): array
+    {
+        $msg = mb_strtolower($message);
+        
+        $categoriasABuscar = [];
+        if (str_contains($msg, 'procesador') || str_contains($msg, 'cpu')) {
+            $categoriasABuscar[] = 'CPU';
+        }
+        if (str_contains($msg, 'tarjeta') || str_contains($msg, 'gpu') || str_contains($msg, 'grafica') || str_contains($msg, 'vídeo') || str_contains($msg, 'video')) {
+            $categoriasABuscar[] = 'GPU';
+        }
+        if (str_contains($msg, 'ram') || str_contains($msg, 'memoria')) {
+            $categoriasABuscar[] = 'RAM';
+        }
+        if (str_contains($msg, 'placa') || str_contains($msg, 'motherboard') || str_contains($msg, 'madre')) {
+            $categoriasABuscar[] = 'Motherboard';
+        }
+        if (str_contains($msg, 'disco') || str_contains($msg, 'ssd') || str_contains($msg, 'almacenamiento')) {
+            $categoriasABuscar[] = 'Storage';
+        }
+        if (str_contains($msg, 'fuente') || str_contains($msg, 'psu')) {
+            $categoriasABuscar[] = 'PSU';
+        }
+        if (str_contains($msg, 'gabinete') || str_contains($msg, 'case') || str_contains($msg, 'chasis')) {
+            $categoriasABuscar[] = 'Case';
+        }
+        if (str_contains($msg, 'cooler') || str_contains($msg, 'refrigeracion')) {
+            $categoriasABuscar[] = 'Cooler';
+        }
+
+        if (empty($categoriasABuscar)) {
+            $categoriasABuscar = ['CPU', 'GPU'];
+        }
+
+        $nombresCategorias = [
+            'CPU' => 'Procesadores (CPU)',
+            'GPU' => 'Tarjetas de Video (GPU)',
+            'RAM' => 'Memorias RAM',
+            'Motherboard' => 'Placas Madre (Motherboards)',
+            'Storage' => 'Almacenamiento (SSD/HDD)',
+            'PSU' => 'Fuentes de Poder (PSU)',
+            'Cooler' => 'Refrigeración / Coolers',
+            'Case' => 'Gabinetes / Cases',
+        ];
+
+        $lineas = ["Aquí tienes los componentes disponibles en nuestro catálogo según tu consulta:\n"];
+
+        foreach ($categoriasABuscar as $cat) {
+            $items = DB::table('componentes as c')
+                ->join('productos_catalogo as pc', 'c.producto_id', '=', 'pc.id')
+                ->where('pc.categoria', $cat)
+                ->where('c.activo', true)
+                ->where('c.stock', '>', 0)
+                ->whereNull('c.deleted_at')
+                ->select(
+                    'pc.nombre', 'pc.categoria', 'c.especificacion', 'c.gama', 'c.stock',
+                    DB::raw('CASE WHEN (c.descuento_activo = true OR c.descuento_activo = 1) AND c.descuento_porcentaje > 0 THEN ROUND(c.precio * (1 - c.descuento_porcentaje / 100), 2) ELSE c.precio END as precio_final')
+                )
+                ->orderBy('c.gama', 'desc')
+                ->orderBy('precio_final', 'asc')
+                ->limit(10)
+                ->get();
+
+            if ($items->isNotEmpty()) {
+                $titulo = $nombresCategorias[$cat] ?? $cat;
+                $lineas[] = "**" . $titulo . ":**";
+                
+                foreach ($items as $item) {
+                    $gamaTag = !empty($item->gama) ? " [" . ucfirst($item->gama) . "]" : "";
+                    $precioFormateado = '$' . number_format($item->precio_final, 0, ',', '.');
+                    $lineas[] = "- **" . $item->nombre . "**" . $gamaTag . " - " . $precioFormateado . " (Stock: " . $item->stock . ")";
+                }
+                $lineas[] = "";
+            }
+        }
+
+        if (count($lineas) <= 1) {
+            return [
+                'type' => 'text',
+                'message' => "Actualmente no encontramos componentes disponibles en esa categoría en nuestro catálogo. ¿Te gustaría consultar por otra categoría o armar una PC completa?"
+            ];
+        }
+
+        $lineas[] = "¿Te gustaría armar una PC con alguno de estos componentes o necesitas asesoría para elegir?";
+
+        return [
+            'type' => 'text',
+            'message' => implode("\n", $lineas)
+        ];
+    }
+
+    private function formatMoney($amount): string
+    {
+        return '$' . number_format((float)$amount, 0, ',', '.');
     }
 }

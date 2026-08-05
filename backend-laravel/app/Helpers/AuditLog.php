@@ -39,7 +39,7 @@ class AuditLog
     /**
      * Formatea un valor para mostrarlo de forma amigable
      */
-    private static function formatValue($campo, $valor)
+    private static function formatValue($campo, $valor, $model = null)
     {
         // Campos booleanos de estado
         if (in_array($campo, ['activo', 'activa'])) {
@@ -71,6 +71,9 @@ class AuditLog
         // Resolver proveedor_id a nombre
         if ($campo === 'proveedor_id') {
             if (empty($valor)) return 'Ninguno';
+            if ($model && $model->relationLoaded('proveedor') && $model->proveedor && $model->proveedor->id == $valor) {
+                return $model->proveedor->nombre;
+            }
             $nombre = DB::table('proveedores')->where('id', $valor)->value('nombre');
             return $nombre ?? 'Desconocido';
         }
@@ -78,6 +81,9 @@ class AuditLog
         // Resolver bodega_id a nombre
         if ($campo === 'bodega_id') {
             if (empty($valor)) return 'Ninguna';
+            if ($model && $model->relationLoaded('bodega') && $model->bodega && $model->bodega->id == $valor) {
+                return $model->bodega->nombre;
+            }
             $nombre = DB::table('bodegas')->where('id', $valor)->value('nombre');
             return $nombre ?? 'Desconocida';
         }
@@ -114,8 +120,10 @@ class AuditLog
         foreach ($dirty as $campo => $nuevo) {
             if ($campo === 'updated_at' || $campo === 'created_at') continue;
 
-            $label = self::$fieldLabels[$campo] ?? $campo;
             $viejo = $model->getOriginal($campo);
+            if ((string)$viejo === (string)$nuevo) continue;
+
+            $label = self::$fieldLabels[$campo] ?? $campo;
 
             // Para contraseña, no mostrar valores
             if ($campo === 'password') {
@@ -123,8 +131,8 @@ class AuditLog
                 continue;
             }
 
-            $viejoFormatted = self::formatValue($campo, $viejo);
-            $nuevoFormatted = self::formatValue($campo, $nuevo);
+            $viejoFormatted = self::formatValue($campo, $viejo, $model);
+            $nuevoFormatted = self::formatValue($campo, $nuevo, $model);
 
             // Si ambos valores formateados son iguales, saltar
             if ($viejoFormatted === $nuevoFormatted) continue;

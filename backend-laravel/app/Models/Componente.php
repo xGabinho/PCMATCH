@@ -97,7 +97,7 @@ class Componente extends Model
      */
     public function scopeActivo($query)
     {
-        return $query->where('activo', 'true');
+        return $query->whereRaw("activo IS TRUE");
     }
 
     /**
@@ -105,7 +105,7 @@ class Componente extends Model
      */
     public function scopeInactivo($query)
     {
-        return $query->where('activo', 'false');
+        return $query->whereRaw("activo IS FALSE");
     }
 
     /**
@@ -227,7 +227,7 @@ class Componente extends Model
             ->join('cotizaciones', 'cotizacion_items.cotizacion_id', '=', 'cotizaciones.id')
             ->where('cotizacion_items.componente_id', $this->id)
             ->where('cotizaciones.created_at', '>=', $limite)
-            ->where('cotizaciones.stock_restaurado', 'false')
+            ->where('cotizaciones.stock_restaurado', false)
             ->exists();
     }
 }

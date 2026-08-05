@@ -1,5 +1,5 @@
 <template>
-  <main class="max-w-3xl mx-auto px-6 py-16">
+  <main class="max-w-3xl mx-auto px-6 pt-28 pb-16">
     <div class="text-center mb-12">
       <h1 class="text-4xl font-bold theme-text mb-4">Contacto</h1>
       <p class="text-lg theme-text-muted">¿Tienes alguna duda o sugerencia? Escríbenos y te responderemos a la brevedad.</p>

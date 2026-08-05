@@ -21,4 +21,29 @@ document.addEventListener('input', (e) => {
   }
 });
 
-createApp(App).use(router).mount('#app')
+const app = createApp(App);
+
+app.config.errorHandler = (err, instance, info) => {
+  const errorLog = {
+    timestamp: new Date().toISOString(),
+    level: 'error',
+    message: err?.message || String(err),
+    component: instance?.$options?.name || instance?.$options?.__name || 'UnknownComponent',
+    info: info,
+    stack_trace: err?.stack || null,
+  };
+  console.error('[LOG_ERROR]', errorLog);
+};
+
+window.addEventListener('unhandledrejection', (event) => {
+  const errorLog = {
+    timestamp: new Date().toISOString(),
+    level: 'error',
+    type: 'unhandledrejection',
+    reason: event.reason?.message || String(event.reason),
+    stack_trace: event.reason?.stack || null,
+  };
+  console.error('[LOG_UNHANDLED_REJECTION]', errorLog);
+});
+
+app.use(router).mount('#app');

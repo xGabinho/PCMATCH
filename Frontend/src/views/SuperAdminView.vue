@@ -81,9 +81,9 @@
               <thead>
                 <tr><th v-for="h in ['Razón Social','ID Legal','Contacto','Documento','Aprobación','Cuenta','Acciones']" :key="h" class="px-6 py-3 text-left text-xs text-text-muted uppercase tracking-wider font-medium">{{ h }}</th></tr>
               </thead>
-              <tbody class="divide-y divide-dark-border">
+              <tbody class="divide-y theme-border">
                 <tr v-if="filteredProveedores.length === 0"><td colspan="6" class="px-6 py-12 text-center theme-text-muted text-sm">Sin proveedores registrados</td></tr>
-                <tr v-for="p in filteredProveedores" :key="p.id" class="hover:bg-gray-100 dark:bg-dark-bg/50 transition-colors">
+                <tr v-for="p in filteredProveedores" :key="p.id" class="hover:bg-gray-100 dark:hover:bg-dark-bg/50 transition-colors">
                   <td class="px-6 py-4 text-sm font-medium theme-text">{{ p.razon_social || p.nombre }}</td>
                   <td class="px-6 py-4 text-sm theme-text-muted font-mono">{{ p.identificacion_legal || 'N/A' }}</td>
                   <td class="px-6 py-4 text-sm theme-text-muted">
@@ -152,9 +152,9 @@
               <thead class="border-b theme-border">
                 <tr><th v-for="h in ['Nombre','Correo','Proveedor','Componentes','Estado','Acciones']" :key="h" class="px-6 py-3 text-left text-xs theme-text-muted uppercase tracking-wider font-medium">{{ h }}</th></tr>
               </thead>
-              <tbody class="divide-y divide-dark-border">
+              <tbody class="divide-y theme-border">
                 <tr v-if="filteredBodegas.length === 0"><td colspan="6" class="px-6 py-12 text-center theme-text-muted text-sm">Sin bodegas registradas</td></tr>
-                <tr v-for="b in filteredBodegas" :key="b.id" class="hover:bg-gray-100 dark:bg-dark-bg/50 transition-colors">
+                <tr v-for="b in filteredBodegas" :key="b.id" class="hover:bg-gray-100 dark:hover:bg-dark-bg/50 transition-colors">
                   <td class="px-6 py-4 text-sm font-medium theme-text">{{ b.nombre }}</td>
                   <td class="px-6 py-4 text-sm theme-text-muted">{{ b.correo }}</td>
                   <td class="px-6 py-4">
@@ -194,9 +194,9 @@
               <thead class="border-b theme-border">
                 <tr><th v-for="h in ['ID', 'Nombre de Producto', 'Categoría']" :key="h" class="px-6 py-3 text-left text-xs theme-text-muted uppercase tracking-wider font-medium">{{ h }}</th></tr>
               </thead>
-              <tbody class="divide-y divide-dark-border">
+              <tbody class="divide-y theme-border">
                 <tr v-if="filteredCatalogoList.length === 0"><td colspan="3" class="px-6 py-12 text-center theme-text-muted text-sm">Sin productos en el catálogo</td></tr>
-                <tr v-for="p in filteredCatalogoList" :key="p.id" class="hover:bg-gray-100 dark:bg-dark-bg/50 transition-colors">
+                <tr v-for="p in filteredCatalogoList" :key="p.id" class="hover:bg-gray-100 dark:hover:bg-dark-bg/50 transition-colors">
                   <td class="px-6 py-4 text-sm theme-text-muted font-mono">#{{ p.id }}</td>
                   <td class="px-6 py-4 text-sm font-medium theme-text">{{ p.nombre }}</td>
                   <td class="px-6 py-4"><span class="badge text-xs bg-accent/10 text-accent border border-accent/20">{{ p.categoria }}</span></td>
@@ -235,9 +235,9 @@
               <thead class="border-b theme-border">
                 <tr><th v-for="h in ['Componente','Categoría','Gama','Bodega','Precio','Stock','Estado','Acciones']" :key="h" class="px-6 py-3 text-left text-xs theme-text-muted uppercase tracking-wider font-medium">{{ h }}</th></tr>
               </thead>
-              <tbody class="divide-y divide-dark-border">
+              <tbody class="divide-y theme-border">
                 <tr v-if="filteredComponentes.length === 0"><td colspan="8" class="px-6 py-12 text-center theme-text-muted text-sm">Sin componentes registrados</td></tr>
-                <tr v-for="c in filteredComponentes" :key="c.id" class="hover:bg-gray-100 dark:bg-dark-bg/50 transition-colors">
+                <tr v-for="c in filteredComponentes" :key="c.id" class="hover:bg-gray-100 dark:hover:bg-dark-bg/50 transition-colors">
                   <td class="px-6 py-4 text-sm font-medium theme-text">
                     <div>{{ c.nombre }}</div>
                     <div class="text-xs theme-text-muted opacity-75 truncate max-w-xs">{{ c.especificacion }}</div>
@@ -278,9 +278,9 @@
               <thead class="border-b theme-border">
                 <tr><th v-for="h in ['#','Cliente','Perfil','Componentes','Total','Fecha']" :key="h" class="px-6 py-3 text-left text-xs theme-text-muted uppercase tracking-wider font-medium">{{ h }}</th></tr>
               </thead>
-              <tbody class="divide-y divide-dark-border">
+              <tbody class="divide-y theme-border">
                 <tr v-if="cotizaciones.length === 0"><td colspan="6" class="px-6 py-12 text-center theme-text-muted text-sm">Sin cotizaciones</td></tr>
-                <tr v-for="c in cotizaciones" :key="c.id" class="hover:bg-gray-100 dark:bg-dark-bg/50 transition-colors">
+                <tr v-for="c in cotizaciones" :key="c.id" class="hover:bg-gray-100 dark:hover:bg-dark-bg/50 transition-colors">
                   <td class="px-6 py-4 text-sm font-mono theme-text-muted">#{{ c.id }}</td>
                   <td class="px-6 py-4 text-sm theme-text">{{ c.nombre }} {{ c.apellido }}</td>
                   <td class="px-6 py-4 text-sm theme-text-muted">{{ perfilLabel(c.perfil) }}</td>
@@ -513,9 +513,9 @@
               <thead class="border-b theme-border">
                 <tr><th v-for="h in ['Nombre','Descripción','Permisos','Estado','Acciones']" :key="h" class="px-6 py-3 text-left text-xs theme-text-muted uppercase tracking-wider font-medium">{{ h }}</th></tr>
               </thead>
-              <tbody class="divide-y divide-dark-border">
+              <tbody class="divide-y theme-border">
                 <tr v-if="perfiles.length === 0"><td colspan="5" class="px-6 py-12 text-center theme-text-muted text-sm">Sin perfiles</td></tr>
-                <tr v-for="p in perfiles" :key="p.id" class="hover:bg-gray-100 dark:bg-dark-bg/50 transition-colors">
+                <tr v-for="p in perfiles" :key="p.id" class="hover:bg-gray-100 dark:hover:bg-dark-bg/50 transition-colors">
                   <td class="px-6 py-4 text-sm font-medium theme-text">{{ p.nombre }}</td>
                   <td class="px-6 py-4 text-sm theme-text-muted max-w-48 truncate">{{ p.descripcion || '—' }}</td>
                   <td class="px-6 py-4 text-sm theme-text font-mono">{{ p.permisos?.length || 0 }}</td>
@@ -565,9 +565,9 @@
               <thead class="border-b theme-border">
                 <tr><th v-for="h in ['Usuario','Correo','Teléfono','Rol','Estado','Registrado','Acciones']" :key="h" class="px-6 py-3 text-left text-xs theme-text-muted uppercase tracking-wider font-medium">{{ h }}</th></tr>
               </thead>
-              <tbody class="divide-y divide-dark-border">
+              <tbody class="divide-y theme-border">
                 <tr v-if="filteredUsuarios.length === 0"><td colspan="6" class="px-6 py-12 text-center theme-text-muted text-sm">Sin usuarios</td></tr>
-                <tr v-for="u in filteredUsuarios" :key="u.id" class="hover:bg-gray-100 dark:bg-dark-bg/50 transition-colors">
+                <tr v-for="u in filteredUsuarios" :key="u.id" class="hover:bg-gray-100 dark:hover:bg-dark-bg/50 transition-colors">
                   <td class="px-6 py-4">
                     <div class="flex items-center gap-3">
                       <div class="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0" :class="roleStyles[u.rol]?.avatar ?? 'theme-card theme-text-muted'">
@@ -612,9 +612,9 @@
               <thead class="border-b theme-border">
                 <tr><th v-for="h in ['Fecha','Usuario','Rol','Acción','Módulo']" :key="h" class="px-6 py-3 text-left text-xs theme-text-muted uppercase tracking-wider font-medium">{{ h }}</th></tr>
               </thead>
-              <tbody class="divide-y divide-dark-border">
+              <tbody class="divide-y theme-border">
                 <tr v-if="historial.length === 0"><td colspan="5" class="px-6 py-12 text-center theme-text-muted text-sm">Sin registros</td></tr>
-                <tr v-for="h in historial" :key="h.id" class="hover:bg-gray-100 dark:bg-dark-bg/50 transition-colors">
+                <tr v-for="h in historial" :key="h.id" class="hover:bg-gray-100 dark:hover:bg-dark-bg/50 transition-colors">
                   <td class="px-6 py-4 text-sm theme-text-muted whitespace-nowrap">{{ new Date(h.created_at).toLocaleString('es-CL') }}</td>
                   <td class="px-6 py-4 text-sm font-medium theme-text">{{ h.usuario_nombre || 'Usuario Eliminado' }}</td>
                   <td class="px-6 py-4">

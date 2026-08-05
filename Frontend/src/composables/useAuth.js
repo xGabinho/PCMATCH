@@ -4,6 +4,8 @@ import { API } from '@/config/api'
 // Estado global compartido entre componentes
 const isLoggedIn = ref(!!localStorage.getItem('token'))
 const user = ref(JSON.parse(localStorage.getItem('usuario') ?? 'null'))
+let lastAuthCheckTime = 0
+const AUTH_CACHE_TTL = 30000 // 30 segundos
 
 export function useAuth() {
 
@@ -46,6 +48,7 @@ export function useAuth() {
     localStorage.setItem('usuario', JSON.stringify(data.usuario))
     isLoggedIn.value = true
     user.value = data.usuario
+    lastAuthCheckTime = Date.now()
 
     return data.usuario
   }
@@ -72,16 +75,22 @@ export function useAuth() {
     localStorage.setItem('usuario', JSON.stringify(data.usuario))
     isLoggedIn.value = true
     user.value = data.usuario
+    lastAuthCheckTime = Date.now()
 
     return data.usuario
   }
 
-  function logout() {
+  function clearSession() {
     localStorage.removeItem('token')
     localStorage.removeItem('usuario')
-    localStorage.clear()
     isLoggedIn.value = false
     user.value = null
+    lastAuthCheckTime = 0
+  }
+
+  function logout() {
+    clearSession()
+    localStorage.clear()
     window.location.href = '/login'
   }
 
@@ -105,15 +114,24 @@ export function useAuth() {
     return false
   }
 
-  async function checkAuth() {
+  async function checkAuth(force = false) {
     const token = getToken()
-    if (!token) return false
+    if (!token) {
+      clearSession()
+      return false
+    }
+
+    // Retorno rápido si la sesión ya fue verificada recientemente (sub-1ms)
+    if (!force && user.value && (Date.now() - lastAuthCheckTime < AUTH_CACHE_TTL)) {
+      return true
+    }
+
     try {
       const res = await fetch(`${API}/auth/profile`, {
         headers: { Authorization: `Bearer ${token}` }
       })
       if (res.status === 401) {
-        logout()
+        clearSession()
         return false
       }
       if (res.ok) {
@@ -121,12 +139,14 @@ export function useAuth() {
         if (data.perfil) {
           updateUser(data.perfil)
         }
+        lastAuthCheckTime = Date.now()
         return true
       }
+      return false
     } catch (e) {
       console.error('Error al verificar sesión:', e)
+      return !!user.value
     }
-    return true
   }
 
   return { isLoggedIn, user, login, register, logout, getToken, updateUser, hasPermission, checkAuth }

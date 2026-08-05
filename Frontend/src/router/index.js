@@ -1,52 +1,41 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import { useAuth } from '../composables/useAuth'
 
-import HomeView       from '../views/HomeView.vue'
-import LoginView      from '../views/LoginView.vue'
-import ForgotPasswordView  from '../views/ForgotPasswordView.vue'
-import ResetPasswordView   from '../views/ResetPasswordView.vue'
-import DemoQuoteView  from '../views/DemoQuoteView.vue'
-import AboutView      from '../views/AboutView.vue'
-import ContactView    from '../views/ContactView.vue'
-import ClientHomeView from '../views/ClientHomeView.vue'
-import BuilderView    from '../views/BuilderView.vue'
-import QuoteView      from '../views/QuoteView.vue'
-import AdminView      from '../views/AdminView.vue'
-import SuperAdminView from '../views/SuperAdminView.vue'
-import BodegaView     from '../views/BodegaView.vue'
-import ProveedorView  from '../views/ProveedorView.vue'
-import ProfileView    from '../views/ProfileView.vue'
-import UserProfileView from '../views/UserProfileView.vue'
+import HomeView from '../views/HomeView.vue'
 
 const routes = [
   // Públicas
-  { path: '/',          component: HomeView  },
-  { path: '/login',     component: LoginView },
-  { path: '/recuperar-password',   component: ForgotPasswordView },
-  { path: '/restablecer-password', component: ResetPasswordView },
-  { path: '/ejemplo-cotizacion',   component: DemoQuoteView },
-  { path: '/sobre-nosotros',       component: AboutView },
-  { path: '/contacto',             component: ContactView },
+  { path: '/',          component: HomeView },
+  { path: '/login',     component: () => import('../views/LoginView.vue') },
+  { path: '/recuperar-password',   component: () => import('../views/ForgotPasswordView.vue') },
+  { path: '/restablecer-password', component: () => import('../views/ResetPasswordView.vue') },
+  { path: '/ejemplo-cotizacion',   component: () => import('../views/DemoQuoteView.vue') },
+  { path: '/sobre-nosotros',       component: () => import('../views/AboutView.vue') },
+  { path: '/contacto',             component: () => import('../views/ContactView.vue') },
 
-  // Cliente
-  { path: '/inicio',    component: ClientHomeView, meta: { requiresAuth: true, roles: ['cliente'] } },
-  { path: '/perfil',    component: ProfileView,    meta: { requiresAuth: true, roles: ['cliente'] } },
-  { path: '/armar',     component: BuilderView,    meta: { requiresAuth: true, roles: ['cliente'] } },
-  { path: '/cotizacion',component: QuoteView,      meta: { requiresAuth: true, roles: ['cliente'] } },
+  // Cliente y armador (accesible por todos los roles autenticados)
+  { path: '/inicio',    component: () => import('../views/ClientHomeView.vue'), meta: { requiresAuth: true, roles: ['cliente'] } },
+  { path: '/perfil',    component: () => import('../views/ProfileView.vue'),    meta: { requiresAuth: true, roles: ['cliente'] } },
+  { path: '/armar',     component: () => import('../views/BuilderView.vue'),    meta: { requiresAuth: true, roles: ['cliente', 'admin', 'superadmin', 'bodega', 'proveedor'] } },
+  { path: '/cotizacion',component: () => import('../views/QuoteView.vue'),      meta: { requiresAuth: true, roles: ['cliente', 'admin', 'superadmin', 'bodega', 'proveedor'] } },
 
   // Perfil de usuario (todos los roles)
-  { path: '/mi-perfil', component: UserProfileView, meta: { requiresAuth: true, roles: ['cliente', 'admin', 'superadmin', 'bodega', 'proveedor'] } },
+  { path: '/mi-perfil', component: () => import('../views/UserProfileView.vue'), meta: { requiresAuth: true, roles: ['cliente', 'admin', 'superadmin', 'bodega', 'proveedor'] } },
 
   // Admin
-  { path: '/admin',  component: AdminView,  meta: { requiresAuth: true, roles: ['admin']  } },
+  { path: '/admin',  component: () => import('../views/AdminView.vue'),  meta: { requiresAuth: true, roles: ['admin']  } },
 
   // Super Admin
-  { path: '/superadmin', component: SuperAdminView, meta: { requiresAuth: true, roles: ['superadmin'] } },
+  { path: '/superadmin', component: () => import('../views/SuperAdminView.vue'), meta: { requiresAuth: true, roles: ['superadmin'] } },
 
   // Bodega / Proveedor
-  { path: '/bodega', component: BodegaView, meta: { requiresAuth: true, roles: ['bodega'] } },
+  { path: '/bodega', component: () => import('../views/BodegaView.vue'), meta: { requiresAuth: true, roles: ['bodega'] } },
   // Proveedor
-  { path: '/proveedor', component: ProveedorView, meta: { requiresAuth: true, roles: ['proveedor'] } },
+  { path: '/proveedor', component: () => import('../views/ProveedorView.vue'), meta: { requiresAuth: true, roles: ['proveedor'] } },
+
+  // Páginas de Error
+  { path: '/error', name: 'Error', component: () => import('../views/ErrorView.vue') },
+  { path: '/:pathMatch(.*)*', name: 'NotFound', component: () => import('../views/ErrorView.vue'), props: { code: 404, title: 'Página No Encontrada', description: 'La página que buscas no existe o ha sido movida.' } },
 ]
 
 const router = createRouter({

@@ -124,7 +124,7 @@ class CotizacionController extends Controller
                     'total' => $total,
                     'codigo' => $codigoUnico,
                     'created_at' => now(),
-                    'stock_restaurado' => 'false'
+                    'stock_restaurado' => false
                 ]);
 
                 // 2. Insertar cada uno de los items y descontar stock

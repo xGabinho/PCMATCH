@@ -7,15 +7,14 @@ const { user } = useAuth()
 const selectedItems = ref({})
 const perfil = ref('')
 
+// Helper para obtener la clave de localStorage según el usuario
+function getStorageKey() {
+  return user.value && user.value.id ? `pcmatch_builder_${user.value.id}` : 'pcmatch_builder_guest'
+}
+
 // Load state from localStorage based on user
 function loadState() {
-  if (!user.value || !user.value.id) {
-    selectedItems.value = {}
-    perfil.value = ''
-    return
-  }
-  
-  const saved = localStorage.getItem(`pcmatch_builder_${user.value.id}`)
+  const saved = localStorage.getItem(getStorageKey())
   if (saved) {
     try {
       const parsed = JSON.parse(saved)
@@ -41,9 +40,7 @@ watch(() => user.value?.id, () => {
 
 // Auto-save changes to localStorage
 watch([selectedItems, perfil], () => {
-  if (!user.value || !user.value.id) return
-  
-  localStorage.setItem(`pcmatch_builder_${user.value.id}`, JSON.stringify({
+  localStorage.setItem(getStorageKey(), JSON.stringify({
     items: selectedItems.value,
     perfil: perfil.value
   }))

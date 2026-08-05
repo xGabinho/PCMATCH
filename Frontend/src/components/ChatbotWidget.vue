@@ -72,9 +72,8 @@
                 :class="msg.role === 'user' 
                   ? 'bg-accent text-white rounded-tr-xs' 
                   : 'bg-white dark:bg-zinc-800 border theme-border text-slate-800 dark:text-slate-100 rounded-tl-xs'"
-              >
-                {{ msg.content }}
-              </div>
+                v-html="formatMarkdown(msg.content)"
+              ></div>
             </div>
 
             <!-- Mapeo de Varias Opciones de PC si el mensaje contiene resultado de armado -->
@@ -152,7 +151,7 @@
 
                   <!-- Botón para usar esta build -->
                   <button 
-                    @click="applyBuildToBuilder(msg.buildResult.opciones[msg.activeOptionIdx ?? 0])"
+                    @click="applyBuildToBuilder(msg)"
                     class="w-full btn-primary text-xs py-2 rounded-lg flex items-center justify-center gap-1.5 font-medium shadow-sm transition-transform active:scale-98"
                   >
                     <Zap class="w-3.5 h-3.5" />
@@ -399,34 +398,91 @@ const sendMessage = async () => {
   }
 }
 
+const formatMarkdown = (text) => {
+  if (!text) return ''
+  let safe = text
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+
+  // Reemplazar **texto** por <strong>texto</strong>
+  safe = safe.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+  // Reemplazar *texto* por <em>texto</em>
+  safe = safe.replace(/\*(.*?)\*/g, '<em>$1</em>')
+
+  return safe
+}
+
 const resetChat = () => {
   chatMessages.value = [{ role: 'model', content: defaultInitialMessage }]
   showQuickChips.value = true
   localStorage.removeItem(STORAGE_KEY)
 }
 
-const applyBuildToBuilder = (option) => {
-  if (!option || !option.build) return
-
-  clearAll()
-
-  for (const comp of option.build) {
-    selectItem(comp.step_id, {
-      id: comp.id,
-      nombre: comp.nombre,
-      categoria: comp.categoria,
-      especificacion: comp.especificacion,
-      gama: comp.gama,
-      enfoque_uso: comp.enfoque_uso,
-      precio: comp.precio,
-      precio_final: comp.precio_final,
-      stock: comp.stock,
-      imagen_url: comp.imagen_url,
-      bodega: comp.bodega,
-    })
+const getStepIdFromCategory = (comp) => {
+  if (comp.step_id && ['cpu', 'gpu', 'ram', 'storage', 'motherboard', 'psu', 'cooler', 'case'].includes(comp.step_id)) {
+    return comp.step_id
   }
+  const cat = (comp.categoria || '').toLowerCase().trim()
+  if (cat.includes('cpu') || cat.includes('procesador')) return 'cpu'
+  if (cat.includes('gpu') || cat.includes('gráfica') || cat.includes('grafica') || cat.includes('video')) return 'gpu'
+  if (cat.includes('ram') || cat.includes('memoria')) return 'ram'
+  if (cat.includes('storage') || cat.includes('almacenamiento') || cat.includes('ssd') || cat.includes('disco')) return 'storage'
+  if (cat.includes('motherboard') || cat.includes('placa') || cat.includes('mobo')) return 'motherboard'
+  if (cat.includes('psu') || cat.includes('fuente')) return 'psu'
+  if (cat.includes('cooler') || cat.includes('refrigeracion') || cat.includes('disipador')) return 'cooler'
+  if (cat.includes('case') || cat.includes('gabinete') || cat.includes('chasis')) return 'case'
+  return null
+}
 
-  router.push('/armar')
+const applyBuildToBuilder = async (msg) => {
+  try {
+    if (!msg || !msg.buildResult) return
+
+    let buildItems = []
+    if (msg.buildResult.opciones && msg.buildResult.opciones.length > 0) {
+      const activeIdx = msg.activeOptionIdx ?? 0
+      const selectedOption = msg.buildResult.opciones[activeIdx] || msg.buildResult.opciones[0]
+      buildItems = selectedOption ? (selectedOption.build || []) : []
+    } else if (Array.isArray(msg.buildResult.build)) {
+      buildItems = msg.buildResult.build
+    }
+
+    if (!buildItems || buildItems.length === 0) {
+      console.warn('No hay componentes válidos para añadir al ensamblador.')
+      return
+    }
+
+    clearAll()
+
+    for (const comp of buildItems) {
+      const stepId = getStepIdFromCategory(comp)
+      if (stepId) {
+        selectItem(stepId, {
+          id: comp.id,
+          nombre: comp.nombre,
+          categoria: comp.categoria,
+          especificacion: comp.especificacion,
+          gama: comp.gama,
+          enfoque_uso: comp.enfoque_uso,
+          precio: comp.precio,
+          precio_final: comp.precio_final || comp.precio,
+          stock: comp.stock,
+          imagen_url: comp.imagen_url,
+          bodega: comp.bodega,
+        })
+      } else {
+        console.warn(`Categoría no mapeada para el componente: ${comp.nombre} (${comp.categoria})`)
+      }
+    }
+
+    isOpen.value = false
+    await router.push('/armar').catch(() => {
+      window.location.href = '/armar'
+    })
+  } catch (error) {
+    console.error('Error al aplicar build al ensamblador:', error)
+  }
 }
 </script>
 

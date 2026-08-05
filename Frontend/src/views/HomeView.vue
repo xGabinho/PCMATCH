@@ -30,7 +30,7 @@
 
           <!-- CTAs -->
           <div class="flex flex-col sm:flex-row items-center gap-4 w-full sm:w-auto">
-            <router-link to="/login" class="btn-primary text-base px-8 py-4 w-full sm:w-auto text-center">
+            <router-link :to="armarRoute" class="btn-primary text-base px-8 py-4 w-full sm:w-auto text-center">
               Armar mi PC →
             </router-link>
             <router-link to="/ejemplo-cotizacion" class="btn-secondary text-base px-8 py-4 w-full sm:w-auto text-center">
@@ -75,13 +75,24 @@
 import { Bot, Rocket, Zap, Wrench, FileText } from 'lucide-vue-next';
 
 
+import { computed } from 'vue'
 import SeccionMasVendidos from '../components/Recomendaciones/SeccionMasVendidos.vue'
 import { useTheme } from '../composables/useTheme'
 import { useAuth } from '../composables/useAuth'
 
 
 const { isDark } = useTheme()
-const { isLoggedIn } = useAuth()
+const { isLoggedIn, user } = useAuth()
+
+const armarRoute = computed(() => {
+  if (!isLoggedIn.value) return '/login'
+  const rol = user.value?.rol
+  if (rol === 'superadmin') return '/superadmin'
+  if (rol === 'admin') return '/admin'
+  if (rol === 'bodega') return '/bodega'
+  if (rol === 'proveedor') return '/proveedor'
+  return '/armar'
+})
 
 const stats = [
   { value: '+500', label: 'Componentes' },

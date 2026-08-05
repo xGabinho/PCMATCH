@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Cache;
 use App\Helpers\AuditLog;
 use App\Models\Componente;
 
@@ -281,39 +282,46 @@ class ComponenteController extends Controller
     
     public function indexPublic(Request $request)
     {
-        $query = Componente::with(['producto:id,nombre,categoria', 'bodega:id,nombre'])
-            ->activo()
-            ->conStock()
-            ->whereHas('bodega', function ($q) {
-                $q->where('activa', 'true');
+        $cacheKey = 'comp_pub_' . md5(json_encode($request->all()));
+
+        $resultado = Cache::remember($cacheKey, 30, function () use ($request) {
+            $query = Componente::with(['producto:id,nombre,categoria', 'bodega:id,nombre'])
+                ->activo()
+                ->conStock()
+                ->where(function ($q) {
+                    $q->whereNull('bodega_id')
+                      ->orWhereHas('bodega', function ($sub) {
+                          $sub->whereRaw("activa IS TRUE");
+                      });
+                });
+
+            if ($request->filled('categoria')) {
+                $query->porCategoria($request->query('categoria'));
+            }
+
+            if ($request->filled('buscar')) {
+                $query->buscar($request->query('buscar'));
+            }
+
+            $componentes = $query->orderBy('id', 'ASC')->get();
+
+            return $componentes->map(function ($c) {
+                return [
+                    'id'             => $c->id,
+                    'sku'            => $c->sku,
+                    'nombre'         => $c->producto->nombre ?? '—',
+                    'categoria'      => $c->producto->categoria ?? '—',
+                    'especificacion' => $c->especificacion,
+                    'gama'           => $c->gama,
+                    'precio'         => $c->precio,
+                    'descuento_porcentaje' => $c->descuento_porcentaje,
+                    'descuento_activo' => $c->descuento_activo,
+                    'precio_final'   => $c->precio_final,
+                    'stock'          => $c->stock,
+                    'bodega'         => $c->bodega->nombre ?? '—',
+                    'imagen_url'     => $c->imagen_url,
+                ];
             });
-
-        if ($request->filled('categoria')) {
-            $query->porCategoria($request->query('categoria'));
-        }
-
-        if ($request->filled('buscar')) {
-            $query->buscar($request->query('buscar'));
-        }
-
-        $componentes = $query->orderBy('id', 'ASC')->get();
-
-        $resultado = $componentes->map(function ($c) {
-            return [
-                'id'             => $c->id,
-                'sku'            => $c->sku,
-                'nombre'         => $c->producto->nombre ?? '—',
-                'categoria'      => $c->producto->categoria ?? '—',
-                'especificacion' => $c->especificacion,
-                'gama'           => $c->gama,
-                'precio'         => $c->precio,
-                'descuento_porcentaje' => $c->descuento_porcentaje,
-                'descuento_activo' => $c->descuento_activo,
-                'precio_final'   => $c->precio_final,
-                'stock'          => $c->stock,
-                'bodega'         => $c->bodega->nombre ?? '—',
-                'imagen_url'     => $c->imagen_url,
-            ];
         });
 
         return response()->json(['componentes' => $resultado]);

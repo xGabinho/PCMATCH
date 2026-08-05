@@ -24,13 +24,13 @@ class AnaliticaController extends Controller
         }
 
         $bodegas = DB::table('bodegas')
-            ->whereRaw('activa = true')
+            ->whereRaw('activa IS TRUE')
             ->select('id', 'nombre')
             ->orderBy('nombre')
             ->get();
 
         $proveedores = DB::table('proveedores')
-            ->whereRaw('activo = true')
+            ->whereRaw('activo IS TRUE')
             ->select('id', 'nombre')
             ->orderBy('nombre')
             ->get();

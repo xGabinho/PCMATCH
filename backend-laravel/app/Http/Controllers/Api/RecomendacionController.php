@@ -28,7 +28,7 @@ class RecomendacionController extends Controller
                 ->join('productos_catalogo as pc', 'c.producto_id', '=', 'pc.id')
                 ->leftJoin('bodegas as b', 'c.bodega_id', '=', 'b.id')
                 ->where('c.enfoque_uso', $enfoque)
-                ->where('c.activo', 'true')
+                ->whereRaw("c.activo IS TRUE")
                 ->where('c.stock', '>', 0)
                 ->whereNull('c.deleted_at')
                 ->select(
@@ -62,7 +62,7 @@ class RecomendacionController extends Controller
                     ->join('productos_catalogo as pc', 'c.producto_id', '=', 'pc.id')
                     ->leftJoin('bodegas as b', 'c.bodega_id', '=', 'b.id')
                     ->where('c.enfoque_uso', $enfoque)
-                    ->where('c.activo', 'true')
+                    ->whereRaw("c.activo IS TRUE")
                     ->where('c.stock', '>', 0)
                     ->whereNull('c.deleted_at')
                     ->whereNotIn('c.id', $idsExcluir)

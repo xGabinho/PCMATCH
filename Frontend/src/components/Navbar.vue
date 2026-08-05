@@ -80,6 +80,14 @@
               class="absolute right-0 mt-2 w-48 rounded-xl theme-card border theme-border shadow-lg py-2 z-50 animate-fade-in"
             >
               <router-link
+                v-if="adminPanelRoute"
+                :to="adminPanelRoute"
+                @click="userMenuOpen = false"
+                class="block px-4 py-2 text-sm text-accent font-semibold hover:bg-gray-100 dark:hover:bg-dark-border/50 transition-colors"
+              >
+                Panel de control
+              </router-link>
+              <router-link
                 to="/mi-perfil"
                 @click="userMenuOpen = false"
                 class="block px-4 py-2 text-sm theme-text hover:bg-gray-100 dark:hover:bg-dark-border/50 transition-colors"
@@ -172,14 +180,24 @@
             <span class="text-sm font-medium theme-text flex items-center gap-2">
               <User class="w-4 h-4" /> {{ userDisplayName }}
             </span>
-            <router-link
-              v-if="isLoggedIn"
-              to="/mi-perfil"
-              @click="mobileMenuOpen = false"
-              class="text-xs text-accent font-medium"
-            >
-              Perfil
-            </router-link>
+            <div class="flex items-center gap-3">
+              <router-link
+                v-if="isLoggedIn && adminPanelRoute"
+                :to="adminPanelRoute"
+                @click="mobileMenuOpen = false"
+                class="text-xs text-accent font-semibold"
+              >
+                Panel
+              </router-link>
+              <router-link
+                v-if="isLoggedIn"
+                to="/mi-perfil"
+                @click="mobileMenuOpen = false"
+                class="text-xs theme-text-muted font-medium hover:text-accent"
+              >
+                Perfil
+              </router-link>
+            </div>
           </div>
           <button
             v-if="isLoggedIn"
@@ -231,6 +249,16 @@ const homeRoute = computed(() => {
   if (rol === 'bodega') return '/bodega'
   if (rol === 'proveedor') return '/proveedor'
   return '/inicio'
+})
+
+const adminPanelRoute = computed(() => {
+  if (!isLoggedIn.value) return null
+  const rol = user.value?.rol
+  if (rol === 'superadmin') return '/superadmin'
+  if (rol === 'admin') return '/admin'
+  if (rol === 'bodega') return '/bodega'
+  if (rol === 'proveedor') return '/proveedor'
+  return null
 })
 
 function handleLogout() {
