@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Cache;
 use App\Helpers\AuditLog;
 
 class CatalogoController extends Controller
@@ -20,27 +21,31 @@ class CatalogoController extends Controller
     
     public function index(Request $request)
     {
-        $query = DB::table('productos_catalogo')
-            ->select('id', 'nombre', 'categoria', 'especificacion', 'imagen_url',
-                     'nucleos', 'hilos', 'frecuencia_hz', 'enfoque_uso', 'gama');
+        $cacheKey = 'cat_pub_' . md5(json_encode($request->all()));
 
-        if ($request->has('categoria')) {
-            $query->where('categoria', $request->query('categoria'))
-                  ->orderBy('nombre', 'ASC');
-        } else {
-            $query->orderBy('categoria', 'ASC')
-                  ->orderBy('nombre', 'ASC');
-        }
+        $productos = Cache::remember($cacheKey, 30, function () use ($request) {
+            $query = DB::table('productos_catalogo')
+                ->select('id', 'nombre', 'categoria', 'especificacion', 'imagen_url',
+                         'nucleos', 'hilos', 'frecuencia_hz', 'enfoque_uso', 'gama');
 
-        if ($request->filled('buscar')) {
-            $q = $request->query('buscar');
-            $query->where(function ($w) use ($q) {
-                $w->where('nombre', 'ILIKE', "%{$q}%")
-                  ->orWhere('especificacion', 'ILIKE', "%{$q}%");
-            });
-        }
+            if ($request->has('categoria')) {
+                $query->where('categoria', $request->query('categoria'))
+                      ->orderBy('nombre', 'ASC');
+            } else {
+                $query->orderBy('categoria', 'ASC')
+                      ->orderBy('nombre', 'ASC');
+            }
 
-        $productos = $query->get();
+            if ($request->filled('buscar')) {
+                $q = $request->query('buscar');
+                $query->where(function ($w) use ($q) {
+                    $w->where('nombre', 'ILIKE', "%{$q}%")
+                      ->orWhere('especificacion', 'ILIKE', "%{$q}%");
+                });
+            }
+
+            return $query->get();
+        });
 
         return response()->json([
             'productos' => $productos
@@ -60,6 +65,10 @@ class CatalogoController extends Controller
         $user = $request->user();
         if (!$user || !in_array($user->rol ?? '', ['admin', 'superadmin'])) {
             return response()->json(['success' => false, 'message' => 'No autorizado'], 403);
+        }
+
+        if ($user->rol === 'admin' && !$user->hasPermission('componentes.crear')) {
+            return response()->json(['success' => false, 'message' => 'No autorizado. Se requiere el permiso: componentes.crear'], 403);
         }
 
         $validator = Validator::make($request->all(), [
@@ -115,6 +124,10 @@ class CatalogoController extends Controller
         $user = $request->user();
         if (!$user || !in_array($user->rol ?? '', ['admin', 'superadmin'])) {
             return response()->json(['success' => false, 'message' => 'No autorizado'], 403);
+        }
+
+        if ($user->rol === 'admin' && !$user->hasPermission('componentes.editar')) {
+            return response()->json(['success' => false, 'message' => 'No autorizado. Se requiere el permiso: componentes.editar'], 403);
         }
 
         $id = $request->input('id');
@@ -174,6 +187,10 @@ class CatalogoController extends Controller
         $user = $request->user();
         if (!$user || !in_array($user->rol ?? '', ['admin', 'superadmin'])) {
             return response()->json(['success' => false, 'message' => 'No autorizado'], 403);
+        }
+
+        if ($user->rol === 'admin' && !$user->hasPermission('componentes.eliminar')) {
+            return response()->json(['success' => false, 'message' => 'No autorizado. Se requiere el permiso: componentes.eliminar'], 403);
         }
 
         $id = $id ?? $request->query('id');

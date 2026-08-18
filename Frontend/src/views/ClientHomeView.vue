@@ -8,10 +8,10 @@
       </div>
       <div class="absolute right-0 top-0 w-[500px] h-[300px] bg-accent/5 rounded-full blur-3xl pointer-events-none"></div>
 
-      <div class="max-w-7xl mx-auto px-6 py-10 relative z-10">
+      <div class="max-w-7xl mx-auto px-6 pt-24 pb-10 relative z-10">
         <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6">
           <div>
-            <p class="theme-text-muted text-sm mb-1">Bienvenido de vuelta 👋</p>
+            <p class="theme-text-muted text-sm mb-1">Bienvenido de vuelta <Hand class="w-4 h-4 inline-block text-amber-500" /></p>
             <h1 class="text-3xl font-bold theme-text tracking-tight">
               Hola, <span class="text-accent">{{ user?.nombre }}</span>
             </h1>
@@ -32,9 +32,6 @@
             <div class="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
               <router-link to="/armar" class="btn-primary text-sm px-5 py-2.5 flex items-center justify-center gap-2 w-full sm:w-auto">
                 <Zap class="w-4 h-4" /> Armar mi PC
-              </router-link>
-              <router-link to="/asistente" class="btn-secondary text-sm px-5 py-2.5 flex items-center justify-center gap-2 w-full sm:w-auto">
-                <span>🤖</span> Usar asistente
               </router-link>
             </div>
           </div>
@@ -163,7 +160,7 @@
       <!-- Components Grid -->
       <div v-else class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
         <div
-          v-for="comp in filteredComponents"
+          v-for="comp in paginatedComponents"
           :key="comp.id"
           class="card-dark rounded-xl flex flex-col card-hover group overflow-hidden"
         >
@@ -220,73 +217,61 @@
                   {{ comp.stock }} unid.
                 </div>
               </div>
-              <router-link
-                to="/armar"
-                class="w-full text-center text-sm font-medium py-2.5 rounded-lg border theme-border theme-text-muted hover:border-accent hover:text-accent transition-all duration-150 block"
-                :class="{ 'opacity-40 pointer-events-none': comp.stock == 0 }"
+              <button
+                @click="addToBuilder(comp)"
+                :disabled="comp.stock == 0"
+                class="w-full text-center text-sm font-medium py-2.5 rounded-lg border theme-border theme-text-muted hover:border-accent hover:text-accent transition-all duration-150 block disabled:opacity-40 disabled:pointer-events-none cursor-pointer"
               >
                 {{ comp.stock == 0 ? 'Sin stock' : 'Usar en mi PC →' }}
-              </router-link>
+              </button>
             </div>
           </div>
+        </div>
+      </div>
+
+      <!-- Pagination Controls -->
+      <div v-if="filteredComponents.length > 0" class="flex flex-col sm:flex-row items-center justify-between gap-4 mt-8 pt-6 border-t theme-border">
+        <p class="text-xs theme-text-muted">
+          Página <span class="font-semibold theme-text">{{ currentPage }}</span> de <span class="font-semibold theme-text">{{ totalPages }}</span>
+          ({{ filteredComponents.length }} componentes en total)
+        </p>
+
+        <div class="flex items-center gap-1.5">
+          <button
+            @click="goToPage(currentPage - 1)"
+            :disabled="currentPage === 1"
+            class="px-3 py-2 rounded-lg text-xs font-medium border theme-border theme-card theme-text hover:border-accent disabled:opacity-40 disabled:pointer-events-none transition-all flex items-center gap-1 min-h-[38px] cursor-pointer"
+          >
+            <ChevronLeft class="w-4 h-4" /> Anterior
+          </button>
+
+          <div class="flex items-center gap-1">
+            <template v-for="(p, idx) in displayedPages" :key="idx">
+              <span v-if="p === '...'" class="px-1.5 text-xs theme-text-muted">...</span>
+              <button
+                v-else
+                @click="goToPage(p)"
+                class="w-9 h-9 rounded-lg text-xs font-medium transition-all flex items-center justify-center cursor-pointer min-h-[36px]"
+                :class="currentPage === p
+                  ? 'bg-accent text-white font-bold shadow-md shadow-accent/20'
+                  : 'theme-card border theme-border theme-text-muted hover:theme-text hover:border-accent/40'"
+              >
+                {{ p }}
+              </button>
+            </template>
+          </div>
+
+          <button
+            @click="goToPage(currentPage + 1)"
+            :disabled="currentPage === totalPages"
+            class="px-3 py-2 rounded-lg text-xs font-medium border theme-border theme-card theme-text hover:border-accent disabled:opacity-40 disabled:pointer-events-none transition-all flex items-center gap-1 min-h-[38px] cursor-pointer"
+          >
+            Siguiente <ChevronRight class="w-4 h-4" />
+          </button>
         </div>
       </div>
 
     </div>
-
-    <!-- Bottom CTA Banner -->
-    <!-- ════ Asistente CTA Section ════ -->
-    <section class="border-t theme-border py-16">
-      <div class="max-w-7xl mx-auto px-6">
-        <div class="relative overflow-hidden rounded-2xl p-8 sm:p-12"
-          :class="isDark
-            ? 'bg-gradient-to-br from-accent/10 via-dark-card to-purple-500/10 border border-accent/20'
-            : 'bg-gradient-to-br from-blue-50 via-white to-purple-50 border border-accent/20 shadow-lg'"
-        >
-          <!-- Decorative glow -->
-          <div class="absolute -right-20 -top-20 w-64 h-64 bg-accent/10 rounded-full blur-3xl pointer-events-none"></div>
-          <div class="absolute -left-10 -bottom-10 w-40 h-40 bg-purple-500/10 rounded-full blur-3xl pointer-events-none"></div>
-
-          <div class="relative z-10 flex flex-col lg:flex-row items-center gap-8">
-            <div class="flex-1 text-center lg:text-left">
-              <div class="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-accent/20 bg-accent/10 text-accent text-xs font-medium mb-4">
-                <span>🤖</span> Nuevo: Asistente inteligente
-              </div>
-              <h2 class="text-2xl sm:text-3xl font-bold theme-text tracking-tight mb-3">
-                ¿No sabes de tecnología? <span class="text-accent">No hay problema</span>
-              </h2>
-              <p class="theme-text-muted text-sm leading-relaxed max-w-lg mx-auto lg:mx-0">
-                Nuestro asistente te hace 3 preguntas simples y te recomienda la combinación perfecta de componentes según tu presupuesto y lo que necesitas. Sin jerga técnica, sin complicaciones.
-              </p>
-
-              <div class="flex flex-wrap justify-center lg:justify-start gap-4 mt-6 text-xs theme-text-muted">
-                <div class="flex items-center gap-1.5">
-                  <span class="w-1.5 h-1.5 rounded-full bg-green-500"></span>
-                  3 preguntas simples
-                </div>
-                <div class="flex items-center gap-1.5">
-                  <span class="w-1.5 h-1.5 rounded-full bg-green-500"></span>
-                  Recomendación instantánea
-                </div>
-                <div class="flex items-center gap-1.5">
-                  <span class="w-1.5 h-1.5 rounded-full bg-green-500"></span>
-                  Optimizado a tu presupuesto
-                </div>
-              </div>
-            </div>
-
-            <div class="flex-shrink-0 flex flex-col gap-3">
-              <router-link to="/asistente" class="btn-primary text-base px-8 py-4 inline-flex items-center justify-center gap-2">
-                <span>🚀</span> Probar asistente
-              </router-link>
-              <router-link to="/armar" class="btn-secondary text-sm px-6 py-3">
-                O armar manualmente →
-              </router-link>
-            </div>
-          </div>
-        </div>
-      </div>
-    </section>
 
     <!-- ════ Más Vendidos ════ -->
     <SeccionMasVendidos />
@@ -295,21 +280,74 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, markRaw } from 'vue'
+import { Hand, Bot, Rocket, Zap, Search, Settings, Wrench, Settings as CpuIcon, Gamepad2, Save, Disc, Plug, Snowflake, Monitor, ChevronLeft, ChevronRight } from 'lucide-vue-next';
+
+
+import { ref, computed, watch, onMounted, markRaw } from 'vue'
+import { useRouter } from 'vue-router'
 import { useAuth } from '../composables/useAuth'
 import { useTheme } from '../composables/useTheme'
+import { useBuilder } from '../composables/useBuilder'
+import { useComponentes } from '../composables/useComponentes'
 import SeccionMasVendidos from '../components/Recomendaciones/SeccionMasVendidos.vue'
-import { Zap, Search, Settings, Wrench, Settings as CpuIcon, Gamepad2, Save, Disc, Plug, Snowflake, Monitor } from '@lucide/vue'
 
 import { API } from '@/config/api'
+const router = useRouter()
 const { user } = useAuth()
 const { isDark } = useTheme()
+const { selectItem } = useBuilder()
+
+const getStepIdFromCategory = (comp) => {
+  if (comp.step_id && ['cpu', 'gpu', 'ram', 'storage', 'motherboard', 'psu', 'cooler', 'case'].includes(comp.step_id)) {
+    return comp.step_id
+  }
+  const cat = (comp.categoria || '').toLowerCase().trim()
+  if (cat.includes('cpu') || cat.includes('procesador')) return 'cpu'
+  if (cat.includes('gpu') || cat.includes('gráfica') || cat.includes('grafica') || cat.includes('video')) return 'gpu'
+  if (cat.includes('ram') || cat.includes('memoria')) return 'ram'
+  if (cat.includes('storage') || cat.includes('almacenamiento') || cat.includes('ssd') || cat.includes('disco')) return 'storage'
+  if (cat.includes('motherboard') || cat.includes('placa') || cat.includes('mobo')) return 'motherboard'
+  if (cat.includes('psu') || cat.includes('fuente')) return 'psu'
+  if (cat.includes('cooler') || cat.includes('refrigeracion') || cat.includes('disipador')) return 'cooler'
+  if (cat.includes('case') || cat.includes('gabinete') || cat.includes('chasis')) return 'case'
+  return null
+}
+
+const addToBuilder = async (comp) => {
+  try {
+    if (!comp) return
+    const stepId = getStepIdFromCategory(comp)
+    if (stepId) {
+      selectItem(stepId, {
+        id: comp.id,
+        nombre: comp.nombre,
+        categoria: comp.categoria,
+        especificacion: comp.especificacion,
+        gama: comp.gama,
+        enfoque_uso: comp.enfoque_uso,
+        precio: comp.precio,
+        precio_final: comp.precio_final || comp.precio,
+        stock: comp.stock,
+        imagen_url: comp.imagen_url,
+        bodega: comp.bodega,
+      })
+    }
+    await router.push('/armar').catch(() => {
+      window.location.href = '/armar'
+    })
+  } catch (e) {
+    console.error('Error al agregar al ensamblador:', e)
+    window.location.href = '/armar'
+  }
+}
 
 const searchQuery    = ref('')
 const activeCategory = ref('Todos')
 const sortBy         = ref('name')
-const allComponents  = ref([])
-const loading        = ref(false)
+const { allComponents, isLoading: loading, fetchComponentes } = useComponentes()
+
+const currentPage  = ref(1)
+const itemsPerPage = ref(10)
 
 const categories = ['CPU', 'GPU', 'RAM', 'Storage', 'PSU', 'Motherboard', 'Cooler', 'Case']
 
@@ -349,10 +387,10 @@ const filteredComponents = computed(() => {
   if (searchQuery.value.trim()) {
     const q = searchQuery.value.toLowerCase()
     result = result.filter(c =>
-      c.nombre.toLowerCase().includes(q) ||
-      c.especificacion?.toLowerCase().includes(q) ||
-      c.categoria.toLowerCase().includes(q) ||
-      c.bodega.toLowerCase().includes(q)
+      (c.nombre || '').toLowerCase().includes(q) ||
+      (c.especificacion || '').toLowerCase().includes(q) ||
+      (c.categoria || '').toLowerCase().includes(q) ||
+      (c.bodega || '').toLowerCase().includes(q)
     )
   }
 
@@ -369,6 +407,46 @@ const filteredComponents = computed(() => {
   return result
 })
 
+const totalPages = computed(() => {
+  return Math.ceil(filteredComponents.value.length / itemsPerPage.value) || 1
+})
+
+const paginatedComponents = computed(() => {
+  const start = (currentPage.value - 1) * itemsPerPage.value
+  return filteredComponents.value.slice(start, start + itemsPerPage.value)
+})
+
+const displayedPages = computed(() => {
+  const total = totalPages.value
+  const current = currentPage.value
+  if (total <= 7) {
+    return Array.from({ length: total }, (_, i) => i + 1)
+  }
+  const pages = new Set([1, total, current, current - 1, current + 1])
+  const sorted = Array.from(pages).filter(p => p > 0 && p <= total).sort((a, b) => a - b)
+  const result = []
+  let prev = null
+  for (const p of sorted) {
+    if (prev && p - prev > 1) {
+      result.push('...')
+    }
+    result.push(p)
+    prev = p
+  }
+  return result
+})
+
+function goToPage(page) {
+  if (page >= 1 && page <= totalPages.value) {
+    currentPage.value = page
+    window.scrollTo({ top: 300, behavior: 'smooth' })
+  }
+}
+
+watch([searchQuery, activeCategory, sortBy, filterGama, filterEnfoque, filterNucleos, filterHilos, filterFrecuenciaMin], () => {
+  currentPage.value = 1
+})
+
 /**
 
  * Obtiene datos desde el backend mediante API.
@@ -376,19 +454,6 @@ const filteredComponents = computed(() => {
  * Mantiene sincronizada la vista con la base de datos.
 
  */
-
-async function fetchComponentes() {
-  loading.value = true
-  try {
-    const res = await fetch(`${API}/componentes/publico`)
-    const data = await res.json()
-    if (res.ok) allComponents.value = data.componentes
-  } catch(e) {
-    console.error(e)
-  } finally {
-    loading.value = false
-  }
-}
 
 onMounted(fetchComponentes)
 </script>

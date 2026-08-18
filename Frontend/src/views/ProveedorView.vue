@@ -88,7 +88,7 @@
             <div v-else class="divide-y divide-dark-border">
               <div v-for="b in bodegas" :key="b.id" class="px-6 py-4 flex items-center justify-between">
                 <div class="flex items-center gap-3">
-                  <div class="w-9 h-9 rounded-lg bg-accent/10 border border-accent/20 flex items-center justify-center text-accent text-sm">🏪</div>
+                  <div class="w-9 h-9 rounded-lg bg-accent/10 border border-accent/20 flex items-center justify-center text-accent text-sm"><Store class="w-5 h-5" /></div>
                   <div>
                     <p class="text-sm font-medium theme-text">{{ b.nombre }}</p>
                     <p class="text-xs theme-text-muted">{{ b.correo }}</p>
@@ -423,7 +423,10 @@
 </template>
 
 <script setup>
-import { Check, Trash2, Sun, Moon, Wrench, FileText, Briefcase, Gamepad2, Palette, BookOpen, Store, Settings } from '@lucide/vue'
+import { Store, BarChart3, Check, Trash2, Sun, Moon, Wrench, FileText, Briefcase, Gamepad2, Palette, BookOpen, Settings } from 'lucide-vue-next';
+
+
+
 import { useTheme } from '../composables/useTheme'
 const { isDark, toggleTheme } = useTheme()
 import { ref, markRaw, computed, onMounted } from 'vue'
@@ -444,7 +447,7 @@ function perfilLabel(p) { return ({ office: 'Oficina', gaming: 'Gaming', design:
 const activeSection = ref('dashboard')
 
 const sections = computed(() => [
-  { id: 'dashboard',    icon: '📊', label: 'Dashboard',    description: 'Resumen general de tus bodegas',           cta: null,            count: null                  },
+  { id: 'dashboard',    icon: BarChart3, label: 'Dashboard',    description: 'Resumen general de tus bodegas',           cta: null,            count: null                  },
   { id: 'bodegas',      icon: markRaw(Store), label: 'Bodegas asociadas',  description: `${bodegas.value.length} bodegas asociadas`, cta: '+ Nueva bodega', count: bodegas.value.length  },
   { id: 'componentes',  icon: markRaw(Wrench), label: 'Componentes',  description: `Componentes de tus bodegas`,               cta: '+ Nuevo componente', count: componentes.value.length },
   { id: 'cotizaciones', icon: markRaw(FileText), label: 'Cotizaciones', description: 'Cotizaciones de tus bodegas',              cta: null,            count: cotizaciones.value.length },

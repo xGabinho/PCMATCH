@@ -1,5 +1,5 @@
 # ============================================
-# PCMATCH Backend — Railway Dockerfile
+# PCMATCH Backend — Render / Production Dockerfile
 # PHP-FPM + Nginx en un solo contenedor
 # ============================================
 FROM php:8.2-fpm
@@ -16,18 +16,18 @@ COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 
 WORKDIR /var/www/html
 
-# Copiar dependencias primero (layer cache)
+# Copiar dependencias primero (aprovechar layer caching de Docker)
 COPY composer.json composer.lock ./
 RUN composer install --no-interaction --prefer-dist --optimize-autoloader --no-dev --no-scripts
 
 # Copiar el resto del código
 COPY . .
 
-# Regenerar autoloader con scripts
+# Regenerar autoloader optimizado
 RUN composer dump-autoload --optimize --no-dev
 
 # Configurar Nginx
-COPY docker/nginx.railway.conf /etc/nginx/sites-available/default
+COPY docker/nginx.conf /etc/nginx/sites-available/default
 RUN rm -f /etc/nginx/sites-enabled/default \
     && ln -s /etc/nginx/sites-available/default /etc/nginx/sites-enabled/default
 
@@ -39,6 +39,6 @@ RUN chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cac
 COPY docker/start.sh /usr/local/bin/start.sh
 RUN dos2unix /usr/local/bin/start.sh && chmod +x /usr/local/bin/start.sh
 
-EXPOSE 8080
+EXPOSE 10000
 
 CMD ["/usr/local/bin/start.sh"]

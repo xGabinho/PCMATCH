@@ -20,4 +20,18 @@ class Usuario extends Authenticatable
     {
         return $this->belongsTo(Perfil::class, 'perfil_id');
     }
+
+    public function hasPermission(string $permiso): bool
+    {
+        if ($this->rol === 'superadmin') {
+            return true;
+        }
+        if (!$this->perfil_id) {
+            return $this->rol === 'admin';
+        }
+        if (!$this->perfil || !$this->perfil->activo) {
+            return false;
+        }
+        return $this->perfil->tienePermiso($permiso);
+    }
 }

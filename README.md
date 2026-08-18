@@ -73,3 +73,47 @@ npm run dev
 🔗 Enlaces y Puertos (Por Defecto)
 Frontend (Vite): http://localhost:5173 (Dependiendo de la configuración)
 Backend API (Laravel): http://localhost:8000 (Revisar puertos en docker-compose.yml)
+
+---
+
+## ☁️ Guía de Despliegue en Producción
+
+### 1. Backend en Render (Web Service)
+1. Inicia sesión en [Render](https://dashboard.render.com/) y crea un **New Web Service**.
+2. Conecta tu repositorio de GitHub.
+3. Configuración del servicio:
+   - **Root Directory**: `backend-laravel`
+   - **Runtime / Environment**: `Docker`
+   - **Dockerfile Path**: `Dockerfile` (o relativo al root: `backend-laravel/Dockerfile`)
+   - **Health Check Path**: `/api/health`
+4. Añade las siguientes **Environment Variables**:
+   - `APP_NAME`: `PCMATCH`
+   - `APP_ENV`: `production`
+   - `APP_DEBUG`: `false`
+   - `APP_KEY`: *(Generar con `php artisan key:generate --show` o dejar que se autogenere)*
+   - `APP_URL`: `https://tu-backend.onrender.com`
+   - `DB_CONNECTION`: `pgsql`
+   - `DB_HOST`: `aws-1-us-east-1.pooler.supabase.com`
+   - `DB_PORT`: `6543`
+   - `DB_DATABASE`: `postgres`
+   - `DB_USERNAME`: `tu_usuario_supabase`
+   - `DB_PASSWORD`: `tu_contraseña_supabase`
+   - `FRONTEND_URL`: `https://tu-frontend.vercel.app`
+   - `GEMINI_API_KEY`: `tu_api_key_gemini`
+   *(Consulta `backend-laravel/.env.render` para la lista completa de variables recomendadas).*
+
+*(Nota: También puedes usar el Blueprint `render.yaml` incluido en el repositorio para desplegar la infraestructura de forma automática).*
+
+---
+
+### 2. Frontend en Vercel
+1. Inicia sesión en [Vercel](https://vercel.com/) y haz clic en **Add New Project**.
+2. Importa tu repositorio.
+3. En la configuración del proyecto:
+   - **Framework Preset**: `Vite`
+   - **Root Directory**: `Frontend`
+   - **Build Command**: `npm run build`
+   - **Output Directory**: `dist`
+4. Añade la variable de entorno:
+   - `VITE_API_URL`: `https://tu-backend.onrender.com/api`
+5. Haz clic en **Deploy**. El archivo `Frontend/vercel.json` gestionará automáticamente el enrutamiento de la SPA.

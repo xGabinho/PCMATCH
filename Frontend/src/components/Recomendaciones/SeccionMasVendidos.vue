@@ -25,7 +25,7 @@
             ? 'bg-accent text-white shadow-lg shadow-accent/20'
             : 'theme-card border theme-border theme-text-muted hover:theme-text hover:border-accent/40'"
         >
-          <span>{{ tab.icon }}</span>
+          <component :is="tab.icon" class="w-4 h-4" />
           {{ tab.label }}
         </button>
       </div>
@@ -43,7 +43,7 @@
 
       <!-- Empty -->
       <div v-else-if="currentItems.length === 0" class="text-center py-16">
-        <div class="text-4xl mb-3">📦</div>
+        <Package class="w-10 h-10 mx-auto mb-3 text-text-muted" stroke-width="1.5" />
         <p class="theme-text font-medium mb-1">Sin datos aún</p>
         <p class="theme-text-muted text-sm">Todavía no tenemos suficientes datos de ventas para esta categoría.</p>
       </div>
@@ -70,7 +70,7 @@
               <img :src="comp.imagen_url" :alt="comp.nombre" class="w-full h-full object-contain drop-shadow-sm" />
             </template>
             <template v-else>
-              <span class="text-4xl opacity-20">{{ categoryIcons[comp.categoria] ?? '🔧' }}</span>
+              <component :is="categoryIcons[comp.categoria] ?? Wrench" class="w-10 h-10 opacity-20" />
             </template>
 
             <span class="absolute top-2 right-2 text-xs px-2 py-0.5 rounded-full font-medium border"
@@ -96,7 +96,7 @@
                 <p class="text-xs theme-text-muted">{{ comp.bodega }}</p>
               </div>
               <div v-if="comp.veces_cotizado > 0" class="flex items-center gap-1 text-xs theme-text-muted">
-                <span>🔥</span>
+                <Flame class="w-3 h-3 text-orange-500" />
                 {{ comp.veces_cotizado }} cotización{{ comp.veces_cotizado !== 1 ? 'es' : '' }}
               </div>
             </div>
@@ -108,15 +108,18 @@
 </template>
 
 <script setup>
+import { Gamepad2, BookOpen, Briefcase, Palette, Settings, Save, Disc, Plug, Zap, Snowflake, Monitor, Package, Flame, Wrench } from 'lucide-vue-next';
+
 import { ref, computed, onMounted } from 'vue'
+
 
 const API = '/api'
 
 const tabs = [
-  { key: 'gaming',  icon: '🎮', label: 'Gaming' },
-  { key: 'estudio', icon: '📚', label: 'Estudio' },
-  { key: 'oficina', icon: '💼', label: 'Oficina' },
-  { key: 'diseño',  icon: '🎨', label: 'Diseño' },
+  { key: 'gaming',  icon: Gamepad2, label: 'Gaming' },
+  { key: 'estudio', icon: BookOpen, label: 'Estudio' },
+  { key: 'oficina', icon: Briefcase, label: 'Oficina' },
+  { key: 'diseño',  icon: Palette, label: 'Diseño' },
 ]
 
 const activeTab = ref('gaming')
@@ -124,8 +127,8 @@ const loading = ref(false)
 const masVendidos = ref({})
 
 const categoryIcons = {
-  CPU: '⚙️', GPU: '🎮', RAM: '💾', Storage: '💿',
-  Motherboard: '🔌', PSU: '⚡', Cooler: '❄️', Case: '🖥️'
+  CPU: Settings, GPU: Gamepad2, RAM: Save, Storage: Disc,
+  Motherboard: Plug, PSU: Zap, Cooler: Snowflake, Case: Monitor
 }
 
 const tierStyles = {

@@ -8,7 +8,7 @@
       </div>
       <div class="absolute right-0 top-0 w-[500px] h-[300px] bg-accent/5 rounded-full blur-3xl pointer-events-none"></div>
 
-      <div class="max-w-3xl mx-auto px-6 py-10 relative z-10">
+      <div class="max-w-3xl mx-auto px-6 pt-28 pb-10 relative z-10">
         <div class="flex items-center gap-5">
           <!-- Avatar -->
           <div class="w-16 h-16 rounded-2xl bg-accent/10 border border-accent/20 flex items-center justify-center text-accent text-2xl font-bold flex-shrink-0 select-none">
@@ -282,14 +282,15 @@ async function fetchProfile() {
       }
     })
     const data = await res.json()
-    if (res.ok) {
-      tipo.value = data.tipo
-      form.value.nombre = data.perfil.nombre || ''
-      form.value.apellido = data.perfil.apellido || ''
-      form.value.correo = data.perfil.correo || ''
-      form.value.telefono = data.perfil.telefono || ''
+    if (res.ok && data.perfil) {
+      tipo.value = data.tipo || 'usuario'
+      const p = data.perfil
+      form.value.nombre = p.nombre || ''
+      form.value.apellido = p.apellido || ''
+      form.value.correo = p.correo || ''
+      form.value.telefono = p.telefono || ''
     } else {
-      toast.error(data.message || 'Error al cargar el perfil')
+      toast.error(data?.message || 'Error al cargar el perfil')
     }
   } catch (e) {
     toast.error('No se pudo conectar con el servidor')

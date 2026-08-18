@@ -1,5 +1,5 @@
 <template>
-  <main class="min-h-[calc(100vh-4rem)] flex items-center justify-center px-4 sm:px-6 py-12 relative overflow-auto">
+  <main class="min-h-[calc(100vh-4rem)] flex items-center justify-center px-4 sm:px-6 pt-24 pb-12 relative overflow-auto">
 
     <!-- Background glow -->
     <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-accent/5 rounded-full blur-3xl pointer-events-none"></div>
@@ -79,8 +79,10 @@
 </template>
 
 <script setup>
+import { Mail } from 'lucide-vue-next';
+
 import { ref } from 'vue'
-import { Mail } from '@lucide/vue'
+
 import { API } from '@/config/api'
 
 const correo = ref('')

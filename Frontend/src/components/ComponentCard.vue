@@ -43,7 +43,7 @@
       <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-3 border-t theme-border">
         <div>
           <div v-if="discountActive && discountPercentage > 0" class="flex items-center gap-1.5 mb-0.5">
-            <span class="line-through text-[10px] theme-text-muted opacity-70">${{ price.toLocaleString() }}</span>
+            <span class="line-through text-[10px] theme-text-muted opacity-70">${{ Number(price || 0).toLocaleString() }}</span>
             <span class="text-[10px] bg-red-500/20 text-red-400 px-1.5 py-0.5 rounded font-bold">-{{ discountPercentage }}%</span>
           </div>
           <p class="text-accent font-semibold font-mono text-lg">${{ finalPrice ? finalPrice.toLocaleString() : price.toLocaleString() }}</p>
@@ -58,8 +58,10 @@
 </template>
 
 <script setup>
+import { Cpu, Gamepad2, Save, Disc, Plug, Zap, Snowflake, Monitor, Wrench } from 'lucide-vue-next';
+
 import { computed } from 'vue'
-import { Cpu, Gamepad2, Save, Disc, Plug, Zap, Snowflake, Monitor, Wrench } from '@lucide/vue'
+
 
 const props = defineProps({
   name: String,

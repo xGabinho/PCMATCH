@@ -20,11 +20,19 @@ class UsuarioController extends Controller
     
     public function index(Request $request)
     {
+        $user = $request->user();
         // 1. Verificación del Rol (emulando requireAuth(['admin']))
-        if (!in_array($request->user()->rol, ['admin', 'superadmin'])) {
+        if (!in_array($user->rol, ['admin', 'superadmin'])) {
             return response()->json([
                 'success' => false,
                 'message' => 'No autorizado. Se requiere rol de administrador.'
+            ], 403);
+        }
+
+        if ($user->rol === 'admin' && !$user->hasPermission('usuarios.ver')) {
+            return response()->json([
+                'success' => false,
+                'message' => 'No autorizado. Se requiere el permiso: usuarios.ver'
             ], 403);
         }
 
@@ -64,8 +72,17 @@ class UsuarioController extends Controller
     
     public function store(Request $request)
     {
-        if (!in_array($request->user()->rol, ['admin', 'superadmin'])) {
+        $user = $request->user();
+        if (!in_array($user->rol, ['admin', 'superadmin'])) {
             return response()->json(['success' => false, 'message' => 'No autorizado'], 403);
+        }
+
+        if ($user->rol === 'admin' && !$user->hasPermission('usuarios.crear')) {
+            return response()->json(['success' => false, 'message' => 'No autorizado. Se requiere el permiso: usuarios.crear'], 403);
+        }
+
+        if ($request->input('rol') === 'superadmin' && $user->rol !== 'superadmin') {
+            return response()->json(['success' => false, 'message' => 'Solo un Super Administrador puede crear usuarios con el rol de Superadmin.'], 403);
         }
 
         $validator = \Illuminate\Support\Facades\Validator::make($request->all(), [
@@ -126,8 +143,13 @@ class UsuarioController extends Controller
     
     public function update(Request $request)
     {
-        if (!in_array($request->user()->rol, ['admin', 'superadmin'])) {
+        $user = $request->user();
+        if (!in_array($user->rol, ['admin', 'superadmin'])) {
             return response()->json(['success' => false, 'message' => 'No autorizado'], 403);
+        }
+
+        if ($user->rol === 'admin' && !$user->hasPermission('usuarios.editar')) {
+            return response()->json(['success' => false, 'message' => 'No autorizado. Se requiere el permiso: usuarios.editar'], 403);
         }
 
         // El backend legacy recibía el ID desde el body JSON
@@ -139,6 +161,18 @@ class UsuarioController extends Controller
         $usuario = Usuario::find($id);
         if (!$usuario) {
             return response()->json(['success' => false, 'message' => 'Usuario no encontrado'], 404);
+        }
+
+        if ($request->has('perfil_id') && $request->input('perfil_id') != $usuario->perfil_id) {
+            if ($user->rol === 'admin' && !$user->hasPermission('perfiles.asignar')) {
+                return response()->json(['success' => false, 'message' => 'No autorizado para asignar perfiles.'], 403);
+            }
+        }
+
+        if ($request->has('rol') && $request->input('rol') !== $usuario->rol) {
+            if ($request->input('rol') === 'superadmin' && $user->rol !== 'superadmin') {
+                return response()->json(['success' => false, 'message' => 'Solo un Super Administrador puede asignar el rol de Superadmin.'], 403);
+            }
         }
 
         $validator = \Illuminate\Support\Facades\Validator::make($request->all(), [
@@ -200,8 +234,13 @@ class UsuarioController extends Controller
     
     public function destroy(Request $request, $id = null)
     {
-        if (!in_array($request->user()->rol, ['admin', 'superadmin'])) {
+        $user = $request->user();
+        if (!in_array($user->rol, ['admin', 'superadmin'])) {
             return response()->json(['success' => false, 'message' => 'No autorizado'], 403);
+        }
+
+        if ($user->rol === 'admin' && !$user->hasPermission('usuarios.eliminar')) {
+            return response()->json(['success' => false, 'message' => 'No autorizado. Se requiere el permiso: usuarios.eliminar'], 403);
         }
 
         // El legacy lo pasaba pos HTTP GET param: ?id=X

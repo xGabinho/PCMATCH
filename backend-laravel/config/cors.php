@@ -8,7 +8,7 @@ return [
     |--------------------------------------------------------------------------
     |
     | Configuración de CORS para permitir requests desde el frontend
-    | desplegado en Railway u otro dominio.
+    | desplegado en Vercel u otro dominio.
     |
     */
 
@@ -23,8 +23,9 @@ return [
     ]),
 
     'allowed_origins_patterns' => [
-        // Permite cualquier subdominio de railway.app
-        '#^https://.*\.railway\.app$#',
+        // Permite cualquier subdominio de Vercel y Render
+        '#^https://.*\.vercel\.app$#',
+        '#^https://.*\.onrender\.com$#',
     ],
 
     'allowed_headers' => ['*'],

@@ -30,6 +30,13 @@ class HistorialController extends Controller
             ], 403);
         }
 
+        if ($user->rol === 'admin' && !$user->hasPermission('historial.ver')) {
+            return response()->json([
+                'success' => false,
+                'message' => 'No autorizado. Se requiere el permiso: historial.ver'
+            ], 403);
+        }
+
         // Obtener historial ordenado del mas reciente al mas antiguo
         $historial = HistorialAccion::orderBy('created_at', 'desc')->paginate(15);
 

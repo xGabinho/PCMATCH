@@ -13,11 +13,12 @@ export default defineConfig({
     host: '0.0.0.0',
     port: 5173,
     watch: {
-      usePolling: true
+      usePolling: true,
+      interval: 100
     },
     proxy: {
       '/api': {
-        target: 'http://webserver',
+        target: process.env.VITE_API_TARGET || 'http://webserver',
         changeOrigin: true
       }
     }

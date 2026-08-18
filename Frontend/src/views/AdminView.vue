@@ -44,11 +44,11 @@
       <!-- Topbar -->
       <div class="h-16 border-b theme-border px-8 flex items-center justify-between sticky top-0 bg-light-bg/90 dark:bg-dark-bg/90 backdrop-blur z-10">
         <div>
-          <h1 class="font-semibold theme-text">{{ currentSection.label }}</h1>
-          <p class="text-xs theme-text-muted mt-0.5">{{ currentSection.description }}</p>
+          <h1 class="font-semibold theme-text">{{ currentSection?.label || 'Panel Admin' }}</h1>
+          <p class="text-xs theme-text-muted mt-0.5">{{ currentSection?.description || 'Administración de sistema' }}</p>
         </div>
         <button
-          v-if="currentSection.cta"
+          v-if="currentSection?.cta"
           @click="activeSection === 'bodegas' ? openBodegaModal() : activeSection === 'gestionar-usuarios' ? activeSection = 'crear-usuario' : null"
           class="btn-primary text-sm"
         >
@@ -57,6 +57,12 @@
       </div>
 
       <div class="p-8">
+
+        <div v-if="sections.length === 0" class="card-dark rounded-xl p-12 text-center theme-text-muted my-12 max-w-lg mx-auto border theme-border">
+          <Lock class="w-12 h-12 mx-auto mb-4 text-accent" />
+          <h3 class="text-lg font-bold theme-text mb-2">Sin módulos habilitados</h3>
+          <p class="text-sm leading-relaxed">Tu perfil no cuenta con permisos suficientes para administrar los módulos habilitados. Contacta a un administrador principal.</p>
+        </div>
 
         <!-- ===== BODEGAS ===== -->
         <template v-if="activeSection === 'bodegas'">
@@ -82,20 +88,20 @@
             </div>
             <div v-if="loadingBodegas" class="px-6 py-12 text-center theme-text-muted text-sm">Cargando bodegas...</div>
             <table v-else class="w-full min-w-[640px]">
-              <thead class="border-b border-dark-border">
-                <tr><th v-for="h in ['Nombre','Teléfono','Correo','Proveedor','Componentes','Estado','Acciones']" :key="h" class="px-6 py-3 text-left text-xs text-text-muted uppercase tracking-wider font-medium">{{ h }}</th></tr>
+              <thead class="border-b theme-border">
+                <tr><th v-for="h in ['Nombre','Teléfono','Correo','Proveedor','Componentes','Estado','Acciones']" :key="h" class="px-6 py-3 text-left text-xs theme-text-muted uppercase tracking-wider font-medium">{{ h }}</th></tr>
               </thead>
-              <tbody class="divide-y divide-dark-border">
-                <tr v-if="filteredBodegas.length === 0"><td colspan="6" class="px-6 py-12 text-center text-text-muted text-sm">Sin bodegas registradas</td></tr>
-                <tr v-for="b in filteredBodegas" :key="b.id" class="hover:bg-dark-bg/50 transition-colors">
-                  <td class="px-6 py-4 text-sm font-medium text-text-primary">{{ b.nombre }}</td>
-                  <td class="px-6 py-4 text-sm text-text-muted">{{ b.telefono || '—' }}</td>
-                  <td class="px-6 py-4 text-sm text-text-muted">{{ b.correo }}</td>
+              <tbody class="divide-y theme-border">
+                <tr v-if="filteredBodegas.length === 0"><td colspan="6" class="px-6 py-12 text-center theme-text-muted text-sm">Sin bodegas registradas</td></tr>
+                <tr v-for="b in filteredBodegas" :key="b.id" class="hover:bg-gray-100 dark:hover:bg-dark-bg/50 transition-colors">
+                  <td class="px-6 py-4 text-sm font-medium theme-text">{{ b.nombre }}</td>
+                  <td class="px-6 py-4 text-sm theme-text-muted">{{ b.telefono || '—' }}</td>
+                  <td class="px-6 py-4 text-sm theme-text-muted">{{ b.correo }}</td>
                   <td class="px-6 py-4">
                     <span v-if="b.proveedor_nombre" class="badge text-xs bg-accent/10 text-accent border border-accent/20">{{ b.proveedor_nombre }}</span>
-                    <span v-else class="text-xs text-text-muted">Sin proveedor</span>
+                    <span v-else class="text-xs theme-text-muted">Sin proveedor</span>
                   </td>
-                  <td class="px-6 py-4 text-sm text-text-primary font-mono">{{ b.total_componentes }}</td>
+                  <td class="px-6 py-4 text-sm theme-text font-mono">{{ b.total_componentes }}</td>
                   <td class="px-6 py-4">
                     <span class="badge text-xs px-2.5 py-1" :class="b.activa == 1 ? 'bg-green-500/10 text-green-400 border border-green-500/20' : 'bg-red-500/10 text-red-400 border border-red-500/20'">
                       {{ b.activa == 1 ? 'Activa' : 'Inactiva' }}
@@ -103,8 +109,8 @@
                   </td>
                   <td class="px-6 py-4">
                     <div class="flex gap-2">
-                      <button @click="openEditBodega(b)" class="text-xs text-text-muted hover:text-accent px-2 py-1 rounded hover:bg-accent/10 transition-colors">Editar</button>
-                      <button @click="toggleBodega(b)" class="text-xs text-text-muted hover:text-yellow-400 px-2 py-1 rounded hover:bg-yellow-400/10 transition-colors">
+                      <button @click="openEditBodega(b)" class="text-xs theme-text-muted hover:text-accent px-2 py-1 rounded hover:bg-accent/10 transition-colors">Editar</button>
+                      <button @click="toggleBodega(b)" class="text-xs theme-text-muted hover:text-yellow-400 px-2 py-1 rounded hover:bg-yellow-400/10 transition-colors">
                         {{ b.activa == 1 ? 'Desactivar' : 'Activar' }}
                       </button>
                       <button @click="openDeleteBodega(b)" class="text-xs theme-text-muted hover:text-red-400 px-2 py-1 rounded hover:bg-red-400/10 transition-colors">Eliminar</button>
@@ -170,9 +176,9 @@
               <thead class="border-b theme-border">
                 <tr><th v-for="h in ['Componente','Categoría','Especificación','Gama','Precio','Bodega','Stock','Estado','Acciones']" :key="h" class="px-6 py-3 text-left text-xs theme-text-muted uppercase tracking-wider font-medium">{{ h }}</th></tr>
               </thead>
-              <tbody class="divide-y divide-dark-border">
+              <tbody class="divide-y theme-border">
                 <tr v-if="filteredComponentes.length === 0"><td colspan="8" class="px-6 py-12 text-center theme-text-muted text-sm">Sin componentes</td></tr>
-                <tr v-for="c in filteredComponentes" :key="c.id" class="hover:bg-gray-100 dark:bg-dark-bg/50 transition-colors">
+                <tr v-for="c in filteredComponentes" :key="c.id" class="hover:bg-gray-100 dark:hover:bg-dark-bg/50 transition-colors">
                   <td class="px-6 py-4 text-sm font-medium theme-text">{{ c.nombre }}</td>
                   <td class="px-6 py-4"><span class="badge text-xs bg-accent/10 text-accent border border-accent/20">{{ c.categoria }}</span></td>
                   <td class="px-6 py-4 text-sm theme-text-muted max-w-48 truncate">{{ c.especificacion }}</td>
@@ -203,23 +209,23 @@
         <!-- ===== COTIZACIONES ===== -->
         <template v-if="activeSection === 'cotizaciones'">
           <div class="card-dark rounded-xl overflow-hidden overflow-x-auto">
-            <div class="px-6 py-4 border-b border-dark-border">
-              <h2 class="font-semibold text-text-primary">Historial de cotizaciones</h2>
+            <div class="px-6 py-4 border-b theme-border">
+              <h2 class="font-semibold theme-text">Historial de cotizaciones</h2>
             </div>
-            <div v-if="loadingCotizaciones" class="px-6 py-12 text-center text-text-muted text-sm">Cargando...</div>
+            <div v-if="loadingCotizaciones" class="px-6 py-12 text-center theme-text-muted text-sm">Cargando...</div>
             <table v-else class="w-full min-w-[640px]">
-              <thead class="border-b border-dark-border">
-                <tr><th v-for="h in ['#','Cliente','Perfil','Componentes','Total','Fecha']" :key="h" class="px-6 py-3 text-left text-xs text-text-muted uppercase tracking-wider font-medium">{{ h }}</th></tr>
+              <thead class="border-b theme-border">
+                <tr><th v-for="h in ['#','Cliente','Perfil','Componentes','Total','Fecha']" :key="h" class="px-6 py-3 text-left text-xs theme-text-muted uppercase tracking-wider font-medium">{{ h }}</th></tr>
               </thead>
-              <tbody class="divide-y divide-dark-border">
-                <tr v-if="cotizaciones.length === 0"><td colspan="6" class="px-6 py-12 text-center text-text-muted text-sm">Sin cotizaciones</td></tr>
-                <tr v-for="c in cotizaciones" :key="c.id" class="hover:bg-dark-bg/50 transition-colors">
-                  <td class="px-6 py-4 text-sm font-mono text-text-muted">#{{ c.id }}</td>
-                  <td class="px-6 py-4 text-sm text-text-primary">{{ c.nombre }} {{ c.apellido }}</td>
-                  <td class="px-6 py-4 text-sm text-text-muted">{{ perfilLabel(c.perfil) }}</td>
-                  <td class="px-6 py-4 text-sm font-mono text-text-primary">{{ c.total_items }}</td>
+              <tbody class="divide-y theme-border">
+                <tr v-if="cotizaciones.length === 0"><td colspan="6" class="px-6 py-12 text-center theme-text-muted text-sm">Sin cotizaciones</td></tr>
+                <tr v-for="c in cotizaciones" :key="c.id" class="hover:bg-gray-100 dark:hover:bg-dark-bg/50 transition-colors">
+                  <td class="px-6 py-4 text-sm font-mono theme-text-muted">#{{ c.id }}</td>
+                  <td class="px-6 py-4 text-sm theme-text">{{ c.nombre }} {{ c.apellido }}</td>
+                  <td class="px-6 py-4 text-sm theme-text-muted">{{ perfilLabel(c.perfil) }}</td>
+                  <td class="px-6 py-4 text-sm font-mono theme-text">{{ c.total_items }}</td>
                   <td class="px-6 py-4 text-sm font-mono text-accent font-medium">${{ Number(c.total).toLocaleString() }}</td>
-                  <td class="px-6 py-4 text-sm text-text-muted">{{ formatDate(c.created_at) }}</td>
+                  <td class="px-6 py-4 text-sm theme-text-muted">{{ formatDate(c.created_at) }}</td>
                 </tr>
               </tbody>
             </table>
@@ -281,7 +287,7 @@
                 <label class="block text-sm font-medium theme-text mb-2">Número de celular</label>
                 <div class="flex gap-2">
                   <div class="flex items-center px-3 rounded-lg theme-bg theme-border border theme-text-muted text-sm select-none flex-shrink-0">
-                    🇨🇴 +57
+                    <MapPin class="w-4 h-4 mr-1 inline-block" /> +57
                   </div>
                   <input v-model="newUser.telefonoLocal" @input="handleTelefonoInput(newUser, 'telefonoLocal')" type="tel" placeholder="300 123 4567" maxlength="13" class="flex-1 theme-bg border theme-border rounded-lg px-4 py-3 text-sm theme-text placeholder-text-muted focus:outline-none focus:border-accent transition-colors" />
                 </div>
@@ -318,9 +324,9 @@
               <thead class="border-b theme-border">
                 <tr><th v-for="h in ['Nombre','Descripción','Permisos','Estado','Acciones']" :key="h" class="px-6 py-3 text-left text-xs theme-text-muted uppercase tracking-wider font-medium">{{ h }}</th></tr>
               </thead>
-              <tbody class="divide-y divide-dark-border">
+              <tbody class="divide-y theme-border">
                 <tr v-if="perfiles.length === 0"><td colspan="5" class="px-6 py-12 text-center theme-text-muted text-sm">Sin perfiles</td></tr>
-                <tr v-for="p in perfiles" :key="p.id" class="hover:bg-gray-100 dark:bg-dark-bg/50 transition-colors">
+                <tr v-for="p in perfiles" :key="p.id" class="hover:bg-gray-100 dark:hover:bg-dark-bg/50 transition-colors">
                   <td class="px-6 py-4 text-sm font-medium theme-text">{{ p.nombre }}</td>
                   <td class="px-6 py-4 text-sm theme-text-muted max-w-48 truncate">{{ p.descripcion || '—' }}</td>
                   <td class="px-6 py-4 text-sm theme-text font-mono">{{ p.permisos?.length || 0 }}</td>
@@ -355,7 +361,7 @@
               <p class="text-3xl font-bold text-accent font-mono">{{ usuarios.filter(u => u.rol === 'cliente').length }}</p>
             </div>
             <div class="card-dark rounded-xl p-5">
-              <p class="text-text-muted text-xs uppercase tracking-wider mb-2">Inactivos</p>
+              <p class="theme-text-muted text-xs uppercase tracking-wider mb-2">Inactivos</p>
               <p class="text-3xl font-bold text-red-400 font-mono">{{ usuarios.filter(u => u.activo == 0).length }}</p>
             </div>
           </div>
@@ -370,12 +376,12 @@
               <thead class="border-b theme-border">
                 <tr><th v-for="h in ['Usuario','Correo','Teléfono','Rol','Estado','Registrado','Acciones']" :key="h" class="px-6 py-3 text-left text-xs theme-text-muted uppercase tracking-wider font-medium">{{ h }}</th></tr>
               </thead>
-              <tbody class="divide-y divide-dark-border">
-                <tr v-if="filteredUsuarios.length === 0"><td colspan="7" class="px-6 py-12 text-center text-text-muted text-sm">Sin usuarios</td></tr>
-                <tr v-for="u in filteredUsuarios" :key="u.id" class="hover:bg-dark-bg/50 transition-colors" :class="u.activo == 0 ? 'opacity-50' : ''">
+              <tbody class="divide-y theme-border">
+                <tr v-if="filteredUsuarios.length === 0"><td colspan="7" class="px-6 py-12 text-center theme-text-muted text-sm">Sin usuarios</td></tr>
+                <tr v-for="u in filteredUsuarios" :key="u.id" class="hover:bg-gray-100 dark:hover:bg-dark-bg/50 transition-colors" :class="u.activo == 0 ? 'opacity-50' : ''">
                   <td class="px-6 py-4">
                     <div class="flex items-center gap-3">
-                      <div class="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0" :class="roleStyles[u.rol?.toLowerCase()]?.avatar ?? 'bg-dark-card text-text-muted'">
+                      <div class="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0" :class="roleStyles[u.rol?.toLowerCase()]?.avatar ?? 'theme-card theme-text-muted'">
                         {{ u.nombre.charAt(0) }}
                       </div>
                       <span class="text-sm font-medium theme-text">{{ u.nombre }} {{ u.apellido }}</span>
@@ -394,12 +400,12 @@
                   <td class="px-6 py-4 text-sm theme-text-muted">{{ formatDate(u.created_at) }}</td>
                   <td class="px-6 py-4">
                     <div class="flex gap-2">
-                      <button @click="openEditModal(u)" class="text-xs text-text-muted hover:text-yellow-400 px-2 py-1 rounded hover:bg-yellow-400/10 transition-colors">Editar</button>
+                      <button @click="openEditModal(u)" class="text-xs theme-text-muted hover:text-yellow-400 px-2 py-1 rounded hover:bg-yellow-400/10 transition-colors">Editar</button>
                       
                       <button @click="openDeleteModal(u)" class="text-xs px-2 py-1 rounded transition-colors"
                         :class="u.activo == 1
-                          ? 'text-text-muted hover:text-red-400 hover:bg-red-400/10'
-                          : 'text-text-muted hover:text-green-400 hover:bg-green-400/10'">
+                          ? 'theme-text-muted hover:text-red-400 hover:bg-red-400/10'
+                          : 'theme-text-muted hover:text-green-400 hover:bg-green-400/10'">
                         {{ u.activo == 1 ? 'Desactivar' : 'Reactivar' }}
                       </button>
                     </div>
@@ -415,10 +421,10 @@
           <!-- Tabs -->
           <div class="flex gap-2 mb-6">
             <button @click="reporteTab = 'rotacion'" class="px-4 py-2 rounded-lg text-sm font-medium transition-all" :class="reporteTab === 'rotacion' ? 'bg-accent text-white shadow-lg shadow-accent/20' : 'card-dark theme-text-muted hover:theme-text'">
-              📊 Rotación por Bodega
+              <BarChart3 class="w-5 h-5 mr-2 inline-block text-accent" /> Rotación por Bodega
             </button>
             <button @click="reporteTab = 'consumo'" class="px-4 py-2 rounded-lg text-sm font-medium transition-all" :class="reporteTab === 'consumo' ? 'bg-accent text-white shadow-lg shadow-accent/20' : 'card-dark theme-text-muted hover:theme-text'">
-              📦 Consumo por Proveedor
+              <Package class="w-5 h-5 mr-2 inline-block text-accent" /> Consumo por Proveedor
             </button>
           </div>
 
@@ -486,7 +492,7 @@
                       <th class="px-6 py-3 text-right text-xs theme-text-muted uppercase tracking-wider font-medium">Unidades vendidas</th>
                     </tr>
                   </thead>
-                  <tbody class="divide-y divide-dark-border">
+                  <tbody class="divide-y theme-border">
                     <tr v-for="(item, idx) in rotacionData" :key="idx" class="hover:bg-gray-100 dark:hover:bg-dark-bg/50 transition-colors">
                       <td class="px-6 py-3.5 text-sm font-mono theme-text-muted">{{ idx + 1 }}</td>
                       <td class="px-6 py-3.5 text-sm font-medium theme-text">{{ item.producto_nombre }}</td>
@@ -500,7 +506,7 @@
             </div>
 
             <div v-else-if="rotacionFetched && rotacionData.length === 0" class="card-dark rounded-xl p-12 text-center">
-              <p class="text-4xl mb-3">📭</p>
+              <Mailbox class="w-10 h-10 mx-auto mb-3 theme-text-muted" stroke-width="1.5" />
               <p class="theme-text font-semibold mb-1">Sin movimientos</p>
               <p class="theme-text-muted text-sm">No se encontraron cotizaciones para esta bodega en el rango seleccionado.</p>
             </div>
@@ -567,7 +573,7 @@
                       <th class="px-6 py-3 text-right text-xs theme-text-muted uppercase tracking-wider font-medium">Participación</th>
                     </tr>
                   </thead>
-                  <tbody class="divide-y divide-dark-border">
+                  <tbody class="divide-y theme-border">
                     <tr v-for="item in consumoData" :key="item.bodega_id" class="hover:bg-gray-100 dark:hover:bg-dark-bg/50 transition-colors">
                       <td class="px-6 py-3.5 text-sm font-medium theme-text">{{ item.bodega_nombre }}</td>
                       <td class="px-6 py-3.5 text-sm font-mono text-accent font-semibold text-right">{{ item.total_consumido.toLocaleString() }}</td>
@@ -586,7 +592,7 @@
             </div>
 
             <div v-else-if="consumoFetched && consumoData.length === 0" class="card-dark rounded-xl p-12 text-center">
-              <p class="text-4xl mb-3">📭</p>
+              <Mailbox class="w-10 h-10 mx-auto mb-3 theme-text-muted" stroke-width="1.5" />
               <p class="theme-text font-semibold mb-1">Sin consumo registrado</p>
               <p class="theme-text-muted text-sm">Este proveedor aún no tiene componentes cotizados en sus bodegas.</p>
             </div>
@@ -626,7 +632,7 @@
             <label class="block text-sm font-medium theme-text mb-2">Número de celular</label>
             <div class="flex gap-2">
               <div class="flex items-center px-3 rounded-lg theme-bg theme-border border theme-text-muted text-sm select-none flex-shrink-0">
-                🇨🇴 +57
+                <MapPin class="w-4 h-4 mr-1 inline-block" /> +57
               </div>
               <input v-model="editingUser.telefonoLocal" @input="handleTelefonoInput(editingUser, 'telefonoLocal')" type="tel" placeholder="300 123 4567" maxlength="13" class="flex-1 theme-bg border theme-border rounded-lg px-4 py-3 text-sm theme-text focus:outline-none focus:border-accent transition-colors" />
             </div>
@@ -675,17 +681,18 @@
     
     <div class="w-14 h-14 rounded-full flex items-center justify-center mx-auto mb-4 text-2xl"
       :class="deletingUser?.activo == 1 ? 'bg-red-500/10 border border-red-500/20' : 'bg-green-500/10 border border-green-500/20'">
-      {{ deletingUser?.activo == 1 ? '🚫' : '✅' }}
+      <Ban v-if="deletingUser?.activo == 1" class="w-7 h-7" />
+      <CheckCircle2 v-else class="w-7 h-7" />
     </div>
     
-    <h2 class="text-lg font-bold text-text-primary mb-2">
+    <h2 class="text-lg font-bold theme-text mb-2">
       {{ deletingUser?.activo == 1 ? 'Desactivar usuario' : 'Reactivar usuario' }}
     </h2>
-    <p class="text-text-muted text-sm mb-1">
+    <p class="theme-text-muted text-sm mb-1">
       {{ deletingUser?.activo == 1 ? '¿Desactivar a' : '¿Reactivar a' }}
     </p>
-    <p class="text-text-primary font-semibold mb-2">{{ deletingUser?.nombre }} {{ deletingUser?.apellido }}?</p>
-    <p class="text-xs text-text-muted mb-6 px-4">
+    <p class="theme-text font-semibold mb-2">{{ deletingUser?.nombre }} {{ deletingUser?.apellido }}?</p>
+    <p class="text-xs theme-text-muted mb-6 px-4">
       {{ deletingUser?.activo == 1 ? 'El usuario no podrá iniciar sesión mientras esté inactivo.' : 'El usuario podrá volver a iniciar sesión.' }}
     </p>
     
@@ -720,14 +727,14 @@
             <input v-model="newBodega.nombre" type="text" placeholder="Ej: TecnoStore Santiago" class="w-full theme-bg border theme-border rounded-lg px-4 py-3 text-sm theme-text placeholder-text-muted focus:outline-none focus:border-accent transition-colors" />
           </div>
           <div>
-            <label class="block text-sm font-medium text-text-primary mb-2">Proveedor asignado (opcional)</label>
-            <select v-model="newBodega.proveedor_id" class="w-full bg-dark-bg border border-dark-border rounded-lg px-4 py-3 text-sm text-text-primary focus:outline-none focus:border-accent transition-colors appearance-none">
+            <label class="block text-sm font-medium theme-text mb-2">Proveedor asignado (opcional)</label>
+            <select v-model="newBodega.proveedor_id" class="w-full theme-bg border theme-border rounded-lg px-4 py-3 text-sm theme-text focus:outline-none focus:border-accent transition-colors appearance-none">
               <option :value="null">Ninguno</option>
               <option v-for="p in proveedores.filter(p => p.activo == 1)" :key="p.id" :value="p.id">{{ p.nombre }}</option>
             </select>
           </div>
-          <div class="border-t border-dark-border pt-1">
-            <p class="text-xs text-text-muted mb-4">Credenciales de acceso para el gestor</p>
+          <div class="border-t theme-border pt-1">
+            <p class="text-xs theme-text-muted mb-4">Credenciales de acceso para el gestor</p>
           </div>
           <div>
             <label class="block text-sm font-medium theme-text mb-2">Correo electrónico</label>
@@ -737,7 +744,7 @@
             <label class="block text-sm font-medium theme-text mb-2">Número de celular</label>
             <div class="flex gap-2">
               <div class="flex items-center px-3 rounded-lg theme-bg theme-border border theme-text-muted text-sm select-none flex-shrink-0">
-                🇨🇴 +57
+                <MapPin class="w-4 h-4 mr-1 inline-block" /> +57
               </div>
               <input v-model="newBodega.telefonoLocal" @input="handleTelefonoInput(newBodega, 'telefonoLocal')" type="tel" placeholder="300 123 4567" maxlength="13" class="flex-1 theme-bg border theme-border rounded-lg px-4 py-3 text-sm theme-text placeholder-text-muted focus:outline-none focus:border-accent transition-colors" />
             </div>
@@ -767,38 +774,38 @@
       <div class="fixed inset-0 bg-black/60 backdrop-blur-sm" @click="showEditBodegaModal = false"></div>
       <div class="relative card-dark rounded-2xl p-6 w-full max-w-md my-auto shadow-2xl">
         <div class="flex items-center justify-between mb-6">
-          <h2 class="text-lg font-bold text-text-primary">Editar bodega</h2>
-          <button @click="showEditBodegaModal = false" class="text-text-muted hover:text-text-primary text-2xl leading-none w-8 h-8 flex items-center justify-center rounded-lg hover:bg-dark-bg">×</button>
+          <h2 class="text-lg font-bold theme-text">Editar bodega</h2>
+          <button @click="showEditBodegaModal = false" class="theme-text-muted hover:theme-text text-2xl leading-none w-8 h-8 flex items-center justify-center rounded-lg hover:theme-bg">×</button>
         </div>
         <div class="space-y-5">
           <div>
-            <label class="block text-sm font-medium text-text-primary mb-2">Nombre</label>
-            <input v-model="editingBodega.nombre" type="text" class="w-full bg-dark-bg border border-dark-border rounded-lg px-4 py-3 text-sm text-text-primary focus:outline-none focus:border-accent transition-colors" />
+            <label class="block text-sm font-medium theme-text mb-2">Nombre</label>
+            <input v-model="editingBodega.nombre" type="text" class="w-full theme-bg border theme-border rounded-lg px-4 py-3 text-sm theme-text focus:outline-none focus:border-accent transition-colors" />
           </div>
           <div>
-            <label class="block text-sm font-medium text-text-primary mb-2">Número de celular</label>
+            <label class="block text-sm font-medium theme-text mb-2">Número de celular</label>
             <div class="flex gap-2">
-              <div class="flex items-center px-3 rounded-lg bg-dark-bg border border-dark-border text-text-muted text-sm select-none flex-shrink-0">
-                🇨🇴 +57
+              <div class="flex items-center px-3 rounded-lg theme-bg theme-border border theme-text-muted text-sm select-none flex-shrink-0">
+                <MapPin class="w-4 h-4 mr-1 inline-block" /> +57
               </div>
-              <input v-model="editingBodega.telefonoLocal" @input="handleTelefonoInput(editingBodega, 'telefonoLocal')" type="tel" placeholder="300 123 4567" maxlength="13" class="flex-1 bg-dark-bg border border-dark-border rounded-lg px-4 py-3 text-sm text-text-primary focus:outline-none focus:border-accent transition-colors" />
+              <input v-model="editingBodega.telefonoLocal" @input="handleTelefonoInput(editingBodega, 'telefonoLocal')" type="tel" placeholder="300 123 4567" maxlength="13" class="flex-1 theme-bg border theme-border rounded-lg px-4 py-3 text-sm theme-text focus:outline-none focus:border-accent transition-colors" />
             </div>
-            <p class="text-xs text-text-muted mt-1">Debe ser un número colombiano válido (3XX XXX XXXX)</p>
+            <p class="text-xs theme-text-muted mt-1">Debe ser un número colombiano válido (3XX XXX XXXX)</p>
           </div>
           <div>
-            <label class="block text-sm font-medium text-text-primary mb-2">Proveedor asignado</label>
-            <select v-model="editingBodega.proveedor_id" class="w-full bg-dark-bg border border-dark-border rounded-lg px-4 py-3 text-sm text-text-primary focus:outline-none focus:border-accent transition-colors appearance-none">
+            <label class="block text-sm font-medium theme-text mb-2">Proveedor asignado</label>
+            <select v-model="editingBodega.proveedor_id" class="w-full theme-bg border theme-border rounded-lg px-4 py-3 text-sm theme-text focus:outline-none focus:border-accent transition-colors appearance-none">
               <option :value="null">Ninguno</option>
               <option v-for="p in proveedores.filter(p => p.activo == 1)" :key="p.id" :value="p.id">{{ p.nombre }}</option>
             </select>
           </div>
           <div>
-            <label class="block text-sm font-medium text-text-primary mb-2">Estado</label>
+            <label class="block text-sm font-medium theme-text mb-2">Estado</label>
             <div class="flex items-center gap-3">
               <button @click="editingBodega.activa = 1" class="flex-1 py-2 rounded-lg border text-sm font-medium transition-colors"
-                :class="editingBodega.activa == 1 ? 'border-green-500/40 bg-green-500/10 text-green-400' : 'border-dark-border text-text-muted'"><Check class="w-4 h-4 inline-block mr-1" /> Activa</button>
+                :class="editingBodega.activa == 1 ? 'border-green-500/40 bg-green-500/10 text-green-400' : 'theme-border theme-text-muted'"><Check class="w-4 h-4 inline-block mr-1" /> Activa</button>
               <button @click="editingBodega.activa = 0" class="flex-1 py-2 rounded-lg border text-sm font-medium transition-colors"
-                :class="editingBodega.activa == 0 ? 'border-red-500/40 bg-red-500/10 text-red-400' : 'border-dark-border text-text-muted'">✕ Inactiva</button>
+                :class="editingBodega.activa == 0 ? 'border-red-500/40 bg-red-500/10 text-red-400' : 'theme-border theme-text-muted'">✕ Inactiva</button>
             </div>
           </div>
           <p v-if="editBodegaError" class="text-xs text-red-400 bg-red-500/10 border border-red-500/20 rounded-lg px-4 py-2.5">{{ editBodegaError }}</p>
@@ -815,10 +822,10 @@
       <div class="fixed inset-0 bg-black/60 backdrop-blur-sm" @click="showDeleteBodegaModal = false"></div>
       <div class="relative card-dark rounded-2xl p-6 w-full max-w-sm my-auto shadow-2xl text-center">
         <div class="w-14 h-14 rounded-full bg-red-500/10 border border-red-500/20 flex items-center justify-center mx-auto mb-4 text-2xl"><Trash2 class="w-4 h-4 inline-block" /></div>
-        <h2 class="text-lg font-bold text-text-primary mb-2">Eliminar bodega</h2>
-        <p class="text-text-muted text-sm mb-1">¿Estás seguro de que deseas eliminar</p>
-        <p class="text-text-primary font-semibold mb-2">{{ deletingBodega?.nombre }}?</p>
-        <p class="text-xs text-text-muted mb-6 px-4">Se eliminarán también todos sus componentes.</p>
+        <h2 class="text-lg font-bold theme-text mb-2">Eliminar bodega</h2>
+        <p class="theme-text-muted text-sm mb-1">¿Estás seguro de que deseas eliminar</p>
+        <p class="theme-text font-semibold mb-2">{{ deletingBodega?.nombre }}?</p>
+        <p class="text-xs theme-text-muted mb-6 px-4">Se eliminarán también todos sus componentes.</p>
         <p v-if="deleteBodegaError" class="text-xs text-red-400 bg-red-500/10 border border-red-500/20 rounded-lg px-4 py-2.5 mb-4 text-center">{{ deleteBodegaError }}</p>
         <div class="flex gap-3">
           <button @click="confirmDeleteBodega" :disabled="savingDeleteBodega" class="flex-1 py-3 rounded-lg text-sm font-medium bg-red-500/10 text-red-400 border border-red-500/20 hover:bg-red-500/20 transition-colors">
@@ -1082,7 +1089,10 @@
 </template>
 
 <script setup>
-import { UserPlus, Check, Trash2, Pencil, Sun, Moon, Info, Wrench, FileText, Shield, Briefcase, Gamepad2, Palette, BookOpen, Store, Users, Lock, User, Settings, BarChart3 } from '@lucide/vue'
+import { MapPin, BarChart3, Package, Mailbox, Ban, CheckCircle2, UserPlus, Check, Trash2, Pencil, Sun, Moon, Info, Wrench, FileText, Shield, Briefcase, Gamepad2, Palette, BookOpen, Store, Users, Lock, User, Settings } from 'lucide-vue-next';
+
+
+
 import { useTheme } from '../composables/useTheme'
 const { isDark, toggleTheme } = useTheme()
 import { ref, markRaw, computed, onMounted, nextTick, watch } from 'vue'
@@ -1113,13 +1123,12 @@ function handleTelefonoInput(obj, key) {
 }
 
 import { API } from '@/config/api'
-const { getToken, logout } = useAuth()
+const { getToken, logout, user, hasPermission } = useAuth()
 const router = useRouter()
 const toast = useToast()
 
 function handleLogout() {
   logout()
-  router.push('/login')
 }
 
 function formatDate(dateStr) {
@@ -1132,21 +1141,17 @@ function perfilLabel(p) { return ({ office: 'Oficina', gaming: 'Gaming', design:
 // ── Secciones ─────────────────────────────────────────────
 const activeSection = ref('bodegas')
 
-/**
- * Configuración dinámica de las secciones del menú lateral.
- * Utiliza 'computed' para mantener reactivos los contadores (ej. cantidad de bodegas).
- */
-const sections = computed(() => [
-  { id: 'bodegas',            icon: markRaw(Store), label: 'Bodegas',            description: `${bodegas.value.length} bodegas registradas`,    cta: '+ Agregar bodega', count: bodegas.value.length    },
-  { id: 'componentes',        icon: markRaw(Wrench), label: 'Componentes',        description: `${componentes.value.length} componentes en total`, cta: '+ Nuevo Componente Maestro',               count: componentes.value.length },
-  { id: 'cotizaciones',       icon: markRaw(FileText), label: 'Cotizaciones',       description: 'Historial de cotizaciones',                       cta: null,               count: null },
-  { id: 'crear-usuario',      icon: markRaw(UserPlus), label: 'Crear usuario',      description: 'Registrar nuevo usuario',                        cta: null,               count: null },
-  { id: 'gestionar-usuarios', icon: markRaw(Users), label: 'Gestionar usuarios', description: `${usuarios.value.length} usuarios registrados`,   cta: '+ Crear usuario',  count: usuarios.value.length   },
-  { id: 'perfiles', icon: markRaw(Lock), label: 'Perfiles y Permisos', description: `${perfiles.value.length} perfiles`, cta: '+ Crear perfil', count: perfiles.value.length },
-  { id: 'reportes', icon: markRaw(BarChart3), label: 'Reportes', description: 'Analíticas y estadísticas', cta: null, count: null },
-])
+const sectionPermissions = {
+  bodegas: 'bodegas.ver',
+  componentes: 'componentes.ver',
+  cotizaciones: 'cotizaciones.ver',
+  'crear-usuario': 'usuarios.crear',
+  'gestionar-usuarios': 'usuarios.ver',
+  perfiles: 'perfiles.ver',
+  reportes: 'reportes.ver'
+}
 
-const currentSection = computed(() => sections.value.find(s => s.id === activeSection.value))
+
 
 // ── Estilos ───────────────────────────────────────────────
 const roles = [
@@ -1196,7 +1201,10 @@ async function fetchProveedores() {
   try {
     const res = await fetch(`${API}/proveedores`, { headers: { Authorization: `Bearer ${getToken()}` } })
     const data = await res.json()
-    if (res.ok) proveedores.value = data.proveedores
+    if (res.ok) {
+      const list = data.proveedores?.data || data.proveedores
+      proveedores.value = Array.isArray(list) ? list : []
+    }
   } catch(e) { console.error(e) }
 }
 
@@ -2206,13 +2214,41 @@ function renderConsumoChart() {
   })
 }
 
+/**
+ * Configuración dinámica de las secciones del menú lateral.
+ * Filtra las secciones visibles según el perfil de permisos asignado al usuario.
+ */
+const sections = computed(() => {
+  const all = [
+    { id: 'bodegas',            icon: markRaw(Store), label: 'Bodegas',            description: `${bodegas.value.length} bodegas registradas`,    cta: '+ Agregar bodega', count: bodegas.value.length    },
+    { id: 'componentes',        icon: markRaw(Wrench), label: 'Componentes',        description: `${componentes.value.length} componentes en total`, cta: '+ Nuevo Componente Maestro',               count: componentes.value.length },
+    { id: 'cotizaciones',       icon: markRaw(FileText), label: 'Cotizaciones',       description: 'Historial de cotizaciones',                       cta: null,               count: null },
+    { id: 'crear-usuario',      icon: markRaw(UserPlus), label: 'Crear usuario',      description: 'Registrar nuevo usuario',                        cta: null,               count: null },
+    { id: 'gestionar-usuarios', icon: markRaw(Users), label: 'Gestionar usuarios', description: `${usuarios.value.length} usuarios registrados`,   cta: '+ Crear usuario',  count: usuarios.value.length   },
+    { id: 'perfiles', icon: markRaw(Lock), label: 'Perfiles y Permisos', description: `${perfiles.value.length} perfiles`, cta: '+ Crear perfil', count: perfiles.value.length },
+    { id: 'reportes', icon: markRaw(BarChart3), label: 'Reportes', description: 'Analíticas y estadísticas', cta: null, count: null },
+  ]
+  return all.filter(s => {
+    const code = sectionPermissions[s.id]
+    return !code || hasPermission(code)
+  })
+})
+
+watch(sections, (newSections) => {
+  if (newSections.length > 0 && !newSections.some(s => s.id === activeSection.value)) {
+    activeSection.value = newSections[0].id
+  }
+}, { immediate: true })
+
+const currentSection = computed(() => sections.value.find(s => s.id === activeSection.value) || sections.value[0] || {})
+
 // ── Lifecycle ─────────────────────────────────────────────
 onMounted(() => {
-  fetchBodegas()
-  fetchUsuarios()
-  fetchComponentes()
-  fetchCotizaciones()
-  fetchProveedores()
-  fetchSelectores()
+  if (hasPermission('bodegas.ver')) fetchBodegas()
+  if (hasPermission('usuarios.ver')) fetchUsuarios()
+  if (hasPermission('componentes.ver')) fetchComponentes()
+  if (hasPermission('cotizaciones.ver')) fetchCotizaciones()
+  if (hasPermission('proveedores.ver')) fetchProveedores()
+  if (hasPermission('perfiles.ver')) fetchPerfiles()
 })
 </script>

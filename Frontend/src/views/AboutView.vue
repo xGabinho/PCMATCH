@@ -1,5 +1,5 @@
 <template>
-  <main class="max-w-4xl mx-auto px-6 py-16">
+  <main class="max-w-4xl mx-auto px-6 pt-28 pb-16">
     <div class="text-center mb-16">
       <h1 class="text-4xl font-bold theme-text mb-4">Sobre Nosotros</h1>
       <p class="text-lg theme-text-muted">Conoce más sobre la plataforma líder en cotización de PCs en Chile.</p>
@@ -50,5 +50,6 @@
 </template>
 
 <script setup>
-import { Rocket, Shield, CircleDollarSign, Zap } from '@lucide/vue'
+import { Rocket, Shield, CircleDollarSign, Zap } from 'lucide-vue-next';
+
 </script>

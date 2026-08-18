@@ -44,10 +44,10 @@
       <!-- Topbar -->
       <div class="h-16 border-b theme-border px-8 flex items-center justify-between sticky top-0 bg-light-bg/90 dark:bg-dark-bg/90 backdrop-blur z-10">
         <div>
-          <h1 class="font-semibold theme-text">{{ currentSection.label }}</h1>
-          <p class="text-xs theme-text-muted mt-0.5">{{ currentSection.description }}</p>
+          <h1 class="font-semibold theme-text">{{ currentSection?.label || 'Super Admin' }}</h1>
+          <p class="text-xs theme-text-muted mt-0.5">{{ currentSection?.description || '' }}</p>
         </div>
-        <button v-if="currentSection.cta" @click="handleCta" class="btn-primary text-sm">
+        <button v-if="currentSection?.cta" @click="handleCta" class="btn-primary text-sm">
           {{ currentSection.cta }}
         </button>
       </div>
@@ -78,12 +78,12 @@
             </div>
             <div v-if="loadingProveedores" class="px-6 py-12 text-center theme-text-muted text-sm">Cargando proveedores...</div>
             <table v-else class="w-full min-w-[640px]">
-              <thead>
-                <tr><th v-for="h in ['Razón Social','ID Legal','Contacto','Documento','Aprobación','Cuenta','Acciones']" :key="h" class="px-6 py-3 text-left text-xs text-text-muted uppercase tracking-wider font-medium">{{ h }}</th></tr>
+              <thead class="border-b theme-border bg-black/10 dark:bg-white/[0.02]">
+                <tr><th v-for="h in ['Razón Social','ID Legal','Contacto','Documento','Aprobación','Cuenta','Acciones']" :key="h" class="px-6 py-3 text-left text-xs theme-text-muted uppercase tracking-wider font-medium">{{ h }}</th></tr>
               </thead>
-              <tbody class="divide-y divide-dark-border">
+              <tbody class="divide-y theme-divide">
                 <tr v-if="filteredProveedores.length === 0"><td colspan="6" class="px-6 py-12 text-center theme-text-muted text-sm">Sin proveedores registrados</td></tr>
-                <tr v-for="p in filteredProveedores" :key="p.id" class="hover:bg-gray-100 dark:bg-dark-bg/50 transition-colors">
+                <tr v-for="p in filteredProveedores" :key="p.id" class="theme-row-hover">
                   <td class="px-6 py-4 text-sm font-medium theme-text">{{ p.razon_social || p.nombre }}</td>
                   <td class="px-6 py-4 text-sm theme-text-muted font-mono">{{ p.identificacion_legal || 'N/A' }}</td>
                   <td class="px-6 py-4 text-sm theme-text-muted">
@@ -92,7 +92,7 @@
                   </td>
                   <td class="px-6 py-4">
                     <a v-if="p.documento_soporte_url" :href="p.documento_soporte_url" target="_blank" class="text-xs text-accent hover:underline flex items-center gap-1">
-                      📄 Ver Doc
+                      <FileText class="w-4 h-4 mr-1 inline-block" /> Ver Doc
                     </a>
                     <span v-else class="text-xs theme-text-muted">—</span>
                   </td>
@@ -110,13 +110,25 @@
                       <span v-else class="badge text-[10px] px-2 py-0.5 bg-green-500/10 text-green-400 border border-green-500/20">Activa</span>
                     </td>
                   <td class="px-6 py-4">
-                    <div class="flex flex-wrap gap-2">
-                       <button v-if="user?.rol === 'superadmin' && p.estado_aprobacion !== 'aprobado'" @click="cambiarEstadoProveedor(p, 'aprobado')" class="text-xs theme-text-muted hover:text-green-400 px-2 py-1 rounded hover:bg-green-400/10 transition-colors">Aprobar</button>
-                       <button v-if="user?.rol === 'superadmin' && p.estado_aprobacion !== 'rechazado'" @click="cambiarEstadoProveedor(p, 'rechazado')" class="text-xs theme-text-muted hover:text-red-400 px-2 py-1 rounded hover:bg-red-400/10 transition-colors">Rechazar</button>
-                       <button @click="toggleActivoProveedor(p)" class="text-xs theme-text-muted hover:text-yellow-400 px-2 py-1 rounded hover:bg-yellow-400/10 transition-colors">
+                    <div class="flex flex-wrap items-center gap-1.5">
+                       <button v-if="user?.rol === 'superadmin' && p.estado_aprobacion !== 'aprobado'" @click="requestConfirm({ title: 'Aprobar proveedor', message: `¿Aprobar al proveedor <strong>${p.razon_social || p.nombre}</strong>?`, confirmLabel: 'Sí, aprobar', variant: 'success', onConfirm: () => cambiarEstadoProveedor(p, 'aprobado') })" :disabled="isActionLoading(`prov_${p.id}_aprobado`)" class="px-2.5 py-1.5 rounded-lg text-xs font-semibold bg-emerald-500/15 text-emerald-400 hover:bg-emerald-500/25 border border-emerald-500/30 active:scale-95 transition-all inline-flex items-center gap-1 cursor-pointer shadow-sm shadow-emerald-950/40" :class="isActionLoading(`prov_${p.id}_aprobado`) ? 'opacity-50 cursor-wait' : ''">
+                         <Loader2 v-if="isActionLoading(`prov_${p.id}_aprobado`)" class="w-3 h-3 animate-spin" />
+                         <Check v-else class="w-3 h-3 stroke-[2.5]" />
+                         Aprobar
+                       </button>
+                       <button v-if="user?.rol === 'superadmin' && p.estado_aprobacion !== 'rechazado'" @click="requestConfirm({ title: 'Rechazar proveedor', message: `¿Rechazar al proveedor <strong>${p.razon_social || p.nombre}</strong>?`, confirmLabel: 'Sí, rechazar', variant: 'danger', onConfirm: () => cambiarEstadoProveedor(p, 'rechazado') })" :disabled="isActionLoading(`prov_${p.id}_rechazado`)" class="px-2.5 py-1.5 rounded-lg text-xs font-semibold bg-rose-500/15 text-rose-400 hover:bg-rose-500/25 border border-rose-500/30 active:scale-95 transition-all inline-flex items-center gap-1 cursor-pointer shadow-sm shadow-rose-950/40" :class="isActionLoading(`prov_${p.id}_rechazado`) ? 'opacity-50 cursor-wait' : ''">
+                         <Loader2 v-if="isActionLoading(`prov_${p.id}_rechazado`)" class="w-3 h-3 animate-spin" />
+                         <X v-else class="w-3 h-3 stroke-[2.5]" />
+                         Rechazar
+                       </button>
+                       <button @click="requestConfirm({ title: p.activo == 1 ? 'Desactivar proveedor' : 'Activar proveedor', message: `¿${p.activo == 1 ? 'Desactivar' : 'Activar'} a <strong>${p.razon_social || p.nombre}</strong>?`, confirmLabel: p.activo == 1 ? 'Sí, desactivar' : 'Sí, activar', variant: p.activo == 1 ? 'warning' : 'success', onConfirm: () => toggleActivoProveedor(p) })" :disabled="isActionLoading(`prov_${p.id}_toggle`)" class="px-2.5 py-1.5 rounded-lg text-xs font-semibold active:scale-95 transition-all inline-flex items-center gap-1 cursor-pointer border shadow-sm" :class="p.activo == 1 ? 'bg-amber-500/15 text-amber-400 hover:bg-amber-500/25 border-amber-500/30 shadow-amber-950/40' : 'bg-emerald-500/15 text-emerald-400 hover:bg-emerald-500/25 border-emerald-500/30 shadow-emerald-950/40'">
+                         <Loader2 v-if="isActionLoading(`prov_${p.id}_toggle`)" class="w-3 h-3 animate-spin" />
                          {{ p.activo == 1 ? 'Desactivar' : 'Activar' }}
                        </button>
-                       <button @click="openEditProveedor(p)" class="text-xs theme-text-muted hover:text-accent px-2 py-1 rounded hover:bg-accent/10 transition-colors">Editar</button>
+                       <button @click="openEditProveedor(p)" class="px-2.5 py-1.5 rounded-lg text-xs font-medium theme-text-muted hover:text-accent hover:border-accent/40 border theme-border theme-bg active:scale-95 transition-all inline-flex items-center gap-1 cursor-pointer">
+                         <Pencil class="w-3 h-3" />
+                         Editar
+                       </button>
                     </div>
                   </td>
                 </tr>
@@ -152,9 +164,9 @@
               <thead class="border-b theme-border">
                 <tr><th v-for="h in ['Nombre','Correo','Proveedor','Componentes','Estado','Acciones']" :key="h" class="px-6 py-3 text-left text-xs theme-text-muted uppercase tracking-wider font-medium">{{ h }}</th></tr>
               </thead>
-              <tbody class="divide-y divide-dark-border">
+              <tbody class="divide-y theme-divide">
                 <tr v-if="filteredBodegas.length === 0"><td colspan="6" class="px-6 py-12 text-center theme-text-muted text-sm">Sin bodegas registradas</td></tr>
-                <tr v-for="b in filteredBodegas" :key="b.id" class="hover:bg-gray-100 dark:bg-dark-bg/50 transition-colors">
+                <tr v-for="b in filteredBodegas" :key="b.id" class="theme-row-hover">
                   <td class="px-6 py-4 text-sm font-medium theme-text">{{ b.nombre }}</td>
                   <td class="px-6 py-4 text-sm theme-text-muted">{{ b.correo }}</td>
                   <td class="px-6 py-4">
@@ -168,12 +180,19 @@
                     </span>
                   </td>
                   <td class="px-6 py-4">
-                    <div class="flex gap-2">
-                      <button @click="openEditBodega(b)" class="text-xs theme-text-muted hover:text-accent px-2 py-1 rounded hover:bg-accent/10 transition-colors">Editar</button>
-                      <button @click="toggleBodega(b)" class="text-xs theme-text-muted hover:text-yellow-400 px-2 py-1 rounded hover:bg-yellow-400/10 transition-colors">
+                    <div class="flex items-center gap-1.5">
+                      <button @click="openEditBodega(b)" class="px-2.5 py-1.5 rounded-lg text-xs font-medium theme-text-muted hover:text-accent hover:border-accent/40 border theme-border theme-bg active:scale-95 transition-all inline-flex items-center gap-1 cursor-pointer">
+                        <Pencil class="w-3 h-3" />
+                        Editar
+                      </button>
+                      <button @click="requestConfirm({ title: b.activa == 1 ? 'Desactivar bodega' : 'Activar bodega', message: `¿${b.activa == 1 ? 'Desactivar' : 'Activar'} la bodega <strong>${b.nombre}</strong>?`, confirmLabel: b.activa == 1 ? 'Sí, desactivar' : 'Sí, activar', variant: b.activa == 1 ? 'warning' : 'success', onConfirm: () => toggleBodega(b) })" :disabled="isActionLoading(`bod_${b.id}_toggle`)" class="px-2.5 py-1.5 rounded-lg text-xs font-semibold active:scale-95 transition-all inline-flex items-center gap-1 cursor-pointer border shadow-sm" :class="b.activa == 1 ? 'bg-amber-500/15 text-amber-400 hover:bg-amber-500/25 border-amber-500/30 shadow-amber-950/40' : 'bg-emerald-500/15 text-emerald-400 hover:bg-emerald-500/25 border-emerald-500/30 shadow-emerald-950/40'">
+                        <Loader2 v-if="isActionLoading(`bod_${b.id}_toggle`)" class="w-3 h-3 animate-spin" />
                         {{ b.activa == 1 ? 'Desactivar' : 'Activar' }}
                       </button>
-                      <button @click="openDeleteBodega(b)" class="text-xs theme-text-muted hover:text-red-400 px-2 py-1 rounded hover:bg-red-400/10 transition-colors">Eliminar</button>
+                      <button @click="openDeleteBodega(b)" class="px-2.5 py-1.5 rounded-lg text-xs font-medium text-rose-400/80 hover:text-rose-400 hover:bg-rose-500/10 border border-rose-500/20 active:scale-95 transition-all inline-flex items-center gap-1 cursor-pointer">
+                        <Trash2 class="w-3 h-3" />
+                        Eliminar
+                      </button>
                     </div>
                   </td>
                 </tr>
@@ -194,9 +213,9 @@
               <thead class="border-b theme-border">
                 <tr><th v-for="h in ['ID', 'Nombre de Producto', 'Categoría']" :key="h" class="px-6 py-3 text-left text-xs theme-text-muted uppercase tracking-wider font-medium">{{ h }}</th></tr>
               </thead>
-              <tbody class="divide-y divide-dark-border">
+              <tbody class="divide-y theme-divide">
                 <tr v-if="filteredCatalogoList.length === 0"><td colspan="3" class="px-6 py-12 text-center theme-text-muted text-sm">Sin productos en el catálogo</td></tr>
-                <tr v-for="p in filteredCatalogoList" :key="p.id" class="hover:bg-gray-100 dark:bg-dark-bg/50 transition-colors">
+                <tr v-for="p in filteredCatalogoList" :key="p.id" class="theme-row-hover">
                   <td class="px-6 py-4 text-sm theme-text-muted font-mono">#{{ p.id }}</td>
                   <td class="px-6 py-4 text-sm font-medium theme-text">{{ p.nombre }}</td>
                   <td class="px-6 py-4"><span class="badge text-xs bg-accent/10 text-accent border border-accent/20">{{ p.categoria }}</span></td>
@@ -233,26 +252,39 @@
             <div v-if="loadingComponentes" class="px-6 py-12 text-center theme-text-muted text-sm">Cargando componentes...</div>
             <table v-else class="w-full min-w-[640px]">
               <thead class="border-b theme-border">
-                <tr><th v-for="h in ['Componente','Categoría','Gama','Estado','Acciones']" :key="h" class="px-6 py-3 text-left text-xs theme-text-muted uppercase tracking-wider font-medium">{{ h }}</th></tr>
+                <tr><th v-for="h in ['Componente','Categoría','Gama','Bodega','Precio','Stock','Estado','Acciones']" :key="h" class="px-6 py-3 text-left text-xs theme-text-muted uppercase tracking-wider font-medium">{{ h }}</th></tr>
               </thead>
-              <tbody class="divide-y divide-dark-border">
-                <tr v-if="filteredComponentes.length === 0"><td colspan="7" class="px-6 py-12 text-center theme-text-muted text-sm">Sin componentes</td></tr>
-                <tr v-for="c in filteredComponentes" :key="c.id" class="hover:bg-gray-100 dark:bg-dark-bg/50 transition-colors">
-                  <td class="px-6 py-4 text-sm font-medium theme-text">{{ c.nombre }}</td>
+              <tbody class="divide-y theme-divide">
+                <tr v-if="filteredComponentes.length === 0"><td colspan="8" class="px-6 py-12 text-center theme-text-muted text-sm">Sin componentes registrados</td></tr>
+                <tr v-for="c in filteredComponentes" :key="c.id" class="theme-row-hover">
+                  <td class="px-6 py-4 text-sm font-medium theme-text">
+                    <div>{{ c.nombre }}</div>
+                    <div class="text-xs theme-text-muted opacity-75 truncate max-w-xs">{{ c.especificacion }}</div>
+                  </td>
                   <td class="px-6 py-4"><span class="badge text-xs bg-accent/10 text-accent border border-accent/20">{{ c.categoria }}</span></td>
                   <td class="px-6 py-4"><span class="text-xs px-2 py-0.5 rounded-full font-medium border" :class="tierStyles[c.gama]">{{ c.gama }}</span></td>
+                  <td class="px-6 py-4 text-sm theme-text-muted">{{ c.bodega_nombre || c.bodega?.nombre || 'General' }}</td>
+                  <td class="px-6 py-4 text-sm font-mono text-accent font-medium">${{ Number(c.precio_final || c.precio || 0).toLocaleString() }}</td>
+                  <td class="px-6 py-4 text-sm font-mono theme-text">{{ c.stock ?? 0 }} unid.</td>
                   <td class="px-6 py-4">
                     <span class="badge text-xs px-2.5 py-1" :class="c.activo == 1 ? 'bg-green-500/10 text-green-400 border border-green-500/20' : 'bg-red-500/10 text-red-400 border border-red-500/20'">
                       {{ c.activo == 1 ? 'Activo' : 'Inactivo' }}
                     </span>
                   </td>
                   <td class="px-6 py-4">
-                    <div class="flex gap-2">
-                      <button @click="toggleComponente(c)" class="text-xs theme-text-muted hover:text-green-400 px-2 py-1 rounded hover:bg-green-400/10 transition-colors">
+                    <div class="flex items-center gap-1.5">
+                      <button @click="requestConfirm({ title: c.activo == 1 ? 'Desactivar componente' : 'Activar componente', message: `¿${c.activo == 1 ? 'Desactivar' : 'Activar'} <strong>${c.nombre}</strong>?`, confirmLabel: c.activo == 1 ? 'Sí, desactivar' : 'Sí, activar', variant: c.activo == 1 ? 'warning' : 'success', onConfirm: () => toggleComponente(c) })" :disabled="isActionLoading(`comp_${c.id}_toggle`)" class="px-2.5 py-1.5 rounded-lg text-xs font-semibold active:scale-95 transition-all inline-flex items-center gap-1 cursor-pointer border shadow-sm" :class="c.activo == 1 ? 'bg-amber-500/15 text-amber-400 hover:bg-amber-500/25 border-amber-500/30 shadow-amber-950/40' : 'bg-emerald-500/15 text-emerald-400 hover:bg-emerald-500/25 border-emerald-500/30 shadow-emerald-950/40'">
+                        <Loader2 v-if="isActionLoading(`comp_${c.id}_toggle`)" class="w-3 h-3 animate-spin" />
                         {{ c.activo == 1 ? 'Desactivar' : 'Activar' }}
                       </button>
-                      <button @click="openEditComp(c)" class="text-xs theme-text-muted hover:text-accent px-2 py-1 rounded hover:bg-accent/10 transition-colors">Editar</button>
-                      <button @click="openDeleteComp(c)" class="text-xs theme-text-muted hover:text-red-400 px-2 py-1 rounded hover:bg-red-400/10 transition-colors">Eliminar</button>
+                      <button @click="openEditComp(c)" class="px-2.5 py-1.5 rounded-lg text-xs font-medium theme-text-muted hover:text-accent hover:border-accent/40 border theme-border theme-bg active:scale-95 transition-all inline-flex items-center gap-1 cursor-pointer">
+                        <Pencil class="w-3 h-3" />
+                        Editar
+                      </button>
+                      <button @click="openDeleteComp(c)" class="px-2.5 py-1.5 rounded-lg text-xs font-medium text-rose-400/80 hover:text-rose-400 hover:bg-rose-500/10 border border-rose-500/20 active:scale-95 transition-all inline-flex items-center gap-1 cursor-pointer">
+                        <Trash2 class="w-3 h-3" />
+                        Eliminar
+                      </button>
                     </div>
                   </td>
                 </tr>
@@ -272,9 +304,9 @@
               <thead class="border-b theme-border">
                 <tr><th v-for="h in ['#','Cliente','Perfil','Componentes','Total','Fecha']" :key="h" class="px-6 py-3 text-left text-xs theme-text-muted uppercase tracking-wider font-medium">{{ h }}</th></tr>
               </thead>
-              <tbody class="divide-y divide-dark-border">
+              <tbody class="divide-y theme-divide">
                 <tr v-if="cotizaciones.length === 0"><td colspan="6" class="px-6 py-12 text-center theme-text-muted text-sm">Sin cotizaciones</td></tr>
-                <tr v-for="c in cotizaciones" :key="c.id" class="hover:bg-gray-100 dark:bg-dark-bg/50 transition-colors">
+                <tr v-for="c in cotizaciones" :key="c.id" class="theme-row-hover">
                   <td class="px-6 py-4 text-sm font-mono theme-text-muted">#{{ c.id }}</td>
                   <td class="px-6 py-4 text-sm theme-text">{{ c.nombre }} {{ c.apellido }}</td>
                   <td class="px-6 py-4 text-sm theme-text-muted">{{ perfilLabel(c.perfil) }}</td>
@@ -289,65 +321,209 @@
 
         <!-- ===== CREAR USUARIO ===== -->
         <template v-if="activeSection === 'crear-usuario'">
-          <div class="max-w-xl">
-            <div class="card-dark rounded-2xl p-8 space-y-6">
-              <div>
-                <label class="block text-sm font-medium theme-text mb-3">Rol del usuario</label>
-                <div class="grid grid-cols-3 gap-3">
-                  <button v-for="role in roles" :key="role.id" @click="newUser.rol = role.id"
-                    class="flex flex-col items-center gap-2 p-4 rounded-xl border transition-all duration-150"
-                    :class="newUser.rol === role.id ? 'border-accent bg-accent/5 text-accent' : 'theme-border theme-text-muted hover:border-accent/40 hover:theme-text'"
-                  >
-                    <component :is="role.icon" class="text-2xl inline-block" />
-                    <span class="text-xs font-medium">{{ role.label }}</span>
-                  </button>
+          <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+
+            <!-- Columna Izquierda: Formulario (col-span-7) -->
+            <div class="lg:col-span-7 space-y-6">
+
+              <!-- Card 1: Selección de Rol y Permisos -->
+              <div class="card-dark rounded-2xl p-6 border theme-border space-y-5">
+                <h3 class="text-xs font-semibold theme-text-muted uppercase tracking-wider flex items-center gap-2">
+                  <Crown class="w-4 h-4 text-accent" /> Configuración de Rol y Accesos
+                </h3>
+
+                <div>
+                  <label class="block text-xs font-medium theme-text-muted mb-2.5">Rol del usuario *</label>
+                  <div class="grid grid-cols-3 gap-3">
+                    <button
+                      v-for="role in roles"
+                      :key="role.id"
+                      @click="newUser.rol = role.id"
+                      type="button"
+                      class="flex flex-col items-center justify-center gap-2 p-3.5 rounded-xl border transition-all duration-150"
+                      :class="newUser.rol === role.id ? 'border-accent bg-accent/10 text-accent font-semibold shadow-sm' : 'theme-border theme-text-muted hover:border-accent/40 hover:theme-text theme-bg'"
+                    >
+                      <component :is="role.icon" class="text-xl inline-block" />
+                      <span class="text-xs font-medium">{{ role.label }}</span>
+                    </button>
+                  </div>
                 </div>
-              </div>
-              
-              <div>
-                <label class="block text-sm font-medium theme-text mb-2">Perfil de Permisos (Opcional)</label>
-                <select v-model="newUser.perfil_id" class="w-full theme-bg border theme-border rounded-lg px-4 py-3 text-sm theme-text focus:outline-none focus:border-accent transition-colors">
-                  <option :value="null">Sin perfil</option>
-                  <option v-for="p in perfiles.filter(p => p.activo == 1)" :key="p.id" :value="p.id">{{ p.nombre }}</option>
-                </select>
+
+                <div>
+                  <label class="block text-xs font-medium theme-text-muted mb-2">Perfil de Permisos <span class="text-xs font-normal opacity-70">(Opcional)</span></label>
+                  <select
+                    v-model="newUser.perfil_id"
+                    class="w-full theme-bg border theme-border rounded-xl px-4 py-3 text-sm theme-text focus:outline-none focus:border-accent transition-colors"
+                  >
+                    <option :value="null">Sin perfil asignado</option>
+                    <option v-for="p in perfiles.filter(p => p.activo == 1)" :key="p.id" :value="p.id">{{ p.nombre }}</option>
+                  </select>
+                </div>
               </div>
 
-              <div class="border-t theme-border"></div>
-              <div class="grid grid-cols-2 gap-4">
-                <div>
-                  <label class="block text-sm font-medium theme-text mb-2">Nombre</label>
-                  <input v-model="newUser.nombre" type="text" placeholder="Juan" class="w-full theme-bg border theme-border rounded-lg px-4 py-3 text-sm theme-text placeholder-text-muted focus:outline-none focus:border-accent transition-colors" />
-                </div>
-                <div>
-                  <label class="block text-sm font-medium theme-text mb-2">Apellido</label>
-                  <input v-model="newUser.apellido" type="text" placeholder="Pérez" class="w-full theme-bg border theme-border rounded-lg px-4 py-3 text-sm theme-text placeholder-text-muted focus:outline-none focus:border-accent transition-colors" />
-                </div>
-              </div>
-              <div>
-                <label class="block text-sm font-medium theme-text mb-2">Correo electrónico</label>
-                <input v-model="newUser.correo" type="email" placeholder="usuario@email.com" class="w-full theme-bg border theme-border rounded-lg px-4 py-3 text-sm theme-text placeholder-text-muted focus:outline-none focus:border-accent transition-colors" />
-              </div>
-              <div>
-                <label class="block text-sm font-medium theme-text mb-2">Número de celular</label>
-                <div class="flex gap-2">
-                  <div class="flex items-center px-3 rounded-lg theme-bg theme-border border theme-text-muted text-sm select-none flex-shrink-0">
-                    🇨🇴 +57
+              <!-- Card 2: Información Personal -->
+              <div class="card-dark rounded-2xl p-6 border theme-border space-y-5">
+                <h3 class="text-xs font-semibold theme-text-muted uppercase tracking-wider flex items-center gap-2">
+                  <User class="w-4 h-4 text-accent" /> Datos de Identificación y Acceso
+                </h3>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label class="block text-xs font-medium theme-text-muted mb-1.5">Nombre *</label>
+                    <input
+                      v-model="newUser.nombre"
+                      type="text"
+                      placeholder="Ej: Juan"
+                      class="w-full theme-bg border theme-border rounded-xl px-4 py-2.5 text-sm theme-text placeholder-text-muted focus:outline-none focus:border-accent transition-colors"
+                    />
                   </div>
-                  <input v-model="newUser.telefonoLocal" @input="handleTelefonoInput(newUser, 'telefonoLocal')" type="tel" placeholder="300 123 4567" maxlength="13" class="flex-1 theme-bg border theme-border rounded-lg px-4 py-3 text-sm theme-text placeholder-text-muted focus:outline-none focus:border-accent transition-colors" />
+
+                  <div>
+                    <label class="block text-xs font-medium theme-text-muted mb-1.5">Apellido</label>
+                    <input
+                      v-model="newUser.apellido"
+                      type="text"
+                      placeholder="Ej: Pérez"
+                      class="w-full theme-bg border theme-border rounded-xl px-4 py-2.5 text-sm theme-text placeholder-text-muted focus:outline-none focus:border-accent transition-colors"
+                    />
+                  </div>
                 </div>
-                <p class="text-xs theme-text-muted mt-1">Debe ser un número colombiano válido (3XX XXX XXXX)</p>
+
+                <div>
+                  <label class="block text-xs font-medium theme-text-muted mb-1.5">Correo electrónico *</label>
+                  <input
+                    v-model="newUser.correo"
+                    type="email"
+                    placeholder="usuario@email.com"
+                    class="w-full theme-bg border theme-border rounded-xl px-4 py-2.5 text-sm theme-text placeholder-text-muted focus:outline-none focus:border-accent transition-colors"
+                  />
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label class="block text-xs font-medium theme-text-muted mb-1.5">Teléfono celular</label>
+                    <div class="flex gap-2">
+                      <div class="flex items-center px-3 rounded-xl theme-bg theme-border border theme-text-muted text-xs select-none flex-shrink-0">
+                        +57
+                      </div>
+                      <input
+                        v-model="newUser.telefonoLocal"
+                        @input="handleTelefonoInput(newUser, 'telefonoLocal')"
+                        type="tel"
+                        placeholder="300 123 4567"
+                        maxlength="13"
+                        class="flex-1 theme-bg border theme-border rounded-xl px-3.5 py-2.5 text-sm theme-text placeholder-text-muted focus:outline-none focus:border-accent transition-colors"
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label class="block text-xs font-medium theme-text-muted mb-1.5">Contraseña temporal *</label>
+                    <input
+                      v-model="newUser.password"
+                      type="password"
+                      placeholder="Mínimo 8 caracteres"
+                      class="w-full theme-bg border theme-border rounded-xl px-4 py-2.5 text-sm theme-text placeholder-text-muted focus:outline-none focus:border-accent transition-colors"
+                    />
+                  </div>
+                </div>
               </div>
-              <div>
-                <label class="block text-sm font-medium theme-text mb-2">Contraseña temporal</label>
-                <input v-model="newUser.password" type="password" placeholder="Mínimo 8 caracteres" class="w-full theme-bg border theme-border rounded-lg px-4 py-3 text-sm theme-text placeholder-text-muted focus:outline-none focus:border-accent transition-colors" />
-              </div>
-              <p v-if="createUserError"   class="text-xs text-red-400 bg-red-500/10 border border-red-500/20 rounded-lg px-4 py-2.5">{{ createUserError }}</p>
-              <p v-if="createUserSuccess" class="text-xs text-green-400 bg-green-500/10 border border-green-500/20 rounded-lg px-4 py-2.5">{{ createUserSuccess }}</p>
-              <div class="flex gap-3 pt-2">
-                <button @click="saveNewUser" :disabled="savingUser" class="btn-primary flex-1 text-sm">{{ savingUser ? 'Creando...' : 'Crear usuario' }}</button>
-                <button @click="resetNewUser" class="btn-secondary text-sm px-5">Limpiar</button>
+
+            </div>
+
+            <!-- Columna Derecha: Vista Previa en Tiempo Real y Acciones (col-span-5) -->
+            <div class="lg:col-span-5">
+              <div class="sticky top-20 card-dark rounded-2xl p-6 border theme-border space-y-6 shadow-lg">
+                <div class="flex items-center justify-between border-b theme-border pb-4">
+                  <div class="flex items-center gap-2">
+                    <span class="w-2 h-2 rounded-full bg-accent animate-pulse"></span>
+                    <h4 class="text-xs font-semibold theme-text uppercase tracking-wider">Vista previa de la cuenta</h4>
+                  </div>
+                  <span class="badge text-[10px] px-2 py-0.5" :class="roleStyles[newUser.rol]?.badge">
+                    {{ roleStyles[newUser.rol]?.label }}
+                  </span>
+                </div>
+
+                <!-- Avatar y Nombre -->
+                <div class="flex flex-col items-center text-center py-2">
+                  <div
+                    class="w-16 h-16 rounded-2xl flex items-center justify-center text-xl font-bold mb-3 transition-colors shadow-inner"
+                    :class="roleStyles[newUser.rol]?.avatar || 'theme-bg theme-text'"
+                  >
+                    {{ (newUser.nombre || 'U').charAt(0).toUpperCase() }}{{ (newUser.apellido || '').charAt(0).toUpperCase() }}
+                  </div>
+                  <h3 class="text-base font-bold theme-text leading-snug">
+                    {{ (newUser.nombre || newUser.apellido) ? `${newUser.nombre || ''} ${newUser.apellido || ''}`.trim() : 'Nombre del Usuario' }}
+                  </h3>
+                  <p class="text-xs theme-text-muted mt-1 font-mono">
+                    {{ newUser.correo || 'correo@ejemplo.com' }}
+                  </p>
+                </div>
+
+                <!-- Detalles resumen -->
+                <div class="space-y-3 pt-2 text-xs border-t theme-border">
+                  <div class="flex items-center justify-between py-1">
+                    <span class="theme-text-muted">Rol asignado:</span>
+                    <span class="font-medium theme-text capitalize">{{ roleStyles[newUser.rol]?.label }}</span>
+                  </div>
+
+                  <div class="flex items-center justify-between py-1">
+                    <span class="theme-text-muted">Perfil de permisos:</span>
+                    <span class="font-medium theme-text">
+                      {{ perfiles.find(p => p.id === newUser.perfil_id)?.nombre || 'Sin perfil asignado' }}
+                    </span>
+                  </div>
+
+                  <div class="flex items-center justify-between py-1">
+                    <span class="theme-text-muted">Teléfono:</span>
+                    <span class="font-mono theme-text">
+                      {{ newUser.telefonoLocal ? '+57 ' + newUser.telefonoLocal : '—' }}
+                    </span>
+                  </div>
+
+                  <div class="flex items-center justify-between py-1">
+                    <span class="theme-text-muted">Estado inicial:</span>
+                    <span class="badge text-[10px] px-2 py-0.5 bg-green-500/10 text-green-400 border border-green-500/20">
+                      Activo
+                    </span>
+                  </div>
+                </div>
+
+                <!-- Info note -->
+                <div class="bg-accent/5 border border-accent/20 rounded-xl p-3.5 text-xs text-accent flex items-start gap-2.5">
+                  <ShieldCheck class="w-4 h-4 flex-shrink-0 mt-0.5" />
+                  <p class="leading-relaxed text-[11px]">
+                    El usuario podrá autenticarse inmediatamente usando el correo y la contraseña temporal establecida.
+                  </p>
+                </div>
+
+                <!-- Mensajes de feedback -->
+                <p v-if="createUserError"   class="text-xs text-red-400 bg-red-500/10 border border-red-500/20 rounded-xl px-4 py-3">{{ createUserError }}</p>
+                <p v-if="createUserSuccess" class="text-xs text-green-400 bg-green-500/10 border border-green-500/20 rounded-xl px-4 py-3">{{ createUserSuccess }}</p>
+
+                <!-- Botones de Acción al pie de la tarjeta -->
+                <div class="pt-2 border-t theme-border space-y-3">
+                  <button
+                    @click="saveNewUser"
+                    :disabled="savingUser"
+                    class="w-full btn-primary py-3.5 rounded-xl flex items-center justify-center gap-2 font-semibold text-sm shadow-lg shadow-accent/25 transition-all hover:scale-[1.01]"
+                  >
+                    <UserPlus class="w-4 h-4" />
+                    {{ savingUser ? 'Creando usuario...' : 'Crear usuario' }}
+                  </button>
+
+                  <button
+                    @click="resetNewUser"
+                    type="button"
+                    class="w-full btn-secondary py-2.5 rounded-xl text-xs font-medium transition-all text-center opacity-80 hover:opacity-100"
+                  >
+                    Limpiar campos
+                  </button>
+                </div>
+
               </div>
             </div>
+
           </div>
         </template>
 
@@ -363,9 +539,9 @@
               <thead class="border-b theme-border">
                 <tr><th v-for="h in ['Nombre','Descripción','Permisos','Estado','Acciones']" :key="h" class="px-6 py-3 text-left text-xs theme-text-muted uppercase tracking-wider font-medium">{{ h }}</th></tr>
               </thead>
-              <tbody class="divide-y divide-dark-border">
+              <tbody class="divide-y theme-divide">
                 <tr v-if="perfiles.length === 0"><td colspan="5" class="px-6 py-12 text-center theme-text-muted text-sm">Sin perfiles</td></tr>
-                <tr v-for="p in perfiles" :key="p.id" class="hover:bg-gray-100 dark:bg-dark-bg/50 transition-colors">
+                <tr v-for="p in perfiles" :key="p.id" class="theme-row-hover">
                   <td class="px-6 py-4 text-sm font-medium theme-text">{{ p.nombre }}</td>
                   <td class="px-6 py-4 text-sm theme-text-muted max-w-48 truncate">{{ p.descripcion || '—' }}</td>
                   <td class="px-6 py-4 text-sm theme-text font-mono">{{ p.permisos?.length || 0 }}</td>
@@ -415,9 +591,9 @@
               <thead class="border-b theme-border">
                 <tr><th v-for="h in ['Usuario','Correo','Teléfono','Rol','Estado','Registrado','Acciones']" :key="h" class="px-6 py-3 text-left text-xs theme-text-muted uppercase tracking-wider font-medium">{{ h }}</th></tr>
               </thead>
-              <tbody class="divide-y divide-dark-border">
+              <tbody class="divide-y theme-divide">
                 <tr v-if="filteredUsuarios.length === 0"><td colspan="6" class="px-6 py-12 text-center theme-text-muted text-sm">Sin usuarios</td></tr>
-                <tr v-for="u in filteredUsuarios" :key="u.id" class="hover:bg-gray-100 dark:bg-dark-bg/50 transition-colors">
+                <tr v-for="u in filteredUsuarios" :key="u.id" class="theme-row-hover">
                   <td class="px-6 py-4">
                     <div class="flex items-center gap-3">
                       <div class="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0" :class="roleStyles[u.rol]?.avatar ?? 'theme-card theme-text-muted'">
@@ -437,12 +613,19 @@
                   </td>
                   <td class="px-6 py-4 text-sm theme-text-muted">{{ formatDate(u.created_at) }}</td>
                   <td class="px-6 py-4">
-                    <div class="flex gap-2">
-                        <button @click="toggleActivoUsuario(u)" class="text-xs theme-text-muted hover:text-green-400 px-2 py-1 rounded hover:bg-green-400/10 transition-colors">
+                    <div class="flex items-center gap-1.5">
+                        <button @click="requestConfirm({ title: u.activo == 1 ? 'Desactivar usuario' : 'Activar usuario', message: `¿${u.activo == 1 ? 'Desactivar' : 'Activar'} a <strong>${u.nombre} ${u.apellido || ''}</strong>?`, confirmLabel: u.activo == 1 ? 'Sí, desactivar' : 'Sí, activar', variant: u.activo == 1 ? 'warning' : 'success', onConfirm: () => toggleActivoUsuario(u) })" :disabled="isActionLoading(`user_${u.id}_toggle`)" class="px-2.5 py-1.5 rounded-lg text-xs font-semibold active:scale-95 transition-all inline-flex items-center gap-1 cursor-pointer border shadow-sm" :class="u.activo == 1 ? 'bg-amber-500/15 text-amber-400 hover:bg-amber-500/25 border-amber-500/30 shadow-amber-950/40' : 'bg-emerald-500/15 text-emerald-400 hover:bg-emerald-500/25 border-emerald-500/30 shadow-emerald-950/40'">
+                           <Loader2 v-if="isActionLoading(`user_${u.id}_toggle`)" class="w-3 h-3 animate-spin" />
                            {{ u.activo == 1 ? 'Desactivar' : 'Activar' }}
                         </button>
-                      <button @click="openEditUsuario(u)" class="text-xs theme-text-muted hover:text-accent px-2 py-1 rounded hover:bg-accent/10 transition-colors">Editar</button>
-                      <button @click="openDeleteUsuario(u)" class="text-xs theme-text-muted hover:text-red-400 px-2 py-1 rounded hover:bg-red-400/10 transition-colors">Eliminar</button>
+                      <button @click="openEditUsuario(u)" class="px-2.5 py-1.5 rounded-lg text-xs font-medium theme-text-muted hover:text-accent hover:border-accent/40 border theme-border theme-bg active:scale-95 transition-all inline-flex items-center gap-1 cursor-pointer">
+                        <Pencil class="w-3 h-3" />
+                        Editar
+                      </button>
+                      <button @click="openDeleteUsuario(u)" class="px-2.5 py-1.5 rounded-lg text-xs font-medium text-rose-400/80 hover:text-rose-400 hover:bg-rose-500/10 border border-rose-500/20 active:scale-95 transition-all inline-flex items-center gap-1 cursor-pointer">
+                        <Trash2 class="w-3 h-3" />
+                        Eliminar
+                      </button>
                     </div>
                   </td>
                 </tr>
@@ -462,9 +645,9 @@
               <thead class="border-b theme-border">
                 <tr><th v-for="h in ['Fecha','Usuario','Rol','Acción','Módulo']" :key="h" class="px-6 py-3 text-left text-xs theme-text-muted uppercase tracking-wider font-medium">{{ h }}</th></tr>
               </thead>
-              <tbody class="divide-y divide-dark-border">
+              <tbody class="divide-y theme-divide">
                 <tr v-if="historial.length === 0"><td colspan="5" class="px-6 py-12 text-center theme-text-muted text-sm">Sin registros</td></tr>
-                <tr v-for="h in historial" :key="h.id" class="hover:bg-gray-100 dark:bg-dark-bg/50 transition-colors">
+                <tr v-for="h in historial" :key="h.id" class="theme-row-hover">
                   <td class="px-6 py-4 text-sm theme-text-muted whitespace-nowrap">{{ new Date(h.created_at).toLocaleString('es-CL') }}</td>
                   <td class="px-6 py-4 text-sm font-medium theme-text">{{ h.usuario_nombre || 'Usuario Eliminado' }}</td>
                   <td class="px-6 py-4">
@@ -483,10 +666,10 @@
           <!-- Tabs -->
           <div class="flex gap-2 mb-6">
             <button @click="reporteTab = 'rotacion'" class="px-4 py-2 rounded-lg text-sm font-medium transition-all" :class="reporteTab === 'rotacion' ? 'bg-accent text-white shadow-lg shadow-accent/20' : 'card-dark theme-text-muted hover:theme-text'">
-              📊 Rotación por Bodega
+              <BarChart3 class="w-5 h-5 mr-2 inline-block text-accent" /> Rotación por Bodega
             </button>
             <button @click="reporteTab = 'consumo'" class="px-4 py-2 rounded-lg text-sm font-medium transition-all" :class="reporteTab === 'consumo' ? 'bg-accent text-white shadow-lg shadow-accent/20' : 'card-dark theme-text-muted hover:theme-text'">
-              📦 Consumo por Proveedor
+              <Package class="w-5 h-5 mr-2 inline-block text-accent" /> Consumo por Proveedor
             </button>
           </div>
 
@@ -552,8 +735,8 @@
                       <th class="px-6 py-3 text-right text-xs theme-text-muted uppercase tracking-wider font-medium">Unidades vendidas</th>
                     </tr>
                   </thead>
-                  <tbody class="divide-y divide-dark-border">
-                    <tr v-for="(item, idx) in rotacionData" :key="idx" class="hover:bg-gray-100 dark:hover:bg-dark-bg/50 transition-colors">
+                  <tbody class="divide-y theme-divide">
+                    <tr v-for="(item, idx) in rotacionData" :key="idx" class="theme-row-hover">
                       <td class="px-6 py-3.5 text-sm font-mono theme-text-muted">{{ idx + 1 }}</td>
                       <td class="px-6 py-3.5 text-sm font-medium theme-text">{{ item.producto_nombre }}</td>
                       <td class="px-6 py-3.5 text-sm theme-text-muted">{{ item.categoria }}</td>
@@ -566,7 +749,7 @@
             </div>
 
             <div v-else-if="rotacionFetched && rotacionData.length === 0" class="card-dark rounded-xl p-12 text-center">
-              <p class="text-4xl mb-3">📭</p>
+              <Mailbox class="w-10 h-10 mx-auto mb-3 text-text-muted" stroke-width="1.5" />
               <p class="theme-text font-semibold mb-1">Sin movimientos</p>
               <p class="theme-text-muted text-sm">No se encontraron cotizaciones para esta bodega en el rango seleccionado.</p>
             </div>
@@ -630,8 +813,8 @@
                       <th class="px-6 py-3 text-right text-xs theme-text-muted uppercase tracking-wider font-medium">Participación</th>
                     </tr>
                   </thead>
-                  <tbody class="divide-y divide-dark-border">
-                    <tr v-for="item in consumoData" :key="item.bodega_id" class="hover:bg-gray-100 dark:hover:bg-dark-bg/50 transition-colors">
+                  <tbody class="divide-y theme-divide">
+                    <tr v-for="item in consumoData" :key="item.bodega_id" class="theme-row-hover">
                       <td class="px-6 py-3.5 text-sm font-medium theme-text">{{ item.bodega_nombre }}</td>
                       <td class="px-6 py-3.5 text-sm font-mono text-accent font-semibold text-right">{{ item.total_consumido.toLocaleString() }}</td>
                       <td class="px-6 py-3.5 text-right">
@@ -649,7 +832,7 @@
             </div>
 
             <div v-else-if="consumoFetched && consumoData.length === 0" class="card-dark rounded-xl p-12 text-center">
-              <p class="text-4xl mb-3">📭</p>
+              <Mailbox class="w-10 h-10 mx-auto mb-3 text-text-muted" stroke-width="1.5" />
               <p class="theme-text font-semibold mb-1">Sin consumo registrado</p>
               <p class="theme-text-muted text-sm">Este proveedor aún no tiene componentes cotizados en sus bodegas.</p>
             </div>
@@ -806,7 +989,7 @@
             <label class="block text-sm font-medium theme-text mb-2">Número de celular</label>
             <div class="flex gap-2">
               <div class="flex items-center px-3 rounded-lg theme-bg theme-border border theme-text-muted text-sm select-none flex-shrink-0">
-                🇨🇴 +57
+                <MapPin class="w-4 h-4 mr-1 inline-block" /> +57
               </div>
               <input v-model="editingBodega.telefonoLocal" @input="handleTelefonoInput(editingBodega, 'telefonoLocal')" type="tel" placeholder="300 123 4567" maxlength="13" class="flex-1 theme-bg border theme-border rounded-lg px-4 py-3 text-sm theme-text focus:outline-none focus:border-accent transition-colors" />
             </div>
@@ -864,7 +1047,7 @@
             <label class="block text-sm font-medium theme-text mb-2">Número de celular</label>
             <div class="flex gap-2">
               <div class="flex items-center px-3 rounded-lg theme-bg theme-border border theme-text-muted text-sm select-none flex-shrink-0">
-                🇨🇴 +57
+                <MapPin class="w-4 h-4 mr-1 inline-block" /> +57
               </div>
               <input v-model="newBodega.telefonoLocal" @input="handleTelefonoInput(newBodega, 'telefonoLocal')" type="tel" placeholder="300 123 4567" maxlength="13" class="flex-1 theme-bg border theme-border rounded-lg px-4 py-3 text-sm theme-text placeholder-text-muted focus:outline-none focus:border-accent transition-colors" />
             </div>
@@ -934,7 +1117,7 @@
             <label class="block text-sm font-medium theme-text mb-2">Número de celular</label>
             <div class="flex gap-2">
               <div class="flex items-center px-3 rounded-lg theme-bg theme-border border theme-text-muted text-sm select-none flex-shrink-0">
-                🇨🇴 +57
+                <MapPin class="w-4 h-4 mr-1 inline-block" /> +57
               </div>
               <input v-model="editingUsuario.telefonoLocal" @input="handleTelefonoInput(editingUsuario, 'telefonoLocal')" type="tel" placeholder="300 123 4567" maxlength="13" class="flex-1 theme-bg border theme-border rounded-lg px-4 py-3 text-sm theme-text focus:outline-none focus:border-accent transition-colors" />
             </div>
@@ -1264,8 +1447,8 @@
                 <div class="space-y-2">
                   <label v-for="(label, code) in permisos" :key="code" class="flex items-start gap-2 cursor-pointer group">
                     <div class="relative flex items-center justify-center mt-0.5">
-                      <input type="checkbox" :checked="editingPerfil.permisos.includes(code)" @change="togglePermiso(code)" class="appearance-none w-4 h-4 rounded border theme-border theme-bg checked:bg-accent checked:border-accent transition-colors" />
-                      <svg v-if="editingPerfil.permisos.includes(code)" class="absolute w-2.5 h-2.5 text-white pointer-events-none" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3">
+                      <input type="checkbox" :checked="editingPerfil.permisos && editingPerfil.permisos.includes(code)" @change="togglePermiso(code)" class="appearance-none w-4 h-4 rounded border theme-border theme-bg checked:bg-accent checked:border-accent transition-colors" />
+                      <svg v-if="editingPerfil.permisos && editingPerfil.permisos.includes(code)" class="absolute w-2.5 h-2.5 text-white pointer-events-none" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
                       </svg>
                     </div>
@@ -1288,19 +1471,122 @@
       </div>
     </div>
 
+    <!-- ===== MODAL CONFIRMACIÓN GENÉRICO ===== -->
+    <Teleport to="body">
+      <div v-if="confirmAction.show" class="fixed inset-0 z-[99999] flex items-center justify-center px-4">
+        <div class="fixed inset-0 bg-black/75 backdrop-blur-md transition-opacity" @click="cancelConfirm"></div>
+        <div class="relative card-dark rounded-2xl p-6 w-full max-w-sm shadow-2xl border theme-border text-center animate-fade-in z-10">
+          <!-- Ícono -->
+          <div class="w-14 h-14 rounded-full flex items-center justify-center mx-auto mb-4"
+            :class="{
+              'bg-green-500/15 border border-green-500/30 text-green-400': confirmAction.variant === 'success',
+              'bg-red-500/15 border border-red-500/30 text-red-400': confirmAction.variant === 'danger',
+              'bg-yellow-500/15 border border-yellow-500/30 text-yellow-400': confirmAction.variant === 'warning',
+              'bg-accent/15 border border-accent/30 text-accent': confirmAction.variant === 'default'
+            }">
+            <CheckCircle2 v-if="confirmAction.variant === 'success'" class="w-7 h-7" />
+            <AlertTriangle v-else-if="confirmAction.variant === 'danger'" class="w-7 h-7" />
+            <AlertTriangle v-else-if="confirmAction.variant === 'warning'" class="w-7 h-7" />
+            <Info v-else class="w-7 h-7" />
+          </div>
+
+          <h2 class="text-lg font-bold theme-text mb-2">{{ confirmAction.title }}</h2>
+          <p class="theme-text-muted text-sm mb-6 px-2 leading-relaxed" v-html="confirmAction.message"></p>
+
+          <div class="flex gap-3">
+            <button
+              @click="executeConfirm"
+              :disabled="confirmAction.loading"
+              class="flex-1 py-3 rounded-xl text-sm font-semibold transition-all flex items-center justify-center gap-2 cursor-pointer shadow-lg"
+              :class="{
+                'bg-green-600 hover:bg-green-500 text-white shadow-green-900/30': confirmAction.variant === 'success',
+                'bg-red-600 hover:bg-red-500 text-white shadow-red-900/30': confirmAction.variant === 'danger',
+                'bg-yellow-600 hover:bg-yellow-500 text-white shadow-yellow-900/30': confirmAction.variant === 'warning',
+                'bg-accent hover:bg-blue-500 text-white shadow-blue-900/30': confirmAction.variant === 'default',
+                'opacity-50 cursor-wait': confirmAction.loading
+              }"
+            >
+              <Loader2 v-if="confirmAction.loading" class="w-4 h-4 animate-spin" />
+              {{ confirmAction.loading ? 'Procesando...' : confirmAction.confirmLabel }}
+            </button>
+            <button @click="cancelConfirm" :disabled="confirmAction.loading" class="flex-1 btn-secondary text-sm rounded-xl">Cancelar</button>
+          </div>
+        </div>
+      </div>
+    </Teleport>
+
   </div>
 </template>
 
 <script setup>
-import { UserPlus, Check, Trash2, Pencil, Sun, Moon, Info, Package, Wrench, FileText, Shield, Briefcase, Gamepad2, Palette, BookOpen, Building2, Store, Users, Lock, ClipboardList, Crown, User, BarChart3 } from '@lucide/vue'
+import { FileText, MapPin, BarChart3, Package, Mailbox, UserPlus, Check, Trash2, Pencil, Sun, Moon, Info, Wrench, Shield, Briefcase, Gamepad2, Palette, BookOpen, Building2, Store, Users, Lock, ClipboardList, Crown, User, AlertTriangle, ShieldCheck, CheckCircle2, Loader2, X } from 'lucide-vue-next';
+
+
+
 import { useTheme } from '../composables/useTheme'
 const { isDark, toggleTheme } = useTheme()
-import { ref, markRaw, computed, onMounted, nextTick, watch } from 'vue'
+import { ref, markRaw, computed, onMounted, nextTick, watch, reactive } from 'vue'
 import { Chart, BarController, PieController, ArcElement, BarElement, CategoryScale, LinearScale, Tooltip, Legend } from 'chart.js'
 Chart.register(BarController, PieController, ArcElement, BarElement, CategoryScale, LinearScale, Tooltip, Legend)
 import { useRouter } from 'vue-router'
 import { useAuth } from '../composables/useAuth'
 import { useToast } from '../composables/useToast'
+
+// ── Confirm Modal State ───────────────────────────────────
+const confirmAction = reactive({
+  show: false,
+  title: '',
+  message: '',
+  confirmLabel: 'Confirmar',
+  cancelLabel: 'Cancelar',
+  variant: 'default', // 'danger' | 'success' | 'warning'
+  loading: false,
+  onConfirm: null
+})
+
+function requestConfirm({ title, message, confirmLabel = 'Confirmar', variant = 'default', onConfirm }) {
+  confirmAction.title = title
+  confirmAction.message = message
+  confirmAction.confirmLabel = confirmLabel
+  confirmAction.variant = variant
+  confirmAction.loading = false
+  confirmAction.onConfirm = onConfirm
+  confirmAction.show = true
+}
+
+async function executeConfirm() {
+  if (confirmAction.onConfirm) {
+    confirmAction.loading = true
+    try {
+      await confirmAction.onConfirm()
+    } finally {
+      confirmAction.loading = false
+      confirmAction.show = false
+    }
+  }
+}
+
+function cancelConfirm() {
+  confirmAction.show = false
+  confirmAction.loading = false
+}
+
+// ── Action Loading Tracker ────────────────────────────────
+const actionLoading = ref(new Set())
+
+function isActionLoading(key) {
+  return actionLoading.value.has(key)
+}
+
+function startLoading(key) {
+  actionLoading.value = new Set([...actionLoading.value, key])
+}
+
+function stopLoading(key) {
+  const next = new Set(actionLoading.value)
+  next.delete(key)
+  actionLoading.value = next
+}
 
 function formatTelefonoLocal(val) {
   if (!val) return ''
@@ -1323,7 +1609,7 @@ const { getToken, logout, user } = useAuth()
 const router = useRouter()
 const toast = useToast()
 
-function handleLogout() { logout(); router.push('/login') }
+function handleLogout() { logout() }
 function formatDate(d) { return d ? new Date(d).toLocaleDateString('es-CL', { day: '2-digit', month: 'short', year: 'numeric' }) : '—' }
 function perfilLabel(p) { return ({ office: 'Oficina', gaming: 'Gaming', design: 'Diseño', study: 'Estudio' })[p] ?? p ?? '—' }
 
@@ -1395,11 +1681,12 @@ const editingProveedor = ref({})
  */
 
 const filteredProveedores = computed(() => {
+  if (!Array.isArray(proveedores.value)) return []
   if (!filterProveedor.value.trim()) return proveedores.value
   const q = filterProveedor.value.toLowerCase()
   return proveedores.value.filter(p => 
-    p.nombre.toLowerCase().includes(q) || 
-    p.correo.toLowerCase().includes(q) || 
+    (p.nombre && p.nombre.toLowerCase().includes(q)) || 
+    (p.correo && p.correo.toLowerCase().includes(q)) || 
     (p.razon_social && p.razon_social.toLowerCase().includes(q)) || 
     (p.identificacion_legal && p.identificacion_legal.toLowerCase().includes(q))
   )
@@ -1418,7 +1705,10 @@ async function fetchProveedores() {
   try {
     const res = await fetch(`${API}/proveedores`, { headers: { Authorization: `Bearer ${getToken()}` } })
     const data = await res.json()
-    if (res.ok) proveedores.value = data.proveedores.data || data.proveedores
+    if (res.ok) {
+      const list = data.proveedores?.data || data.proveedores
+      proveedores.value = Array.isArray(list) ? list : []
+    }
   } catch(e) { console.error(e) } finally { loadingProveedores.value = false }
 }
 
@@ -1487,7 +1777,7 @@ async function saveNewProveedor() {
     const data = await res.json()
     if (!res.ok) return proveedorError.value = data.message ?? 'Error al crear'
     await fetchProveedores() // Como es uno nuevo, dejamos que traiga todo para obtener el ID real
-    await fetchHistorial()
+    fetchHistorial()
     closeProveedorModal()
     toast.success('Proveedor agregado exitosamente')
   } catch(e) { 
@@ -1497,6 +1787,8 @@ async function saveNewProveedor() {
 }
 
 async function cambiarEstadoProveedor(p, estadoNuevo) {
+  const key = `prov_${p.id}_${estadoNuevo}`
+  startLoading(key)
   try {
     const res = await fetch(`${API}/proveedores`, {
       method: 'PUT',
@@ -1509,23 +1801,20 @@ async function cambiarEstadoProveedor(p, estadoNuevo) {
     });
 
     if (res.ok) {
-      // ✅ FORZAMOS LA REACTIVIDAD: Creamos un array nuevo reemplazando solo el modificado
       proveedores.value = proveedores.value.map(prov => 
         prov.id === p.id ? { ...prov, estado_aprobacion: estadoNuevo } : prov
       );
-      
-      // Actualizamos historial (le agregamos un timestamp para evitar caché)
-      fetch(`${API}/historial?t=${Date.now()}`, { headers: { Authorization: `Bearer ${getToken()}` } })
-        .then(r => r.json())
-        .then(d => historial.value = d.historial);
-
+      toast.success(`Proveedor ${estadoNuevo} exitosamente`)
+      fetchHistorial()
     } else {
       const errorData = await res.json();
-      console.error("Laravel rechazó la petición:", errorData);
-      alert("Laravel devolvió un error. Mira la consola para más detalles.");
+      toast.error(errorData.message || 'Error al cambiar estado del proveedor')
     }
   } catch(e) { 
     console.error('Error de red al cambiar estado', e);
+    toast.error('Error de conexión')
+  } finally {
+    stopLoading(key)
   }
 }
 
@@ -1537,6 +1826,8 @@ async function cambiarEstadoProveedor(p, estadoNuevo) {
 
 async function toggleActivoProveedor(p) {
   const activaNuevo = p.activo == 1 ? 0 : 1;
+  const key = `prov_${p.id}_toggle`
+  startLoading(key)
   try {
     const res = await fetch(`${API}/proveedores`, {
       method: 'PUT',
@@ -1549,22 +1840,20 @@ async function toggleActivoProveedor(p) {
     });
 
     if (res.ok) {
-      // ✅ FORZAMOS LA REACTIVIDAD
       proveedores.value = proveedores.value.map(prov => 
         prov.id === p.id ? { ...prov, activo: activaNuevo } : prov
       );
-      
-      fetch(`${API}/historial?t=${Date.now()}`, { headers: { Authorization: `Bearer ${getToken()}` } })
-        .then(r => r.json())
-        .then(d => historial.value = d.historial);
-
+      toast.success(activaNuevo === 1 ? 'Proveedor activado' : 'Proveedor desactivado')
+      fetchHistorial()
     } else {
       const errorData = await res.json();
-      console.error("Laravel rechazó la petición:", errorData);
-      alert("Laravel devolvió un error. Mira la consola para más detalles.");
+      toast.error(errorData.message || 'Error al cambiar estado')
     }
   } catch(e) { 
     console.error('Error de red al desactivar', e);
+    toast.error('Error de conexión')
+  } finally {
+    stopLoading(key)
   }
 }
 
@@ -1615,7 +1904,7 @@ async function saveEditProveedor() {
       proveedores.value[index].identificacion_legal = editingProveedor.value.identificacion_legal
     }
     
-    await fetchHistorial()
+    fetchHistorial()
     showEditProveedorModal.value = false
     toast.success('Proveedor actualizado exitosamente')
   } catch(e) { 
@@ -1726,7 +2015,7 @@ async function saveEditBodega() {
       bodegas.value[index].proveedor_nombre = prov ? prov.nombre : null
     }
 
-    await fetchHistorial()
+    fetchHistorial()
     showEditBodegaModal.value = false
     toast.success('Bodega actualizada exitosamente')
   } catch(e) { 
@@ -1743,6 +2032,8 @@ async function saveEditBodega() {
 
 async function toggleBodega(b) {
   const activaNuevo = b.activa == 1 ? 0 : 1
+  const key = `bod_${b.id}_toggle`
+  startLoading(key)
   try {
     const res = await fetch(`${API}/bodegas`, {
       method: 'PUT',
@@ -1751,12 +2042,19 @@ async function toggleBodega(b) {
     })
     
     if (res.ok) {
-      // ✅ SOLUCIÓN: Actualización local
       const index = bodegas.value.findIndex(bod => bod.id === b.id)
       if (index !== -1) bodegas.value[index].activa = activaNuevo
-      await fetchHistorial()
+      toast.success(activaNuevo === 1 ? 'Bodega activada' : 'Bodega desactivada')
+      fetchHistorial()
+    } else {
+      toast.error('Error al cambiar estado de bodega')
     }
-  } catch(e) { console.error('Error al cambiar estado de bodega', e) }
+  } catch(e) {
+    console.error('Error al cambiar estado de bodega', e)
+    toast.error('Error de conexión')
+  } finally {
+    stopLoading(key)
+  }
 }
 
 function openDeleteBodega(b) {
@@ -1787,7 +2085,7 @@ async function confirmDeleteBodega() {
     
     // ✅ SOLUCIÓN: Eliminar localmente
     bodegas.value = bodegas.value.filter(b => b.id !== deletingBodega.value.id)
-    await fetchHistorial()
+    fetchHistorial()
     showDeleteBodegaModal.value = false
     toast.success('Bodega eliminada exitosamente')
   } catch(e) { 
@@ -1849,7 +2147,7 @@ async function saveNewBodega() {
     const data = await res.json()
     if (!res.ok) return bodegaError.value = data.message ?? 'Error al crear'
     await fetchBodegas() // Fetch necesario para el nuevo ID
-    await fetchHistorial()
+    fetchHistorial()
     closeBodegaModal()
     toast.success('Bodega agregada exitosamente')
   } catch(e) { 
@@ -2016,11 +2314,16 @@ const filterGama = ref('')
 
 
 const filteredComponentes = computed(() => {
-  let result = componentes.value.filter(c => c.bodega_id === null)
+  let result = [...componentes.value]
   
   if (filterComponente.value.trim()) {
     const q = filterComponente.value.toLowerCase()
-    result = result.filter(c => c.nombre.toLowerCase().includes(q) || c.categoria.toLowerCase().includes(q))
+    result = result.filter(c =>
+      c.nombre?.toLowerCase().includes(q) ||
+      c.categoria?.toLowerCase().includes(q) ||
+      c.especificacion?.toLowerCase().includes(q) ||
+      (c.bodega_nombre || c.bodega?.nombre)?.toLowerCase().includes(q)
+    )
   }
   
   if (filterNucleos.value) result = result.filter(c => c.nucleos === parseInt(filterNucleos.value))
@@ -2230,7 +2533,7 @@ async function saveEditComp() {
       componentes.value[index].stock = editingComp.value.stock
     }
 
-    await fetchHistorial()
+    fetchHistorial()
     showEditCompModal.value = false
     toast.success('Componente actualizado exitosamente')
   } catch (e) {
@@ -2249,16 +2552,26 @@ async function saveEditComp() {
 
 async function toggleComponente(c) {
   const activo = c.activo == 1 ? 0 : 1
+  const key = `comp_${c.id}_toggle`
+  startLoading(key)
   try {
-    await fetch(`${API}/componentes`, {
+    const res = await fetch(`${API}/componentes`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getToken()}` },
       body: JSON.stringify({ id: c.id, activo })
     })
-    await fetchComponentes()
-    toast.success(activo === 1 ? 'Componente activado' : 'Componente desactivado')
+    if (res.ok) {
+      const index = componentes.value.findIndex(comp => comp.id === c.id)
+      if (index !== -1) componentes.value[index].activo = activo
+      toast.success(activo === 1 ? 'Componente activado' : 'Componente desactivado')
+      fetchHistorial()
+    } else {
+      toast.error('Error al cambiar estado del componente')
+    }
   } catch (e) {
-    toast.error('Error al cambiar estado del componente')
+    toast.error('Error de conexión')
+  } finally {
+    stopLoading(key)
   }
 }
 
@@ -2403,7 +2716,7 @@ async function saveNewUser() {
     toast.success('Usuario creado correctamente')
     resetNewUser()
     await fetchUsuarios() // Fetch para obtener el nuevo usuario con ID
-    await fetchHistorial()
+    fetchHistorial()
   } catch(e) { createUserError.value = 'Error de conexión' } finally { savingUser.value = false }
 }
 
@@ -2454,7 +2767,7 @@ async function saveEditUsuario() {
       Object.assign(usuarios.value[index], editingUsuario.value)
     }
 
-    await fetchHistorial()
+    fetchHistorial()
     showEditUsuarioModal.value = false
     toast.success('Usuario actualizado exitosamente')
   } catch(e) { 
@@ -2479,12 +2792,17 @@ async function confirmDeleteUsuario() {
     })
     
     if (res.ok) {
-      // ✅ SOLUCIÓN: Eliminar localmente
       usuarios.value = usuarios.value.filter(u => u.id !== deletingUsuario.value.id)
-      await fetchHistorial()
+      toast.success('Usuario eliminado exitosamente')
+      fetchHistorial()
+    } else {
+      toast.error('Error al eliminar usuario')
     }
     showDeleteUsuarioModal.value = false
-  } catch(e) { console.error(e) } finally { savingDeleteUsuario.value = false }
+  } catch(e) {
+    console.error(e)
+    toast.error('Error de conexión')
+  } finally { savingDeleteUsuario.value = false }
 }
 
 /**
@@ -2495,6 +2813,8 @@ async function confirmDeleteUsuario() {
 
 async function toggleActivoUsuario(u) {
   const activoNuevo = u.activo == 1 ? 0 : 1
+  const key = `user_${u.id}_toggle`
+  startLoading(key)
   try {
     const res = await fetch(`${API}/usuarios`, {
       method: 'PUT',
@@ -2508,14 +2828,18 @@ async function toggleActivoUsuario(u) {
       })
     })
     if (res.ok) {
-      // ✅ SOLUCIÓN: Actualización local
       const index = usuarios.value.findIndex(usr => usr.id === u.id)
       if (index !== -1) usuarios.value[index].activo = activoNuevo
-      await fetchHistorial()
+      toast.success(activoNuevo === 1 ? 'Usuario activado' : 'Usuario desactivado')
+      fetchHistorial()
+    } else {
+      toast.error('Error al cambiar estado del usuario')
     }
   } catch(e) { 
     console.error('Error al cambiar de estado', e)
     toast.error('Error de conexión')
+  } finally {
+    stopLoading(key)
   }
 }
 
@@ -2614,6 +2938,9 @@ function closePerfilModal() {
  */
 
 function togglePermiso(code) {
+  if (!Array.isArray(editingPerfil.value.permisos)) {
+    editingPerfil.value.permisos = []
+  }
   const idx = editingPerfil.value.permisos.indexOf(code)
   if (idx === -1) editingPerfil.value.permisos.push(code)
   else editingPerfil.value.permisos.splice(idx, 1)
@@ -2802,17 +3129,55 @@ function renderConsumoChart() {
   })
 }
 
-// ── Lifecycle ─────────────────────────────────────────────
+// ── Lazy Loading por Sección & Lifecycle ─────────────────
+const loadedSections = ref(new Set())
+
+function loadSectionData(section) {
+  if (loadedSections.value.has(section)) return
+  loadedSections.value.add(section)
+
+  switch (section) {
+    case 'proveedores':
+      fetchProveedores()
+      break
+    case 'bodegas':
+      fetchBodegas()
+      fetchProveedores()
+      break
+    case 'catalogo':
+      fetchCatalogo()
+      break
+    case 'componentes':
+      fetchComponentes()
+      break
+    case 'cotizaciones':
+      fetchCotizaciones()
+      break
+    case 'crear-usuario':
+      fetchPerfiles()
+      break
+    case 'gestionar-usuarios':
+      fetchUsuarios()
+      fetchPerfiles()
+      break
+    case 'perfiles':
+      fetchPerfiles()
+      fetchPermisosDisponibles()
+      break
+    case 'historial':
+      fetchHistorial()
+      break
+    case 'reportes':
+      fetchSelectores()
+      break
+  }
+}
+
+watch(activeSection, (section) => {
+  loadSectionData(section)
+}, { immediate: true })
+
 onMounted(() => {
-  fetchProveedores()
-  fetchBodegas()
-  fetchComponentes()
-  fetchCotizaciones()
-  fetchUsuarios()
-  fetchPerfiles()
-  fetchPermisosDisponibles()
-  fetchHistorial()
-  fetchCatalogo()
-  fetchSelectores()
+  // Initial active section is loaded via watch with immediate: true
 })
 </script>

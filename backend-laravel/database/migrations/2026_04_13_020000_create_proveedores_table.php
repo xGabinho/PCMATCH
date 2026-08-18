@@ -21,7 +21,7 @@ return new class extends Migration
         }
 
         // Agregar columna proveedor_id a bodegas (para la relación)
-        if (!Schema::hasColumn('bodegas', 'proveedor_id')) {
+        if (Schema::hasTable('bodegas') && !Schema::hasColumn('bodegas', 'proveedor_id')) {
             Schema::table('bodegas', function (Blueprint $table) {
                 $table->unsignedBigInteger('proveedor_id')->nullable()->after('activa');
             });
@@ -30,11 +30,11 @@ return new class extends Migration
 
     public function down(): void
     {
-        Schema::table('bodegas', function (Blueprint $table) {
-            if (Schema::hasColumn('bodegas', 'proveedor_id')) {
+        if (Schema::hasTable('bodegas') && Schema::hasColumn('bodegas', 'proveedor_id')) {
+            Schema::table('bodegas', function (Blueprint $table) {
                 $table->dropColumn('proveedor_id');
-            }
-        });
+            });
+        }
         Schema::dropIfExists('proveedores');
     }
 };

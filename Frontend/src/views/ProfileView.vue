@@ -71,7 +71,9 @@
 </template>
 
 <script setup>
-import { Briefcase, Gamepad2, Palette, BookOpen } from '@lucide/vue'
+import { Briefcase, Gamepad2, Palette, BookOpen } from 'lucide-vue-next';
+
+
 import { ref } from 'vue'
 import { useBuilder } from '../composables/useBuilder'
 

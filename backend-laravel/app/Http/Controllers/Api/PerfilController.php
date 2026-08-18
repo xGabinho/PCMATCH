@@ -12,18 +12,55 @@ use App\Helpers\AuditLog;
 
 class PerfilController extends Controller
 {
-    
-    /**
-    
-     * Endpoint lógico de la API.
-    
-     * Procesa la petición HTTP, interactúa con los modelos y retorna una respuesta JSON.
-    
-     */
-    
+    public const PERMISOS_DISPONIBLES = [
+        'Usuarios' => [
+            'usuarios.ver'     => 'Ver listado de usuarios',
+            'usuarios.crear'   => 'Crear nuevos usuarios',
+            'usuarios.editar'  => 'Editar datos y roles de usuarios',
+            'usuarios.eliminar'=> 'Eliminar usuarios',
+        ],
+        'Proveedores' => [
+            'proveedores.ver'      => 'Ver directorio de proveedores',
+            'proveedores.crear'    => 'Registrar nuevos proveedores',
+            'proveedores.editar'   => 'Editar información de proveedores',
+            'proveedores.aprobar'  => 'Aprobar o rechazar proveedores',
+            'proveedores.eliminar' => 'Eliminar proveedores',
+        ],
+        'Bodegas' => [
+            'bodegas.ver'     => 'Ver listado de bodegas',
+            'bodegas.crear'   => 'Crear nuevas bodegas',
+            'bodegas.editar'  => 'Editar bodegas',
+            'bodegas.eliminar'=> 'Eliminar bodegas',
+        ],
+        'Componentes' => [
+            'componentes.ver'     => 'Ver componentes en inventario',
+            'componentes.crear'   => 'Crear componentes maestros',
+            'componentes.editar'  => 'Editar especificaciones de componentes',
+            'componentes.eliminar'=> 'Eliminar componentes',
+        ],
+        'Cotizaciones' => [
+            'cotizaciones.ver'     => 'Ver historial de cotizaciones',
+            'cotizaciones.crear'   => 'Generar cotizaciones',
+            'cotizaciones.eliminar'=> 'Eliminar cotizaciones',
+        ],
+        'Perfiles' => [
+            'perfiles.ver'     => 'Ver perfiles y permisos',
+            'perfiles.crear'   => 'Crear perfiles de permisos',
+            'perfiles.editar'  => 'Editar perfiles y permisos',
+            'perfiles.eliminar'=> 'Eliminar perfiles',
+            'perfiles.asignar' => 'Asignar perfiles a usuarios',
+        ],
+        'Historial' => [
+            'historial.ver' => 'Ver registro global de auditoría',
+        ],
+        'Reportes' => [
+            'reportes.ver' => 'Ver analíticas y estadísticas',
+        ]
+    ];
+
     public function available(Request $request)
     {
-        $denied = $this->checkAdmin($request);
+        $denied = $this->checkAdmin($request, 'perfiles.ver');
         if ($denied) return $denied;
 
         return response()->json([
@@ -46,7 +83,7 @@ class PerfilController extends Controller
     
     public function index(Request $request)
     {
-        $denied = $this->checkAdmin($request);
+        $denied = $this->checkAdmin($request, 'perfiles.ver');
         if ($denied) return $denied;
 
         $perfiles = Perfil::with('permisos')->withCount('usuarios')->orderBy('created_at', 'desc')->get();
@@ -81,7 +118,7 @@ class PerfilController extends Controller
     
     public function store(Request $request)
     {
-        $denied = $this->checkAdmin($request);
+        $denied = $this->checkAdmin($request, 'perfiles.crear');
         if ($denied) return $denied;
 
         $validator = Validator::make($request->all(), [
@@ -159,7 +196,7 @@ class PerfilController extends Controller
     
     public function update(Request $request)
     {
-        $denied = $this->checkAdmin($request);
+        $denied = $this->checkAdmin($request, 'perfiles.editar');
         if ($denied) return $denied;
 
         $id = $request->input('id');
@@ -232,7 +269,7 @@ class PerfilController extends Controller
     
     public function destroy(Request $request, $id = null)
     {
-        $denied = $this->checkAdmin($request);
+        $denied = $this->checkAdmin($request, 'perfiles.eliminar');
         if ($denied) return $denied;
 
         $id = $id ?? $request->query('id');
@@ -275,7 +312,7 @@ class PerfilController extends Controller
     
     public function assign(Request $request)
     {
-        $denied = $this->checkAdmin($request);
+        $denied = $this->checkAdmin($request, 'perfiles.asignar');
         if ($denied) return $denied;
 
         $validator = Validator::make($request->all(), [
@@ -317,5 +354,26 @@ class PerfilController extends Controller
             'success' => true,
             'message' => 'Perfil asignado correctamente',
         ]);
+    }
+
+    private function checkAdmin(Request $request, ?string $permission = null)
+    {
+        $user = $request->user();
+        $rol = $user->rol ?? null;
+        if (!in_array($rol, ['admin', 'superadmin'])) {
+            return response()->json([
+                'success' => false,
+                'message' => 'No autorizado. Se requiere rol de administrador o superadmin.'
+            ], 403);
+        }
+        if ($rol === 'admin' && $permission) {
+            if (!$user->hasPermission($permission)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'No autorizado. Se requiere el permiso: ' . $permission
+                ], 403);
+            }
+        }
+        return null;
     }
 }

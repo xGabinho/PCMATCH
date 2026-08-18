@@ -4,7 +4,7 @@
     <!-- Sidebar -->
     <aside class="w-60 border-r theme-border flex-shrink-0 flex flex-col h-screen overflow-y-auto sticky top-0">
       <div class="h-16 px-5 flex items-center border-b theme-border gap-2.5">
-        <div class="w-7 h-7 rounded-lg bg-yellow-500 flex items-center justify-center text-white font-bold text-xs">🏪</div>
+        <div class="w-7 h-7 rounded-lg bg-yellow-500 flex items-center justify-center text-white font-bold text-xs"><Store class="w-4 h-4" /></div>
         <div>
           <p class="theme-text font-semibold text-sm leading-none">{{ bodegaNombre }}</p>
           <p class="theme-text-muted text-xs mt-0.5">Gestor de bodega</p>
@@ -81,7 +81,7 @@
           <!-- Stock alerts -->
           <div class="card-dark rounded-xl overflow-hidden mb-6">
             <div class="px-6 py-4 border-b theme-border flex items-center gap-3">
-              <span class="text-yellow-400">⚠️</span>
+              <AlertTriangle class="w-5 h-5 text-yellow-400 inline-block" />
               <h2 class="font-semibold theme-text">Alertas de stock bajo</h2>
             </div>
             <div v-if="stockAlerts.length === 0" class="px-6 py-8 text-center theme-text-muted text-sm">
@@ -300,7 +300,7 @@
                   <td class="px-6 py-4 text-sm font-mono text-accent font-medium">${{ Number(p.precio_mayorista).toLocaleString() }}</td>
                   <td class="px-6 py-4">
                     <button @click="openImportModal(p)" class="btn-secondary text-xs px-3 py-1.5 flex items-center gap-1.5">
-                      <span>➕</span> Añadir
+                      <Plus class="w-4 h-4 inline-block" /> Añadir
                     </button>
                   </td>
                 </tr>
@@ -467,7 +467,10 @@
 </template>
 
 <script setup>
-import { Check, Trash2, Sun, Moon, Wrench, Store, Settings } from '@lucide/vue'
+import { Store, AlertTriangle, Plus, BarChart3, Check, Trash2, Sun, Moon, Wrench, Settings } from 'lucide-vue-next';
+
+
+
 import { useTheme } from '../composables/useTheme'
 const { isDark, toggleTheme } = useTheme()
 import { useRouter } from 'vue-router'
@@ -493,7 +496,7 @@ const bodegaCorreo = user.value?.correo ?? ''
 // Secciones
 const activeSection = ref('dashboard')
 const sections = [
-  { id: 'dashboard',   icon: '📊', label: 'Dashboard',       description: 'Resumen de tu bodega',          count: null },
+  { id: 'dashboard',   icon: BarChart3, label: 'Dashboard',       description: 'Resumen de tu bodega',          count: null },
   { id: 'componentes', icon: markRaw(Wrench), label: 'Mis componentes', description: 'Gestiona tu catálogo y stock',  count: true },
   { id: 'proveedores', icon: markRaw(Store), label: 'Proveedores',     description: 'Explora catálogos mayoristas',  count: null },
 ]
@@ -521,7 +524,9 @@ async function fetchProveedores() {
     const res = await fetch(`${API}/proveedores`, { headers: { Authorization: `Bearer ${getToken()}` } })
     const data = await res.json()
     if (res.ok) {
-      proveedores.value = data.proveedores.data.filter(p => p.activo === true || p.activo === 1 || p.activo === 'true')
+      const list = data.proveedores?.data || data.proveedores || []
+      const arr = Array.isArray(list) ? list : []
+      proveedores.value = arr.filter(p => p.activo === true || p.activo === 1 || p.activo === 'true')
     }
   } catch(e) { console.error(e) } finally { loadingProveedores.value = false }
 }

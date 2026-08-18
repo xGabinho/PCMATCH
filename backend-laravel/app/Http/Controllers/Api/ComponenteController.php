@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Cache;
 use App\Helpers\AuditLog;
 use App\Models\Componente;
 
@@ -18,8 +19,9 @@ class ComponenteController extends Controller
 
     private function resolverRol($user): string
     {
+        if (!$user) return 'cliente';
         $clase = get_class($user);
-        if ($clase === \App\Models\Usuario::class)   return $user->rol;
+        if ($clase === \App\Models\Usuario::class)   return $user->rol ?? 'cliente';
         if ($clase === \App\Models\Proveedor::class)  return 'proveedor';
         if ($clase === \App\Models\Bodega::class)     return 'bodega';
         return 'cliente';
@@ -50,6 +52,10 @@ class ComponenteController extends Controller
 
         if (!in_array($rol, ['admin', 'superadmin'])) {
             return response()->json(['success' => false, 'message' => 'No autorizado. Solo administradores pueden consultar componentes.'], 403);
+        }
+
+        if ($rol === 'admin' && !$user->hasPermission('componentes.ver')) {
+            return response()->json(['success' => false, 'message' => 'No autorizado. Se requiere el permiso: componentes.ver'], 403);
         }
 
         // ── RN03: Query con relaciones cargadas ──────────────────
@@ -276,39 +282,46 @@ class ComponenteController extends Controller
     
     public function indexPublic(Request $request)
     {
-        $query = Componente::with(['producto:id,nombre,categoria', 'bodega:id,nombre'])
-            ->activo()
-            ->conStock()
-            ->whereHas('bodega', function ($q) {
-                $q->where('activa', 'true');
+        $cacheKey = 'comp_pub_' . md5(json_encode($request->all()));
+
+        $resultado = Cache::remember($cacheKey, 30, function () use ($request) {
+            $query = Componente::with(['producto:id,nombre,categoria', 'bodega:id,nombre'])
+                ->activo()
+                ->conStock()
+                ->where(function ($q) {
+                    $q->whereNull('bodega_id')
+                      ->orWhereHas('bodega', function ($sub) {
+                          $sub->whereRaw("activa IS TRUE");
+                      });
+                });
+
+            if ($request->filled('categoria')) {
+                $query->porCategoria($request->query('categoria'));
+            }
+
+            if ($request->filled('buscar')) {
+                $query->buscar($request->query('buscar'));
+            }
+
+            $componentes = $query->orderBy('id', 'ASC')->get();
+
+            return $componentes->map(function ($c) {
+                return [
+                    'id'             => $c->id,
+                    'sku'            => $c->sku,
+                    'nombre'         => $c->producto->nombre ?? '—',
+                    'categoria'      => $c->producto->categoria ?? '—',
+                    'especificacion' => $c->especificacion,
+                    'gama'           => $c->gama,
+                    'precio'         => $c->precio,
+                    'descuento_porcentaje' => $c->descuento_porcentaje,
+                    'descuento_activo' => $c->descuento_activo,
+                    'precio_final'   => $c->precio_final,
+                    'stock'          => $c->stock,
+                    'bodega'         => $c->bodega->nombre ?? '—',
+                    'imagen_url'     => $c->imagen_url,
+                ];
             });
-
-        if ($request->filled('categoria')) {
-            $query->porCategoria($request->query('categoria'));
-        }
-
-        if ($request->filled('buscar')) {
-            $query->buscar($request->query('buscar'));
-        }
-
-        $componentes = $query->orderBy('id', 'ASC')->get();
-
-        $resultado = $componentes->map(function ($c) {
-            return [
-                'id'             => $c->id,
-                'sku'            => $c->sku,
-                'nombre'         => $c->producto->nombre ?? '—',
-                'categoria'      => $c->producto->categoria ?? '—',
-                'especificacion' => $c->especificacion,
-                'gama'           => $c->gama,
-                'precio'         => $c->precio,
-                'descuento_porcentaje' => $c->descuento_porcentaje,
-                'descuento_activo' => $c->descuento_activo,
-                'precio_final'   => $c->precio_final,
-                'stock'          => $c->stock,
-                'bodega'         => $c->bodega->nombre ?? '—',
-                'imagen_url'     => $c->imagen_url,
-            ];
         });
 
         return response()->json(['componentes' => $resultado]);
@@ -345,6 +358,10 @@ class ComponenteController extends Controller
 
         if (!in_array($rol, ['admin', 'superadmin', 'proveedor', 'bodega'])) {
             return response()->json(['success' => false, 'message' => 'No autorizado para crear componentes'], 403);
+        }
+
+        if ($rol === 'admin' && !$user->hasPermission('componentes.crear')) {
+            return response()->json(['success' => false, 'message' => 'No autorizado. Se requiere el permiso: componentes.crear'], 403);
         }
 
         $isFromMaster = $request->has('master_component_id') && $request->input('master_component_id') !== null && $request->input('master_component_id') !== '';
@@ -585,6 +602,10 @@ class ComponenteController extends Controller
             ], 403);
         }
 
+        if ($rol === 'admin' && !$user->hasPermission('componentes.editar')) {
+            return response()->json(['success' => false, 'message' => 'No autorizado. Se requiere el permiso: componentes.editar'], 403);
+        }
+
         // Fix decimal commas for numeric fields
         foreach (['frecuencia_hz', 'precio'] as $numField) {
             if ($request->has($numField) && is_string($request->input($numField))) {
@@ -743,6 +764,10 @@ class ComponenteController extends Controller
                 'success' => false,
                 'message' => 'No autorizado. Solo el rol Admin, SuperAdmin, Bodega o Proveedor puede eliminar componentes.'
             ], 403);
+        }
+
+        if ($rol === 'admin' && !$user->hasPermission('componentes.eliminar')) {
+            return response()->json(['success' => false, 'message' => 'No autorizado. Se requiere el permiso: componentes.eliminar'], 403);
         }
 
         $id = $id ?? $request->query('id');
