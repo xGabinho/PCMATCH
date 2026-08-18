@@ -237,4 +237,54 @@
   .animate-slide-in-left {
     animation: slide-in-left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   }
+
+  /* ── Theme-aware table dividers ─────────────────────── */
+  .theme-divide {
+    @apply transition-colors duration-200;
+  }
+  html.dark .theme-divide {
+    @apply divide-dark-border;
+  }
+  html.light .theme-divide {
+    @apply divide-light-border;
+  }
+
+  /* ── Universal table & border enforcement ───────────── */
+  html.dark *,
+  html.dark *::before,
+  html.dark *::after {
+    border-color: #2E2E2E;
+  }
+
+  html.dark table,
+  html.dark thead,
+  html.dark tbody,
+  html.dark tr,
+  html.dark th,
+  html.dark td {
+    border-color: #2E2E2E !important;
+  }
+
+  html.dark .divide-y > * + *,
+  html.dark .divide-y > :not([hidden]) ~ :not([hidden]),
+  html.dark [class*="divide-"] > :not([hidden]) ~ :not([hidden]) {
+    border-color: #2E2E2E !important;
+  }
+
+  html.light .divide-y > * + *,
+  html.light .divide-y > :not([hidden]) ~ :not([hidden]),
+  html.light [class*="divide-"] > :not([hidden]) ~ :not([hidden]) {
+    border-color: #E2E5EB !important;
+  }
+
+  /* ── Theme-aware row hover ──────────────────────────── */
+  .theme-row-hover {
+    @apply transition-colors duration-150;
+  }
+  html.dark .theme-row-hover:hover {
+    background-color: rgba(255, 255, 255, 0.04);
+  }
+  html.light .theme-row-hover:hover {
+    @apply bg-gray-50;
+  }
 }

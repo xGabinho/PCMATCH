@@ -15,7 +15,7 @@ use App\Http\Controllers\Api\HistorialController;
 use App\Http\Controllers\Api\RecomendacionController;
 use App\Http\Controllers\Api\AnaliticaController;
 
-// Health check para Railway
+// Health check para Render y monitoreo
 Route::get('/health', function () {
     try {
         \Illuminate\Support\Facades\DB::connection()->getPdo();

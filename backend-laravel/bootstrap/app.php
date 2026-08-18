@@ -16,7 +16,7 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withMiddleware(function (Middleware $middleware): void {
         // $middleware->statefulApi();
 
-        // CORS — permitir requests desde el frontend en Railway
+        // CORS — permitir requests desde el frontend (Vercel, localhost, etc.)
         $middleware->use([
             \Illuminate\Http\Middleware\HandleCors::class,
         ]);
