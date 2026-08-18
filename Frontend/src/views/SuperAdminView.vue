@@ -860,7 +860,15 @@
           </div>
           <div>
             <label class="block text-sm font-medium theme-text mb-1">Identificación Legal (RUT/NIT)</label>
-            <input v-model="newProveedor.identificacion_legal" type="text" placeholder="12345678-9" class="w-full theme-bg border theme-border rounded-lg px-4 py-3 text-sm theme-text placeholder-text-muted focus:outline-none focus:border-accent transition-colors" />
+            <input 
+              v-model="newProveedor.identificacion_legal" 
+              @input="handleNitInput($event, newProveedor)"
+              type="text" 
+              maxlength="11"
+              placeholder="123456789-0" 
+              class="allow-special w-full theme-bg border theme-border rounded-lg px-4 py-3 text-sm theme-text placeholder-text-muted focus:outline-none focus:border-accent transition-colors font-mono" 
+            />
+            <p class="text-[11px] theme-text-muted mt-1">Formato: 9 dígitos + guion + 1 dígito de verificación (ej: 123456789-0)</p>
           </div>
           <div class="border-t theme-border pt-1">
             <p class="text-xs theme-text-muted mb-2">Datos de acceso del proveedor</p>
@@ -913,8 +921,16 @@
             <input v-model="editingProveedor.razon_social" type="text" class="w-full theme-bg border theme-border rounded-lg px-4 py-3 text-sm theme-text focus:outline-none focus:border-accent transition-colors" />
           </div>
           <div>
-            <label class="block text-sm font-medium theme-text mb-1">Identificación Legal</label>
-            <input v-model="editingProveedor.identificacion_legal" type="text" class="w-full theme-bg border theme-border rounded-lg px-4 py-3 text-sm theme-text focus:outline-none focus:border-accent transition-colors" />
+            <label class="block text-sm font-medium theme-text mb-1">Identificación Legal (RUT/NIT)</label>
+            <input 
+              v-model="editingProveedor.identificacion_legal" 
+              @input="handleNitInput($event, editingProveedor)"
+              type="text" 
+              maxlength="11"
+              placeholder="123456789-0" 
+              class="allow-special w-full theme-bg border theme-border rounded-lg px-4 py-3 text-sm theme-text focus:outline-none focus:border-accent transition-colors font-mono" 
+            />
+            <p class="text-[11px] theme-text-muted mt-1">Formato: 9 dígitos + guion + 1 dígito de verificación (ej: 123456789-0)</p>
           </div>
           <div>
             <label class="block text-sm font-medium theme-text mb-1">Nombre representante</label>
@@ -1750,10 +1766,28 @@ function handleFileChange(event) {
 
  */
 
+function handleNitInput(event, target) {
+  const raw = event.target.value || ''
+  let digits = raw.replace(/\D/g, '')
+  if (digits.length > 10) {
+    digits = digits.slice(0, 10)
+  }
+  if (digits.length > 9) {
+    target.identificacion_legal = `${digits.slice(0, 9)}-${digits.slice(9, 10)}`
+  } else {
+    target.identificacion_legal = digits
+  }
+}
+
 async function saveNewProveedor() {
   proveedorError.value = ''
   if (!newProveedor.value.razon_social || !newProveedor.value.identificacion_legal || !newProveedor.value.nombre || !newProveedor.value.correo || !newProveedor.value.password)
     return proveedorError.value = 'Todos los campos son requeridos excepto el documento (opcional)'
+  
+  const nitRegex = /^\d{9}-\d$/
+  if (!nitRegex.test((newProveedor.value.identificacion_legal || '').trim())) {
+    return proveedorError.value = 'La identificación legal (RUT/NIT) debe tener exactamente 9 dígitos seguidos de un guion y 1 dígito de verificación (ej: 123456789-0)'
+  }
   
   savingProveedor.value = true
   
@@ -1877,6 +1911,11 @@ async function saveEditProveedor() {
   editProveedorError.value = ''
   if (!editingProveedor.value.nombre || !editingProveedor.value.razon_social || !editingProveedor.value.identificacion_legal)
     return editProveedorError.value = 'Nombre de proveedor, Representante e Identificación son requeridos'
+    
+  const nitRegex = /^\d{9}-\d$/
+  if (!nitRegex.test((editingProveedor.value.identificacion_legal || '').trim())) {
+    return editProveedorError.value = 'La identificación legal (RUT/NIT) debe tener exactamente 9 dígitos seguidos de un guion y 1 dígito de verificación (ej: 123456789-0)'
+  }
     
   savingEditProveedor.value = true
   try {

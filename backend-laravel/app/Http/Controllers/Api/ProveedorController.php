@@ -94,7 +94,7 @@ class ProveedorController extends Controller
             'nombre' => 'required|string|max:255',
             'correo' => 'required|email|unique:proveedores,correo',
             'password' => 'required|string|min:8',
-            'identificacion_legal' => 'required|string|max:255|unique:proveedores,identificacion_legal',
+            'identificacion_legal' => ['required', 'string', 'regex:/^\d{9}-\d$/', 'unique:proveedores,identificacion_legal'],
             'razon_social' => 'required|string|max:255',
             'documento_soporte' => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:5120', // Max 5MB
             'estado_aprobacion' => 'nullable|string|in:pendiente,aprobado,rechazado'
@@ -106,6 +106,7 @@ class ProveedorController extends Controller
             'correo.unique' => 'El correo ya está registrado',
             'password.min' => 'La contraseña debe tener al menos 8 caracteres',
             'identificacion_legal.required' => 'La identificación legal es requerida',
+            'identificacion_legal.regex' => 'La identificación legal (RUT/NIT) debe tener 9 dígitos seguidos de un guion y 1 dígito de verificación (ej: 123456789-0)',
             'identificacion_legal.unique' => 'La identificación legal ya está en uso',
             'razon_social.required' => 'La razón social es requerida',
             'documento_soporte.file' => 'El documento de soporte debe ser un archivo',
@@ -172,10 +173,12 @@ class ProveedorController extends Controller
             'nombre' => 'required|string|max:255',
             'activo' => 'nullable|integer',
             'estado_aprobacion' => 'nullable|string|in:pendiente,aprobado,rechazado',
-            'identificacion_legal' => 'nullable|string|max:255',
+            'identificacion_legal' => ['nullable', 'string', 'regex:/^\d{9}-\d$/', \Illuminate\Validation\Rule::unique('proveedores', 'identificacion_legal')->ignore($id)],
             'razon_social' => 'nullable|string|max:255'
         ], [
-            'nombre.required' => 'El nombre es requerido'
+            'nombre.required' => 'El nombre es requerido',
+            'identificacion_legal.regex' => 'La identificación legal (RUT/NIT) debe tener 9 dígitos seguidos de un guion y 1 dígito de verificación (ej: 123456789-0)',
+            'identificacion_legal.unique' => 'La identificación legal ya está en uso'
         ]);
 
         if ($validator->fails()) {

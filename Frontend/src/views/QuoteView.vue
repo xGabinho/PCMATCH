@@ -1,5 +1,5 @@
 <template>
-  <main class="max-w-4xl mx-auto px-6 py-12">
+  <main class="max-w-4xl mx-auto px-6 pt-28 pb-12">
 
     <!-- Sin componentes -->
     <div v-if="Object.keys(selectedComponents).length === 0" class="text-center py-24">
@@ -194,9 +194,11 @@ import { useRouter } from 'vue-router'
 
 import { useBuilder } from '../composables/useBuilder'
 import { useAuth } from '../composables/useAuth'
+import { useToast } from '../composables/useToast'
 
 import { API } from '@/config/api'
 const router = useRouter()
+const toast = useToast()
 const { steps, selectedComponents, totalPrice, perfil, removeItem, clearAll, updateQuantity } = useBuilder()
 const { getToken } = useAuth()
 
@@ -244,11 +246,11 @@ async function saveCotizacion() {
   saveSuccess.value = false
   saving.value = true
 
-const items = Object.values(selectedComponents.value).map(item => ({
-  componente_id: item.id,
-  precio:        Number(item.precio_final || item.precio),
-  cantidad:      item.cantidad || 1,
-}))
+  const items = Object.values(selectedComponents.value).map(item => ({
+    componente_id: item.id,
+    precio:        Number(item.precio_final || item.precio),
+    cantidad:      item.cantidad || 1,
+  }))
 
   try {
     const res = await fetch(`${API}/cotizaciones`, {
@@ -257,12 +259,19 @@ const items = Object.values(selectedComponents.value).map(item => ({
       body: JSON.stringify({ items, total: totalPrice.value, perfil: perfil.value })
     })
     const data = await res.json()
-    if (!res.ok) return saveError.value = data.error ?? 'Error al guardar'
+    if (!res.ok) {
+      const errMsg = data.message || data.error || 'Error al guardar cotización'
+      saveError.value = errMsg
+      toast.error(errMsg)
+      return
+    }
     
     generatedCode.value = data.codigo
     saveSuccess.value = true
+    toast.success('Cotización guardada exitosamente')
   } catch(e) {
-    saveError.value = 'Error de conexión'
+    saveError.value = 'Error de conexión con el servidor'
+    toast.error('Error de conexión con el servidor')
   } finally {
     saving.value = false
   }

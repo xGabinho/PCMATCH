@@ -98,8 +98,8 @@ class CotizacionController extends Controller
         $user = $request->user();
         $rol = $this->getRole($request);
 
-        if ($rol !== 'cliente') {
-            return response()->json(['success' => false, 'message' => 'Solo los clientes pueden crear cotizaciones'], 403);
+        if (!in_array($rol, ['cliente', 'admin', 'superadmin'])) {
+            return response()->json(['success' => false, 'message' => 'Solo clientes y administradores pueden crear cotizaciones'], 403);
         }
 
         $items = $request->input('items', []);
@@ -124,7 +124,7 @@ class CotizacionController extends Controller
                     'total' => $total,
                     'codigo' => $codigoUnico,
                     'created_at' => now(),
-                    'stock_restaurado' => false
+                    'stock_restaurado' => DB::raw('false')
                 ]);
 
                 // 2. Insertar cada uno de los items y descontar stock
