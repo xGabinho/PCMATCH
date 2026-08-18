@@ -132,7 +132,7 @@
 
     <div class="client-info">
         <h3>Preparado para:</h3>
-        <p><strong>{{ $user->nombre }} {{ $user->apellido }}</strong></p>
+        <p><strong>{{ $user->nombre }} {{ $user->apellido ?? '' }}</strong></p>
         <p>Email: {{ $user->correo }}</p>
         <p>Perfil de uso sugerido: <strong>{{ ucfirst($cotizacion->perfil) }}</strong></p>
     </div>

@@ -30,7 +30,7 @@ class RestaurarStockCotizaciones extends Command
         // Buscar cotizaciones que tengan más de 7 días y su stock no se haya restaurado
         $cotizaciones = \Illuminate\Support\Facades\DB::table('cotizaciones')
             ->where('created_at', '<', $limite)
-            ->where('stock_restaurado', false)
+            ->where('stock_restaurado', \Illuminate\Support\Facades\DB::raw('false'))
             ->get();
 
         $count = 0;
@@ -50,7 +50,7 @@ class RestaurarStockCotizaciones extends Command
             // Marcar cotización como restaurada
             \Illuminate\Support\Facades\DB::table('cotizaciones')
                 ->where('id', $cotizacion->id)
-                ->update(['stock_restaurado' => true]);
+                ->update(['stock_restaurado' => \Illuminate\Support\Facades\DB::raw('true')]);
 
             $count++;
         }

@@ -1,5 +1,5 @@
 <template>
-  <main class="max-w-5xl mx-auto px-6 py-16">
+  <main class="max-w-5xl mx-auto px-6 pt-28 pb-16">
     <!-- Header -->
     <div class="text-center mb-12">
       <p class="text-accent text-sm font-medium uppercase tracking-widest mb-3">Paso 1 de 4</p>
