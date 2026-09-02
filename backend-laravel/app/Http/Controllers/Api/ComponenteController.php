@@ -284,8 +284,19 @@ class ComponenteController extends Controller
     {
         $cacheKey = 'comp_pub_' . md5(json_encode($request->all()));
 
-        $resultado = Cache::remember($cacheKey, 30, function () use ($request) {
-            $query = Componente::with(['producto:id,nombre,categoria', 'bodega:id,nombre'])
+        $resultado = Cache::remember($cacheKey, 60, function () use ($request) {
+            // Select explícito: solo los campos que el frontend consume
+            $query = Componente::with([
+                    'producto:id,nombre,categoria',
+                    'bodega:id,nombre',
+                ])
+                ->select([
+                    'id', 'sku', 'producto_id', 'bodega_id',
+                    'especificacion', 'gama', 'precio',
+                    'descuento_porcentaje', 'descuento_activo', 'precio_final',
+                    'stock', 'imagen_url',
+                    'nucleos', 'hilos', 'frecuencia_hz', 'enfoque_uso',
+                ])
                 ->activo()
                 ->conStock()
                 ->where(function ($q) {
@@ -307,19 +318,23 @@ class ComponenteController extends Controller
 
             return $componentes->map(function ($c) {
                 return [
-                    'id'             => $c->id,
-                    'sku'            => $c->sku,
-                    'nombre'         => $c->producto->nombre ?? '—',
-                    'categoria'      => $c->producto->categoria ?? '—',
-                    'especificacion' => $c->especificacion,
-                    'gama'           => $c->gama,
-                    'precio'         => $c->precio,
+                    'id'                   => $c->id,
+                    'sku'                  => $c->sku,
+                    'nombre'               => $c->producto->nombre ?? '—',
+                    'categoria'            => $c->producto->categoria ?? '—',
+                    'especificacion'       => $c->especificacion,
+                    'gama'                 => $c->gama,
+                    'precio'               => $c->precio,
                     'descuento_porcentaje' => $c->descuento_porcentaje,
-                    'descuento_activo' => $c->descuento_activo,
-                    'precio_final'   => $c->precio_final,
-                    'stock'          => $c->stock,
-                    'bodega'         => $c->bodega->nombre ?? '—',
-                    'imagen_url'     => $c->imagen_url,
+                    'descuento_activo'     => $c->descuento_activo,
+                    'precio_final'         => $c->precio_final,
+                    'stock'                => $c->stock,
+                    'bodega'               => $c->bodega->nombre ?? '—',
+                    'imagen_url'           => $c->imagen_url,
+                    'nucleos'              => $c->nucleos,
+                    'hilos'                => $c->hilos,
+                    'frecuencia_hz'        => $c->frecuencia_hz,
+                    'enfoque_uso'          => $c->enfoque_uso,
                 ];
             });
         });

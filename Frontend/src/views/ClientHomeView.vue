@@ -167,7 +167,7 @@
           <!-- Image band -->
           <div class="relative w-full h-48 theme-bg flex items-center justify-center overflow-hidden flex-shrink-0">
             <template v-if="comp.imagen_url">
-              <img :src="comp.imagen_url" :alt="comp.nombre" class="w-full h-full object-contain drop-shadow-sm" />
+              <img :src="comp.imagen_url" :alt="comp.nombre" loading="lazy" class="w-full h-full object-contain drop-shadow-sm" />
             </template>
             <template v-else>
               <component :is="categoryIcons[comp.categoria] || Wrench" class="w-10 h-10 opacity-20" />

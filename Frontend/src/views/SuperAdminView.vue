@@ -3106,10 +3106,12 @@ async function fetchRotacion() {
       rotacionData.value = data.data || []
       rotacionBodegaNombre.value = data.bodega_nombre || ''
       rotacionFetched.value = true
-      await nextTick()
-      renderRotacionChart()
     }
-  } catch (e) { console.error(e) } finally { loadingRotacion.value = false }
+  } catch (e) { console.error(e) } finally { 
+    loadingRotacion.value = false 
+    await nextTick()
+    renderRotacionChart()
+  }
 }
 
 function renderRotacionChart() {
@@ -3138,10 +3140,12 @@ async function fetchConsumo() {
       consumoProveedorNombre.value = data.proveedor_nombre || ''
       consumoTotalGeneral.value = data.total_general || 0
       consumoFetched.value = true
-      await nextTick()
-      renderConsumoChart()
     }
-  } catch (e) { console.error(e) } finally { loadingConsumo.value = false }
+  } catch (e) { console.error(e) } finally { 
+    loadingConsumo.value = false 
+    await nextTick()
+    renderConsumoChart()
+  }
 }
 
 function renderConsumoChart() {
@@ -3168,7 +3172,7 @@ function renderConsumoChart() {
   })
 }
 
-// ── Lazy Loading por Sección & Lifecycle ─────────────────
+// ── Carga y Lifecycle de Módulos ──────────────────────────
 const loadedSections = ref(new Set())
 
 function loadSectionData(section) {
@@ -3216,7 +3220,20 @@ watch(activeSection, (section) => {
   loadSectionData(section)
 }, { immediate: true })
 
-onMounted(() => {
-  // Initial active section is loaded via watch with immediate: true
+onMounted(async () => {
+  // Carga simultánea de todos los módulos en paralelo al entrar al sistema
+  await Promise.allSettled([
+    fetchProveedores(),
+    fetchBodegas(),
+    fetchCatalogo(),
+    fetchComponentes(),
+    fetchCotizaciones(),
+    fetchUsuarios(),
+    fetchPerfiles(),
+    fetchPermisosDisponibles(),
+    fetchHistorial(),
+    fetchSelectores()
+  ])
+  ;['proveedores', 'bodegas', 'catalogo', 'componentes', 'cotizaciones', 'crear-usuario', 'gestionar-usuarios', 'perfiles', 'historial', 'reportes'].forEach(s => loadedSections.value.add(s))
 })
 </script>

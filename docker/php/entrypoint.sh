@@ -9,8 +9,10 @@ if [ ! -d "vendor" ] || [ ! -f "vendor/autoload.php" ]; then
     composer install --no-interaction --prefer-dist --optimize-autoloader
 fi
 
-# Generar APP_KEY si no existe
-if [ -z "$APP_KEY" ] || grep -q "APP_KEY=$" .env 2>/dev/null; then
+# Generar APP_KEY solo si no existe o está vacía en .env
+if [ -f ".env" ] && grep -qE "^APP_KEY=.+" .env; then
+    echo "🔑 APP_KEY ya configurada."
+else
     echo "🔑 Generando APP_KEY..."
     php artisan key:generate --force
 fi

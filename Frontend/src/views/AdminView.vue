@@ -2133,10 +2133,14 @@ async function fetchRotacion() {
       rotacionData.value = data.data || []
       rotacionBodegaNombre.value = data.bodega_nombre || ''
       rotacionFetched.value = true
-      await nextTick()
-      renderRotacionChart()
     }
-  } catch (e) { console.error(e) } finally { loadingRotacion.value = false }
+  } catch (e) { 
+    console.error(e) 
+  } finally { 
+    loadingRotacion.value = false 
+    await nextTick()
+    renderRotacionChart()
+  }
 }
 
 function renderRotacionChart() {
@@ -2176,10 +2180,14 @@ async function fetchConsumo() {
       consumoProveedorNombre.value = data.proveedor_nombre || ''
       consumoTotalGeneral.value = data.total_general || 0
       consumoFetched.value = true
-      await nextTick()
-      renderConsumoChart()
     }
-  } catch (e) { console.error(e) } finally { loadingConsumo.value = false }
+  } catch (e) { 
+    console.error(e) 
+  } finally { 
+    loadingConsumo.value = false 
+    await nextTick()
+    renderConsumoChart()
+  }
 }
 
 function renderConsumoChart() {
@@ -2243,12 +2251,15 @@ watch(sections, (newSections) => {
 const currentSection = computed(() => sections.value.find(s => s.id === activeSection.value) || sections.value[0] || {})
 
 // ── Lifecycle ─────────────────────────────────────────────
-onMounted(() => {
-  if (hasPermission('bodegas.ver')) fetchBodegas()
-  if (hasPermission('usuarios.ver')) fetchUsuarios()
-  if (hasPermission('componentes.ver')) fetchComponentes()
-  if (hasPermission('cotizaciones.ver')) fetchCotizaciones()
-  if (hasPermission('proveedores.ver')) fetchProveedores()
-  if (hasPermission('perfiles.ver')) fetchPerfiles()
+onMounted(async () => {
+  await Promise.allSettled([
+    hasPermission('bodegas.ver') ? fetchBodegas() : Promise.resolve(),
+    hasPermission('usuarios.ver') ? fetchUsuarios() : Promise.resolve(),
+    hasPermission('componentes.ver') ? fetchComponentes() : Promise.resolve(),
+    hasPermission('cotizaciones.ver') ? fetchCotizaciones() : Promise.resolve(),
+    hasPermission('proveedores.ver') ? fetchProveedores() : Promise.resolve(),
+    hasPermission('perfiles.ver') ? fetchPerfiles() : Promise.resolve(),
+    fetchSelectores()
+  ])
 })
 </script>
