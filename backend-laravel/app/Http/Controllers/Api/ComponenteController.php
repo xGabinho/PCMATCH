@@ -293,7 +293,7 @@ class ComponenteController extends Controller
                 ->select([
                     'id', 'sku', 'producto_id', 'bodega_id',
                     'especificacion', 'gama', 'precio',
-                    'descuento_porcentaje', 'descuento_activo', 'precio_final',
+                    'descuento_porcentaje', 'descuento_activo',
                     'stock', 'imagen_url',
                     'nucleos', 'hilos', 'frecuencia_hz', 'enfoque_uso',
                 ])

@@ -72,7 +72,7 @@
 </template>
 
 <script setup>
-import { Bot, Rocket, Zap, Wrench, FileText } from 'lucide-vue-next';
+import { Zap, Wrench, FileText } from 'lucide-vue-next';
 
 
 import { computed } from 'vue'
