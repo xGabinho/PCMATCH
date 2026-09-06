@@ -23,7 +23,7 @@ class Proveedor extends Authenticatable
     public function productosCatalogo()
     {
         return $this->belongsToMany(ProductoCatalogo::class, 'proveedor_producto_catalogo', 'proveedor_id', 'producto_catalogo_id')
-            ->withPivot('precio_mayorista', 'descripcion_comercial')
+            ->withPivot('precio_mayorista', 'descripcion_comercial', 'stock', 'especificacion', 'gama', 'enfoque_uso', 'nucleos', 'hilos', 'frecuencia_hz')
             ->withTimestamps();
     }
 

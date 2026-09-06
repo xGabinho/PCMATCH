@@ -32,7 +32,7 @@ app.config.errorHandler = (err, instance, info) => {
     info: info,
     stack_trace: err?.stack || null,
   };
-  console.error('[LOG_ERROR]', errorLog);
+  console.error('[LOG_ERROR]: ' + JSON.stringify(errorLog));
 };
 
 window.addEventListener('unhandledrejection', (event) => {
@@ -43,7 +43,7 @@ window.addEventListener('unhandledrejection', (event) => {
     reason: event.reason?.message || String(event.reason),
     stack_trace: event.reason?.stack || null,
   };
-  console.error('[LOG_UNHANDLED_REJECTION]', errorLog);
+  console.error('[LOG_UNHANDLED_REJECTION]: ' + JSON.stringify(errorLog));
 });
 
 app.use(router).mount('#app');

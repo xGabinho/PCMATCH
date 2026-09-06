@@ -91,6 +91,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::delete('/componentes/{id}', [ComponenteController::class, 'destroy']); // Eliminar por ID
 
     // RUTAS DE COTIZACIONES
+    Route::get('/cotizaciones/buscar/{codigo?}', [CotizacionController::class, 'buscarPorCodigo']); // Buscar cotización por código
     Route::get('/cotizaciones', [CotizacionController::class, 'index']); // Listar
     Route::post('/cotizaciones', [CotizacionController::class, 'store']); // Crear (Solo cliente)
     Route::delete('/cotizaciones', [CotizacionController::class, 'destroy']); // Eliminar
@@ -112,4 +113,9 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/analiticas/selectores', [AnaliticaController::class, 'selectores']);
     Route::get('/analiticas/rotacion-bodega', [AnaliticaController::class, 'rotacionBodega']);
     Route::get('/analiticas/consumo-proveedor', [AnaliticaController::class, 'consumoProveedor']);
+
+    // RUTAS DE ANALÍTICAS — Flujo de componentes (Bodega / Proveedor / Admin / Superadmin)
+    Route::get('/analiticas/bodega/flujo', [AnaliticaController::class, 'flujoBodega']);
+    Route::get('/analiticas/proveedor/flujo-componentes', [AnaliticaController::class, 'flujoProveedor']);
+    Route::get('/analiticas/proveedor/rendimiento-bodegas', [AnaliticaController::class, 'rendimientoBodegasProveedor']);
 });

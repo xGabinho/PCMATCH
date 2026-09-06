@@ -106,6 +106,81 @@
               </div>
             </div>
           </div>
+
+          <!-- Flujo de componentes del proveedor (Chart.js) -->
+          <div class="mt-8">
+            <div class="flex items-center justify-between mb-4">
+              <div class="flex items-center gap-2">
+                <BarChart3 class="w-5 h-5 text-accent" />
+                <h2 class="font-semibold theme-text">Flujo de componentes</h2>
+              </div>
+              <select
+                v-model="provFlujoRango"
+                @change="fetchFlujoProveedor(); fetchRendimientoBodegas()"
+                class="theme-card border theme-border rounded-lg px-3 py-1.5 text-xs theme-text focus:outline-none focus:border-accent transition-colors"
+              >
+                <option value="historico" class="theme-bg">Histórico</option>
+                <option value="3_meses" class="theme-bg">Últimos 3 meses</option>
+                <option value="1_mes" class="theme-bg">Último mes</option>
+              </select>
+            </div>
+
+            <!-- Bloque A: Mayor y menor flujo de componentes -->
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+              <div class="card-dark rounded-xl p-5">
+                <FlowBarChart
+                  title="Mayor flujo (más vendidos)"
+                  :items="provFlujoMayorItems"
+                  orientation="y"
+                  variant="accent"
+                  unit-label="unidades vendidas"
+                  :is-dark="isDark"
+                  :loading="loadingProvFlujo"
+                  empty-text="Sin ventas registradas en este período"
+                />
+              </div>
+              <div class="card-dark rounded-xl p-5">
+                <FlowBarChart
+                  title="Menor flujo (baja rotación)"
+                  :items="provFlujoMenorItems"
+                  orientation="y"
+                  variant="warning"
+                  unit-label="unidades vendidas"
+                  :is-dark="isDark"
+                  :loading="loadingProvFlujo"
+                  empty-text="Todos los componentes tienen movimiento"
+                />
+              </div>
+            </div>
+
+            <!-- Bloque B: Comparativa de bodegas asociadas -->
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <div class="card-dark rounded-xl p-5">
+                <FlowBarChart
+                  title="Ranking de bodegas (unidades vendidas)"
+                  :items="rendimientoBodegasItems"
+                  orientation="y"
+                  variant="accent"
+                  unit-label="unidades vendidas"
+                  :is-dark="isDark"
+                  :loading="loadingRendimiento"
+                  empty-text="Sin ventas en bodegas asociadas"
+                />
+              </div>
+              <div class="card-dark rounded-xl p-5">
+                <DistributionDoughnutChart
+                  title="Distribución de ventas por bodega"
+                  :labels="rendimientoLabels"
+                  :values="rendimientoValues"
+                  :percentages="rendimientoPercentages"
+                  :is-dark="isDark"
+                  :loading="loadingRendimiento"
+                  :total-label="rendimientoTotalLabel"
+                  empty-text="Sin datos de distribución"
+                />
+              </div>
+            </div>
+          </div>
         </template>
 
         <!-- ===== MIS BODEGAS ===== -->
@@ -279,20 +354,66 @@
                 </p>
               </div>
 
-              <!-- Especificación Comercial -->
+              <!-- Especificación Técnica -->
               <div>
-                <label class="block text-sm font-medium theme-text mb-2">Descripción Comercial (Opcional)</label>
-                <input v-model="newComp.especificacion" type="text" placeholder="Ej: Precio especial por lotes de 10+" class="allow-special w-full theme-bg border theme-border rounded-lg px-4 py-3 text-sm theme-text placeholder-text-muted focus:outline-none focus:border-accent transition-colors" />
+                <label class="block text-sm font-medium theme-text mb-2">Especificación técnica</label>
+                <input v-model="newComp.especificacion" type="text" placeholder="Ej: 6 núcleos / 12 hilos · 3.7GHz · AM4" class="allow-special w-full theme-bg border theme-border rounded-lg px-4 py-3 text-sm theme-text placeholder-text-muted focus:outline-none focus:border-accent transition-colors" />
+              </div>
+
+              <!-- Gama -->
+              <div>
+                <label class="block text-sm font-medium theme-text mb-2">Gama</label>
+                <div class="grid grid-cols-3 gap-3">
+                  <button v-for="tier in ['alta', 'media', 'baja']" :key="tier" type="button" @click="newComp.gama = tier"
+                    class="py-2.5 rounded-lg border text-sm font-medium transition-all"
+                    :class="newComp.gama === tier ? 'border-accent bg-accent/10 text-accent font-bold' : 'theme-border theme-text-muted hover:border-accent/40'">
+                    {{ tier.charAt(0).toUpperCase() + tier.slice(1) }}
+                  </button>
+                </div>
+              </div>
+
+              <!-- Enfoque de uso -->
+              <div>
+                <label class="block text-sm font-medium theme-text mb-2">Enfoque de uso</label>
+                <select v-model="newComp.enfoque_uso" class="w-full theme-bg border theme-border rounded-lg px-4 py-3 text-sm theme-text focus:outline-none focus:border-accent transition-colors">
+                  <option :value="''">Ninguno</option>
+                  <option value="gaming">Gaming</option>
+                  <option value="diseño">Diseño</option>
+                  <option value="oficina">Oficina</option>
+                  <option value="estudio">Estudio</option>
+                </select>
+              </div>
+
+              <!-- Especificaciones avanzadas -->
+              <div class="grid grid-cols-3 gap-3">
+                <div>
+                  <label class="block text-sm font-medium theme-text mb-2">Núcleos</label>
+                  <input v-model="newComp.nucleos" type="number" min="1" placeholder="Ej: 8" class="w-full theme-bg border theme-border rounded-lg px-4 py-3 text-sm theme-text focus:outline-none focus:border-accent transition-colors font-mono" />
+                </div>
+                <div>
+                  <label class="block text-sm font-medium theme-text mb-2">Hilos</label>
+                  <input v-model="newComp.hilos" type="number" min="1" placeholder="Ej: 16" class="w-full theme-bg border theme-border rounded-lg px-4 py-3 text-sm theme-text focus:outline-none focus:border-accent transition-colors font-mono" />
+                </div>
+                <div>
+                  <label class="block text-sm font-medium theme-text mb-2">Frecuencia (GHz)</label>
+                  <input v-model="newComp.frecuencia_hz" type="number" step="0.1" min="0" placeholder="Ej: 3.8" class="w-full theme-bg border theme-border rounded-lg px-4 py-3 text-sm theme-text focus:outline-none focus:border-accent transition-colors font-mono" />
+                </div>
+              </div>
+
+              <!-- Descripción Comercial -->
+              <div>
+                <label class="block text-sm font-medium theme-text mb-2">Descripción Comercial propia (Opcional)</label>
+                <textarea v-model="newComp.descripcion_comercial" rows="2" placeholder="Ej: Precio especial por lotes de 10+. Garantía directa con fabricante." class="allow-special w-full theme-bg border theme-border rounded-lg px-4 py-3 text-sm theme-text placeholder-text-muted focus:outline-none focus:border-accent transition-colors resize-none"></textarea>
               </div>
 
               <div class="grid grid-cols-2 gap-4">
                 <div>
                   <label class="block text-sm font-medium theme-text mb-2">Precio Mayorista ($) <span class="text-red-400">*</span></label>
-                  <input v-model="newComp.precio" type="number" min="0" step="1" @keydown="blockInvalidChars($event)" class="w-full theme-bg border theme-border rounded-lg px-4 py-3 text-sm theme-text focus:outline-none focus:border-accent transition-colors" />
+                  <input v-model="newComp.precio" type="number" min="0" step="1" @keydown="blockInvalidChars($event)" class="w-full theme-bg border theme-border rounded-lg px-4 py-3 text-sm theme-text focus:outline-none focus:border-accent transition-colors font-mono" />
                 </div>
                 <div>
                   <label class="block text-sm font-medium theme-text mb-2">Stock Disponible <span class="text-red-400">*</span></label>
-                  <input v-model="newComp.stock" type="number" min="0" step="1" @keydown="blockInvalidChars($event)" class="w-full theme-bg border theme-border rounded-lg px-4 py-3 text-sm theme-text focus:outline-none focus:border-accent transition-colors" />
+                  <input v-model="newComp.stock" type="number" min="0" step="1" @keydown="blockInvalidCharsStock($event)" class="w-full theme-bg border theme-border rounded-lg px-4 py-3 text-sm theme-text focus:outline-none focus:border-accent transition-colors font-mono" />
                 </div>
               </div>
             </div>
@@ -369,7 +490,7 @@
     <!-- ===== MODAL EDITAR COMPONENTE ===== -->
     <div v-if="showEditCompModal" class="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto py-6 px-4">
       <div class="fixed inset-0 bg-black/60 backdrop-blur-sm" @click="showEditCompModal = false"></div>
-      <div class="relative card-dark rounded-2xl p-6 w-full max-w-md my-auto shadow-2xl">
+      <div class="relative card-dark rounded-2xl p-6 w-full max-w-2xl my-auto shadow-2xl">
         <div class="flex items-center justify-between mb-6">
           <div>
             <h2 class="text-lg font-bold theme-text">Editar componente</h2>
@@ -379,14 +500,66 @@
         </div>
 
         <div class="space-y-5 max-h-[60vh] overflow-y-auto pr-2">
+          <!-- Especificación Técnica -->
+          <div>
+            <label class="block text-sm font-medium theme-text mb-2">Especificación técnica</label>
+            <input v-model="editingComp.especificacion" type="text" placeholder="Ej: 6 núcleos / 12 hilos · 3.7GHz · AM4" class="allow-special w-full theme-bg border theme-border rounded-lg px-4 py-3 text-sm theme-text placeholder-text-muted focus:outline-none focus:border-accent transition-colors" />
+          </div>
+
+          <!-- Gama -->
+          <div>
+            <label class="block text-sm font-medium theme-text mb-2">Gama</label>
+            <div class="grid grid-cols-3 gap-3">
+              <button v-for="tier in ['alta', 'media', 'baja']" :key="tier" type="button" @click="editingComp.gama = tier"
+                class="py-2.5 rounded-lg border text-sm font-medium transition-all"
+                :class="editingComp.gama === tier ? 'border-accent bg-accent/10 text-accent font-bold' : 'theme-border theme-text-muted hover:border-accent/40'">
+                {{ tier.charAt(0).toUpperCase() + tier.slice(1) }}
+              </button>
+            </div>
+          </div>
+
+          <!-- Enfoque de uso -->
+          <div>
+            <label class="block text-sm font-medium theme-text mb-2">Enfoque de uso</label>
+            <select v-model="editingComp.enfoque_uso" class="w-full theme-bg border theme-border rounded-lg px-4 py-3 text-sm theme-text focus:outline-none focus:border-accent transition-colors">
+              <option :value="''">Ninguno</option>
+              <option value="gaming">Gaming</option>
+              <option value="diseño">Diseño</option>
+              <option value="oficina">Oficina</option>
+              <option value="estudio">Estudio</option>
+            </select>
+          </div>
+
+          <!-- Especificaciones avanzadas -->
+          <div class="grid grid-cols-3 gap-3">
+            <div>
+              <label class="block text-sm font-medium theme-text mb-2">Núcleos</label>
+              <input v-model="editingComp.nucleos" type="number" min="1" placeholder="Ej: 8" class="w-full theme-bg border theme-border rounded-lg px-4 py-3 text-sm theme-text focus:outline-none focus:border-accent transition-colors font-mono" />
+            </div>
+            <div>
+              <label class="block text-sm font-medium theme-text mb-2">Hilos</label>
+              <input v-model="editingComp.hilos" type="number" min="1" placeholder="Ej: 16" class="w-full theme-bg border theme-border rounded-lg px-4 py-3 text-sm theme-text focus:outline-none focus:border-accent transition-colors font-mono" />
+            </div>
+            <div>
+              <label class="block text-sm font-medium theme-text mb-2">Frecuencia (GHz)</label>
+              <input v-model="editingComp.frecuencia_hz" type="number" step="0.1" min="0" placeholder="Ej: 3.8" class="w-full theme-bg border theme-border rounded-lg px-4 py-3 text-sm theme-text focus:outline-none focus:border-accent transition-colors font-mono" />
+            </div>
+          </div>
+
+          <!-- Descripción Comercial -->
+          <div>
+            <label class="block text-sm font-medium theme-text mb-2">Descripción Comercial propia (Opcional)</label>
+            <textarea v-model="editingComp.descripcion_comercial" rows="2" placeholder="Ej: Precio especial por lotes. Garantía con fabricante." class="allow-special w-full theme-bg border theme-border rounded-lg px-4 py-3 text-sm theme-text placeholder-text-muted focus:outline-none focus:border-accent transition-colors resize-none"></textarea>
+          </div>
+
           <div class="grid grid-cols-2 gap-4">
             <div>
               <label class="block text-sm font-medium theme-text mb-2">Precio Mayorista ($)</label>
-              <input v-model="editingComp.precio_mayorista" type="number" min="0" step="1" @keydown="blockInvalidChars($event)" class="w-full theme-bg border theme-border rounded-lg px-4 py-3 text-sm theme-text focus:outline-none focus:border-accent transition-colors" />
+              <input v-model="editingComp.precio_mayorista" type="number" min="0" step="1" @keydown="blockInvalidChars($event)" class="w-full theme-bg border theme-border rounded-lg px-4 py-3 text-sm theme-text focus:outline-none focus:border-accent transition-colors font-mono" />
             </div>
             <div>
               <label class="block text-sm font-medium theme-text mb-2">Stock Disponible</label>
-              <input v-model="editingComp.stock" type="number" min="0" step="1" @keydown="blockInvalidChars($event)" class="w-full theme-bg border theme-border rounded-lg px-4 py-3 text-sm theme-text focus:outline-none focus:border-accent transition-colors" />
+              <input v-model="editingComp.stock" type="number" min="0" step="1" @keydown="blockInvalidCharsStock($event)" class="w-full theme-bg border theme-border rounded-lg px-4 py-3 text-sm theme-text focus:outline-none focus:border-accent transition-colors font-mono" />
             </div>
           </div>
           <p v-if="editCompError" class="mt-5 text-xs text-red-400 bg-red-500/10 border border-red-500/20 rounded-lg px-4 py-2.5 text-center">{{ editCompError }}</p>
@@ -424,12 +597,12 @@
 
 <script setup>
 import { Store, BarChart3, Check, Trash2, Sun, Moon, Wrench, FileText, Briefcase, Gamepad2, Palette, BookOpen, Settings } from 'lucide-vue-next';
-
-
+import FlowBarChart from '../components/charts/FlowBarChart.vue'
+import DistributionDoughnutChart from '../components/charts/DistributionDoughnutChart.vue'
 
 import { useTheme } from '../composables/useTheme'
 const { isDark, toggleTheme } = useTheme()
-import { ref, markRaw, computed, onMounted } from 'vue'
+import { ref, markRaw, computed, onMounted, nextTick } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuth } from '../composables/useAuth'
 import { useToast } from '../composables/useToast'
@@ -448,7 +621,7 @@ const activeSection = ref('dashboard')
 
 const sections = computed(() => [
   { id: 'dashboard',    icon: BarChart3, label: 'Dashboard',    description: 'Resumen general de tus bodegas',           cta: null,            count: null                  },
-  { id: 'bodegas',      icon: markRaw(Store), label: 'Bodegas asociadas',  description: `${bodegas.value.length} bodegas asociadas`, cta: '+ Nueva bodega', count: bodegas.value.length  },
+  { id: 'bodegas',      icon: markRaw(Store), label: 'Bodegas asociadas',  description: `${bodegas.value.length} bodegas asociadas`, cta: null, count: bodegas.value.length  },
   { id: 'componentes',  icon: markRaw(Wrench), label: 'Componentes',  description: `Componentes de tus bodegas`,               cta: '+ Nuevo componente', count: componentes.value.length },
   { id: 'cotizaciones', icon: markRaw(FileText), label: 'Cotizaciones', description: 'Cotizaciones de tus bodegas',              cta: null,            count: cotizaciones.value.length },
 ])
@@ -479,6 +652,10 @@ const editBodegaError    = ref('')
 const savingEditBodega   = ref(false)
 const savingDeleteBodega = ref(false)
 const deleteBodegaError  = ref('')
+const showBodegaModal    = ref(false)
+const newBodega          = ref({ nombre: '', correo: '', password: '', telefono: '', direccion: '' })
+const bodegaError        = ref('')
+const savingBodega       = ref(false)
 
 /**
 
@@ -670,17 +847,11 @@ const filterNucleos = ref('')
 const filterHilos = ref('')
 const filterFrecuenciaMin = ref('')
 
-/**
-
- * Propiedad computada que filtra dinámicamente los registros basándose en los criterios de búsqueda.
-
- */
-
 const filteredComponentes = computed(() => {
   let result = [...componentes.value]
   if (filterComponente.value.trim()) {
     const q = filterComponente.value.toLowerCase()
-    result = result.filter(c => c.nombre.toLowerCase().includes(q) || c.categoria.toLowerCase().includes(q))
+    result = result.filter(c => c.nombre?.toLowerCase().includes(q) || c.categoria?.toLowerCase().includes(q))
   }
   if (filterGama.value) result = result.filter(c => c.gama === filterGama.value)
   if (filterEnfoque.value) result = result.filter(c => c.enfoque_uso === filterEnfoque.value)
@@ -692,7 +863,7 @@ const filteredComponentes = computed(() => {
 
 // Variables para Add Component
 const showAddCompModal = ref(false)
-const newComp = ref({ producto_id: '', especificacion: '', nucleos: '', hilos: '', frecuencia_hz: '', enfoque_uso: '', gama: 'media', precio: '' })
+const newComp = ref({ producto_id: '', especificacion: '', nucleos: '', hilos: '', frecuencia_hz: '', enfoque_uso: '', gama: 'media', precio: '', stock: '', descripcion_comercial: '' })
 const addCompError = ref('')
 const savingAddComp = ref(false)
 const addImageFile = ref(null)
@@ -731,37 +902,47 @@ function selectProducto(prod) {
   newComp.value.hilos = prod.hilos || ''
   newComp.value.frecuencia_hz = prod.frecuencia_hz || ''
   newComp.value.enfoque_uso = prod.enfoque_uso || ''
-  productoSearch.value = `${prod.nombre} - ${prod.especificacion}`
+  productoSearch.value = prod.nombre
   showProductoDropdown.value = false
 }
 
 /**
-
  * Obtiene datos desde el backend mediante API.
-
  * Mantiene sincronizada la vista con la base de datos.
-
  */
-
 async function fetchCategoriasBase() {
   try {
     const res = await fetch(`${API}/componentes/maestros`, { headers: { Authorization: `Bearer ${getToken()}` } })
     const data = await res.json()
-    if (res.ok) categoriasBase.value = data.componentes || []
-  } catch(e) { console.error(e) }
+    if (res.ok && (data.componentes || data.productos)) {
+      categoriasBase.value = data.componentes || data.productos || []
+    }
+  } catch(e) {
+    console.error('Error al cargar componentes maestros habilitados', e)
+  }
 }
 
 /**
-
  * Abre el modal correspondiente e inicializa los datos necesarios.
-
  */
-
 function openAddModal() {
-  newComp.value = { producto_id: '', especificacion: '', nucleos: '', hilos: '', frecuencia_hz: '', enfoque_uso: '', gama: 'media', precio: '' }
+  newComp.value = {
+    producto_id: '',
+    especificacion: '',
+    nucleos: '',
+    hilos: '',
+    frecuencia_hz: '',
+    enfoque_uso: '',
+    gama: 'media',
+    precio: '',
+    stock: '',
+    descripcion_comercial: ''
+  }
+  productoSearch.value = ''
+  showProductoDropdown.value = false
   addCompError.value = ''
   showAddCompModal.value = true
-  if (categoriasBase.value.length === 0) fetchCategoriasBase()
+  fetchCategoriasBase()
 }
 
 /**
@@ -818,7 +999,13 @@ async function saveNewComp() {
           producto_catalogo_id: newComp.value.producto_id,
           precio_mayorista: newComp.value.precio,
           stock: newComp.value.stock,
-          descripcion_comercial: newComp.value.especificacion
+          especificacion: newComp.value.especificacion || null,
+          gama: newComp.value.gama || 'media',
+          enfoque_uso: newComp.value.enfoque_uso || null,
+          nucleos: newComp.value.nucleos ? Number(newComp.value.nucleos) : null,
+          hilos: newComp.value.hilos ? Number(newComp.value.hilos) : null,
+          frecuencia_hz: newComp.value.frecuencia_hz ? Number(newComp.value.frecuencia_hz) : null,
+          descripcion_comercial: newComp.value.descripcion_comercial || null
         }
       ]
     }
@@ -894,7 +1081,14 @@ async function saveEditComp() {
     const payload = {
       producto_catalogo_id: editingComp.value.id,
       precio_mayorista: editingComp.value.precio_mayorista,
-      stock: editingComp.value.stock
+      stock: editingComp.value.stock,
+      especificacion: editingComp.value.especificacion || null,
+      gama: editingComp.value.gama || 'media',
+      enfoque_uso: editingComp.value.enfoque_uso || null,
+      nucleos: editingComp.value.nucleos ? Number(editingComp.value.nucleos) : null,
+      hilos: editingComp.value.hilos ? Number(editingComp.value.hilos) : null,
+      frecuencia_hz: editingComp.value.frecuencia_hz ? Number(editingComp.value.frecuencia_hz) : null,
+      descripcion_comercial: editingComp.value.descripcion_comercial || null
     }
 
     const res = await fetch(`${API}/proveedores/catalogo/item`, {
@@ -961,10 +1155,92 @@ async function confirmDelete() {
   }
 }
 
-// ── Lifecycle ─────────────────────────────────────────────
+// ── Analítica: Flujo de componentes del proveedor ────────
+const provFlujoRango = ref('historico')
+const loadingProvFlujo = ref(false)
+const provFlujoMayorData = ref([])
+const provFlujoMenorData = ref([])
+
+const provFlujoMayorItems = computed(() =>
+  provFlujoMayorData.value.map(d => ({
+    label: d.producto_nombre + (d.especificacion ? ` (${d.especificacion})` : ''),
+    value: Number(d.total_salida),
+    sublabel: `${d.categoria} · ${d.bodega_nombre} · stock: ${d.stock}`,
+  }))
+)
+
+const provFlujoMenorItems = computed(() =>
+  provFlujoMenorData.value.map(d => ({
+    label: d.producto_nombre + (d.especificacion ? ` (${d.especificacion})` : ''),
+    value: Number(d.total_salida),
+    sublabel: `${d.categoria} · ${d.bodega_nombre} · stock: ${d.stock}`,
+  }))
+)
+
+async function fetchFlujoProveedor() {
+  loadingProvFlujo.value = true
+  try {
+    const res = await fetch(
+      `${API}/analiticas/proveedor/flujo-componentes?rango_fecha=${provFlujoRango.value}&limit=10`,
+      { headers: { Authorization: `Bearer ${getToken()}` } }
+    )
+    const data = await res.json()
+    if (res.ok) {
+      provFlujoMayorData.value = data.mayor_flujo || []
+      provFlujoMenorData.value = data.menor_flujo || []
+    }
+  } catch (e) {
+    console.error('Error fetching flujo proveedor:', e)
+  } finally {
+    loadingProvFlujo.value = false
+  }
+}
+
+// ── Analítica: Rendimiento de bodegas asociadas ────────
+const loadingRendimiento = ref(false)
+const rendimientoData = ref([])
+const rendimientoTotalGeneral = ref(0)
+
+const rendimientoBodegasItems = computed(() =>
+  rendimientoData.value.map(d => ({
+    label: d.bodega_nombre,
+    value: d.total_vendido,
+    sublabel: `${d.total_cotizaciones} cotizaciones · ${d.porcentaje}%`,
+  }))
+)
+
+const rendimientoLabels = computed(() => rendimientoData.value.map(d => d.bodega_nombre))
+const rendimientoValues = computed(() => rendimientoData.value.map(d => d.total_vendido))
+const rendimientoPercentages = computed(() => rendimientoData.value.map(d => d.porcentaje))
+const rendimientoTotalLabel = computed(() =>
+  rendimientoTotalGeneral.value > 0 ? `${rendimientoTotalGeneral.value} unidades` : ''
+)
+
+async function fetchRendimientoBodegas() {
+  loadingRendimiento.value = true
+  try {
+    const res = await fetch(
+      `${API}/analiticas/proveedor/rendimiento-bodegas?rango_fecha=${provFlujoRango.value}`,
+      { headers: { Authorization: `Bearer ${getToken()}` } }
+    )
+    const data = await res.json()
+    if (res.ok) {
+      rendimientoData.value = data.data || []
+      rendimientoTotalGeneral.value = data.total_general || 0
+    }
+  } catch (e) {
+    console.error('Error fetching rendimiento bodegas:', e)
+  } finally {
+    loadingRendimiento.value = false
+  }
+}
+
+// ── Lifecycle ─────────────────────────────────────────
 onMounted(() => {
   fetchBodegas()
   fetchCotizaciones()
   fetchComponentes()
+  fetchFlujoProveedor()
+  fetchRendimientoBodegas()
 })
 </script>

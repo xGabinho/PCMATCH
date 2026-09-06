@@ -155,6 +155,7 @@ class Componente extends Model
     {
         return $query->where(function ($q) use ($termino) {
             $q->where('especificacion', 'LIKE', "%{$termino}%")
+              ->orWhere('sku', 'LIKE', "%{$termino}%")
               ->orWhereHas('producto', function ($sub) use ($termino) {
                   $sub->where('nombre', 'LIKE', "%{$termino}%");
               });
@@ -227,7 +228,7 @@ class Componente extends Model
             ->join('cotizaciones', 'cotizacion_items.cotizacion_id', '=', 'cotizaciones.id')
             ->where('cotizacion_items.componente_id', $this->id)
             ->where('cotizaciones.created_at', '>=', $limite)
-            ->where('cotizaciones.stock_restaurado', false)
+            ->whereRaw('cotizaciones.stock_restaurado IS NOT TRUE')
             ->exists();
     }
 }

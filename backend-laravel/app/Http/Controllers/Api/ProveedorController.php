@@ -292,13 +292,13 @@ class ProveedorController extends Controller
                     'id' => $p->id,
                     'nombre' => $p->nombre,
                     'categoria' => $p->categoria,
-                    'especificacion' => $p->especificacion,
+                    'especificacion' => $p->pivot->especificacion ?: $p->especificacion,
                     'imagen_url' => $p->imagen_url,
-                    'nucleos' => $p->nucleos,
-                    'hilos' => $p->hilos,
-                    'frecuencia_hz' => $p->frecuencia_hz,
-                    'enfoque_uso' => $p->enfoque_uso,
-                    'gama' => $p->gama,
+                    'nucleos' => $p->pivot->nucleos !== null ? $p->pivot->nucleos : $p->nucleos,
+                    'hilos' => $p->pivot->hilos !== null ? $p->pivot->hilos : $p->hilos,
+                    'frecuencia_hz' => $p->pivot->frecuencia_hz !== null ? $p->pivot->frecuencia_hz : $p->frecuencia_hz,
+                    'enfoque_uso' => $p->pivot->enfoque_uso ?: $p->enfoque_uso,
+                    'gama' => $p->pivot->gama ?: ($p->gama ?: 'media'),
                     'precio_mayorista' => $p->pivot->precio_mayorista,
                     'stock' => $p->pivot->stock,
                     'descripcion_comercial' => $p->pivot->descripcion_comercial,
@@ -332,14 +332,20 @@ class ProveedorController extends Controller
             return response()->json(['success' => false, 'message' => 'Proveedor no encontrado'], 404);
         }
 
-        // Accept array of {producto_catalogo_id, precio_mayorista, descripcion_comercial}
+        // Accept array of {producto_catalogo_id, precio_mayorista, stock, especificacion, gama, enfoque_uso, nucleos, hilos, frecuencia_hz, descripcion_comercial}
         if ($request->has('items')) {
             $request->validate([
                 'items' => 'required|array',
                 'items.*.producto_catalogo_id' => 'required|integer|exists:productos_catalogo,id',
                 'items.*.precio_mayorista' => 'required|numeric|min:0',
                 'items.*.stock' => 'required|integer|min:0',
-                'items.*.descripcion_comercial' => 'nullable|string|max:500',
+                'items.*.especificacion' => 'nullable|string|max:1000',
+                'items.*.gama' => 'nullable|string|in:alta,media,baja',
+                'items.*.enfoque_uso' => 'nullable|string|in:gaming,diseño,oficina,estudio',
+                'items.*.nucleos' => 'nullable|integer|min:1',
+                'items.*.hilos' => 'nullable|integer|min:1',
+                'items.*.frecuencia_hz' => 'nullable|numeric|min:0',
+                'items.*.descripcion_comercial' => 'nullable|string|max:1000',
             ]);
 
             $syncData = [];
@@ -347,6 +353,12 @@ class ProveedorController extends Controller
                 $syncData[$item['producto_catalogo_id']] = [
                     'precio_mayorista' => $item['precio_mayorista'],
                     'stock' => $item['stock'],
+                    'especificacion' => $item['especificacion'] ?? null,
+                    'gama' => $item['gama'] ?? null,
+                    'enfoque_uso' => $item['enfoque_uso'] ?? null,
+                    'nucleos' => !empty($item['nucleos']) ? (int)$item['nucleos'] : null,
+                    'hilos' => !empty($item['hilos']) ? (int)$item['hilos'] : null,
+                    'frecuencia_hz' => !empty($item['frecuencia_hz']) ? (float)$item['frecuencia_hz'] : null,
                     'descripcion_comercial' => $item['descripcion_comercial'] ?? null,
                 ];
             }
@@ -372,7 +384,7 @@ class ProveedorController extends Controller
     }
 
     /**
-     * PUT /api/proveedores/catalogo/item — Actualizar precio mayorista de un producto en el catálogo del proveedor
+     * PUT /api/proveedores/catalogo/item — Actualizar producto en el catálogo del proveedor
      */
     public function updateCatalogoItem(Request $request)
     {
@@ -387,7 +399,13 @@ class ProveedorController extends Controller
             'producto_catalogo_id' => 'required|integer',
             'precio_mayorista' => 'required|numeric|min:0',
             'stock' => 'required|integer|min:0',
-            'descripcion_comercial' => 'nullable|string|max:500',
+            'especificacion' => 'nullable|string|max:1000',
+            'gama' => 'nullable|string|in:alta,media,baja',
+            'enfoque_uso' => 'nullable|string|in:gaming,diseño,oficina,estudio',
+            'nucleos' => 'nullable|integer|min:1',
+            'hilos' => 'nullable|integer|min:1',
+            'frecuencia_hz' => 'nullable|numeric|min:0',
+            'descripcion_comercial' => 'nullable|string|max:1000',
         ]);
 
         $exists = DB::table('proveedor_producto_catalogo')
@@ -405,10 +423,17 @@ class ProveedorController extends Controller
             ->update([
                 'precio_mayorista' => $request->input('precio_mayorista'),
                 'stock' => $request->input('stock'),
+                'especificacion' => $request->input('especificacion'),
+                'gama' => $request->input('gama'),
+                'enfoque_uso' => $request->input('enfoque_uso'),
+                'nucleos' => !empty($request->input('nucleos')) ? (int)$request->input('nucleos') : null,
+                'hilos' => !empty($request->input('hilos')) ? (int)$request->input('hilos') : null,
+                'frecuencia_hz' => !empty($request->input('frecuencia_hz')) ? (float)$request->input('frecuencia_hz') : null,
                 'descripcion_comercial' => $request->input('descripcion_comercial'),
+                'updated_at' => now(),
             ]);
 
-        return response()->json(['success' => true, 'message' => 'Precio actualizado']);
+        return response()->json(['success' => true, 'message' => 'Componente actualizado correctamente']);
     }
 
     /**

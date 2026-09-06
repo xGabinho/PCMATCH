@@ -149,8 +149,8 @@
               <p class="text-3xl font-bold text-green-400 font-mono">{{ bodegas.filter(b => b.activa == 1).length }}</p>
             </div>
             <div class="card-dark rounded-xl p-5">
-              <p class="theme-text-muted text-xs uppercase tracking-wider mb-2">Sin proveedor</p>
-              <p class="text-3xl font-bold text-yellow-400 font-mono">{{ bodegas.filter(b => !b.proveedor_id).length }}</p>
+              <p class="theme-text-muted text-xs uppercase tracking-wider mb-2">Con proveedores</p>
+              <p class="text-3xl font-bold text-accent font-mono">{{ bodegas.filter(b => b.proveedor_nombre).length }}</p>
             </div>
           </div>
 
@@ -162,7 +162,7 @@
             <div v-if="loadingBodegas" class="px-6 py-12 text-center theme-text-muted text-sm">Cargando bodegas...</div>
             <table v-else class="w-full min-w-[800px]">
               <thead class="border-b theme-border">
-                <tr><th v-for="h in ['Nombre','Correo','Proveedor','Componentes','Estado','Acciones']" :key="h" class="px-6 py-3 text-left text-xs theme-text-muted uppercase tracking-wider font-medium">{{ h }}</th></tr>
+                <tr><th v-for="h in ['Nombre','Correo','Proveedores asociados','Componentes','Estado','Acciones']" :key="h" class="px-6 py-3 text-left text-xs theme-text-muted uppercase tracking-wider font-medium">{{ h }}</th></tr>
               </thead>
               <tbody class="divide-y theme-divide">
                 <tr v-if="filteredBodegas.length === 0"><td colspan="6" class="px-6 py-12 text-center theme-text-muted text-sm">Sin bodegas registradas</td></tr>
@@ -170,8 +170,12 @@
                   <td class="px-6 py-4 text-sm font-medium theme-text">{{ b.nombre }}</td>
                   <td class="px-6 py-4 text-sm theme-text-muted">{{ b.correo }}</td>
                   <td class="px-6 py-4">
-                    <span v-if="b.proveedor_nombre" class="badge text-xs bg-accent/10 text-accent border border-accent/20">{{ b.proveedor_nombre }}</span>
-                    <span v-else class="text-xs theme-text-muted">Sin proveedor</span>
+                    <div v-if="b.proveedor_nombre" class="flex flex-wrap gap-1">
+                      <span v-for="pname in b.proveedor_nombre.split(', ')" :key="pname" class="badge text-xs bg-accent/10 text-accent border border-accent/20">
+                        {{ pname }}
+                      </span>
+                    </div>
+                    <span v-else class="text-xs theme-text-muted">Sin proveedores</span>
                   </td>
                   <td class="px-6 py-4 text-sm theme-text font-mono">{{ b.total_componentes }}</td>
                   <td class="px-6 py-4">
@@ -231,41 +235,22 @@
             <div class="px-6 py-4 border-b theme-border flex flex-col lg:flex-row items-center justify-between gap-4">
               <h2 class="font-semibold theme-text whitespace-nowrap">Listado de componentes</h2>
               <div class="flex flex-wrap items-center gap-3">
-                <select v-model="filterGama" class="theme-bg border theme-border rounded-lg px-3 py-2 text-sm theme-text focus:outline-none focus:border-accent transition-colors">
-                  <option value="">Gama (Todas)</option>
-                  <option value="alta">Alta</option>
-                  <option value="media">Media</option>
-                  <option value="baja">Baja</option>
-                </select>
-                <select v-model="filterEnfoque" class="theme-bg border theme-border rounded-lg px-3 py-2 text-sm theme-text focus:outline-none focus:border-accent transition-colors">
-                  <option value="">Enfoque (Todos)</option>
-                  <option value="gaming">Gaming</option>
-                  <option value="diseño">Diseño</option>
-                  <option value="oficina">Oficina</option>
-                  <option value="estudio">Estudio</option>
-                </select>
-                <input v-model="filterNucleos" type="number" placeholder="Núcleos" class="theme-bg border theme-border rounded-lg px-3 py-2 text-sm theme-text focus:outline-none focus:border-accent transition-colors w-24" />
-                <input v-model="filterFrecuenciaMin" type="number" step="0.1" placeholder="GHz Min" class="theme-bg border theme-border rounded-lg px-3 py-2 text-sm theme-text focus:outline-none focus:border-accent transition-colors w-28" />
-                <input v-model="filterComponente" type="text" placeholder="Buscar..." class="theme-bg border theme-border rounded-lg px-4 py-2 text-sm theme-text placeholder-text-muted focus:outline-none focus:border-accent transition-colors w-48" />
+                <input v-model="filterComponente" type="text" placeholder="Buscar por nombre o categoría..." class="theme-bg border theme-border rounded-lg px-4 py-2 text-sm theme-text placeholder-text-muted focus:outline-none focus:border-accent transition-colors w-72" />
               </div>
             </div>
             <div v-if="loadingComponentes" class="px-6 py-12 text-center theme-text-muted text-sm">Cargando componentes...</div>
             <table v-else class="w-full min-w-[640px]">
               <thead class="border-b theme-border">
-                <tr><th v-for="h in ['Componente','Categoría','Gama','Bodega','Precio','Stock','Estado','Acciones']" :key="h" class="px-6 py-3 text-left text-xs theme-text-muted uppercase tracking-wider font-medium">{{ h }}</th></tr>
+                <tr><th v-for="h in ['Componente','Categoría','Estado','Acciones']" :key="h" class="px-6 py-3 text-left text-xs theme-text-muted uppercase tracking-wider font-medium">{{ h }}</th></tr>
               </thead>
               <tbody class="divide-y theme-divide">
-                <tr v-if="filteredComponentes.length === 0"><td colspan="8" class="px-6 py-12 text-center theme-text-muted text-sm">Sin componentes registrados</td></tr>
+                <tr v-if="filteredComponentes.length === 0"><td colspan="4" class="px-6 py-12 text-center theme-text-muted text-sm">Sin componentes registrados</td></tr>
                 <tr v-for="c in filteredComponentes" :key="c.id" class="theme-row-hover">
                   <td class="px-6 py-4 text-sm font-medium theme-text">
                     <div>{{ c.nombre }}</div>
                     <div class="text-xs theme-text-muted opacity-75 truncate max-w-xs">{{ c.especificacion }}</div>
                   </td>
                   <td class="px-6 py-4"><span class="badge text-xs bg-accent/10 text-accent border border-accent/20">{{ c.categoria }}</span></td>
-                  <td class="px-6 py-4"><span class="text-xs px-2 py-0.5 rounded-full font-medium border" :class="tierStyles[c.gama]">{{ c.gama }}</span></td>
-                  <td class="px-6 py-4 text-sm theme-text-muted">{{ c.bodega_nombre || c.bodega?.nombre || 'General' }}</td>
-                  <td class="px-6 py-4 text-sm font-mono text-accent font-medium">${{ Number(c.precio_final || c.precio || 0).toLocaleString() }}</td>
-                  <td class="px-6 py-4 text-sm font-mono theme-text">{{ c.stock ?? 0 }} unid.</td>
                   <td class="px-6 py-4">
                     <span class="badge text-xs px-2.5 py-1" :class="c.activo == 1 ? 'bg-green-500/10 text-green-400 border border-green-500/20' : 'bg-red-500/10 text-red-400 border border-red-500/20'">
                       {{ c.activo == 1 ? 'Activo' : 'Inactivo' }}
@@ -276,10 +261,6 @@
                       <button @click="requestConfirm({ title: c.activo == 1 ? 'Desactivar componente' : 'Activar componente', message: `¿${c.activo == 1 ? 'Desactivar' : 'Activar'} <strong>${c.nombre}</strong>?`, confirmLabel: c.activo == 1 ? 'Sí, desactivar' : 'Sí, activar', variant: c.activo == 1 ? 'warning' : 'success', onConfirm: () => toggleComponente(c) })" :disabled="isActionLoading(`comp_${c.id}_toggle`)" class="px-2.5 py-1.5 rounded-lg text-xs font-semibold active:scale-95 transition-all inline-flex items-center gap-1 cursor-pointer border shadow-sm" :class="c.activo == 1 ? 'bg-amber-500/15 text-amber-400 hover:bg-amber-500/25 border-amber-500/30 shadow-amber-950/40' : 'bg-emerald-500/15 text-emerald-400 hover:bg-emerald-500/25 border-emerald-500/30 shadow-emerald-950/40'">
                         <Loader2 v-if="isActionLoading(`comp_${c.id}_toggle`)" class="w-3 h-3 animate-spin" />
                         {{ c.activo == 1 ? 'Desactivar' : 'Activar' }}
-                      </button>
-                      <button @click="openEditComp(c)" class="px-2.5 py-1.5 rounded-lg text-xs font-medium theme-text-muted hover:text-accent hover:border-accent/40 border theme-border theme-bg active:scale-95 transition-all inline-flex items-center gap-1 cursor-pointer">
-                        <Pencil class="w-3 h-3" />
-                        Editar
                       </button>
                       <button @click="openDeleteComp(c)" class="px-2.5 py-1.5 rounded-lg text-xs font-medium text-rose-400/80 hover:text-rose-400 hover:bg-rose-500/10 border border-rose-500/20 active:scale-95 transition-all inline-flex items-center gap-1 cursor-pointer">
                         <Trash2 class="w-3 h-3" />
@@ -661,184 +642,6 @@
           </div>
         </template>
 
-        <!-- ===== REPORTES Y ANALÍTICAS ===== -->
-        <template v-if="activeSection === 'reportes'">
-          <!-- Tabs -->
-          <div class="flex gap-2 mb-6">
-            <button @click="reporteTab = 'rotacion'" class="px-4 py-2 rounded-lg text-sm font-medium transition-all" :class="reporteTab === 'rotacion' ? 'bg-accent text-white shadow-lg shadow-accent/20' : 'card-dark theme-text-muted hover:theme-text'">
-              <BarChart3 class="w-5 h-5 mr-2 inline-block text-accent" /> Rotación por Bodega
-            </button>
-            <button @click="reporteTab = 'consumo'" class="px-4 py-2 rounded-lg text-sm font-medium transition-all" :class="reporteTab === 'consumo' ? 'bg-accent text-white shadow-lg shadow-accent/20' : 'card-dark theme-text-muted hover:theme-text'">
-              <Package class="w-5 h-5 mr-2 inline-block text-accent" /> Consumo por Proveedor
-            </button>
-          </div>
-
-          <!-- ROTACIÓN POR BODEGA -->
-          <template v-if="reporteTab === 'rotacion'">
-            <div class="card-dark rounded-xl p-6 mb-6">
-              <h3 class="text-sm font-semibold theme-text mb-4">Filtros</h3>
-              <div class="flex flex-wrap gap-4 items-end">
-                <div class="flex-1 min-w-[200px]">
-                  <label class="block text-xs theme-text-muted mb-1.5">Bodega</label>
-                  <select v-model="reporteBodegaId" class="w-full theme-bg border theme-border rounded-lg px-3 py-2.5 text-sm theme-text focus:outline-none focus:border-accent transition-colors">
-                    <option value="">Seleccionar bodega...</option>
-                    <option v-for="b in reporteBodegas" :key="b.id" :value="b.id">{{ b.nombre }}</option>
-                  </select>
-                </div>
-                <div class="min-w-[180px]">
-                  <label class="block text-xs theme-text-muted mb-1.5">Rango de tiempo</label>
-                  <select v-model="reporteRango" class="w-full theme-bg border theme-border rounded-lg px-3 py-2.5 text-sm theme-text focus:outline-none focus:border-accent transition-colors">
-                    <option value="1_mes">Último mes</option>
-                    <option value="3_meses">Últimos 3 meses</option>
-                    <option value="historico">Histórico</option>
-                  </select>
-                </div>
-                <button @click="fetchRotacion" :disabled="!reporteBodegaId || loadingRotacion" class="px-5 py-2.5 rounded-lg text-sm font-medium bg-accent text-white hover:bg-accent-hover transition-colors disabled:opacity-40 disabled:cursor-not-allowed shadow-lg shadow-accent/20">
-                  {{ loadingRotacion ? 'Cargando...' : 'Generar reporte' }}
-                </button>
-              </div>
-            </div>
-
-            <div v-if="loadingRotacion" class="card-dark rounded-xl p-12 text-center">
-              <div class="inline-block w-8 h-8 border-2 border-accent/30 border-t-accent rounded-full animate-spin mb-3"></div>
-              <p class="theme-text-muted text-sm">Generando reporte...</p>
-            </div>
-
-            <div v-else-if="rotacionData.length > 0" class="space-y-6">
-              <div class="card-dark rounded-xl p-6">
-                <div class="flex items-center justify-between mb-4">
-                  <div>
-                    <h3 class="font-semibold theme-text">Top componentes — {{ rotacionBodegaNombre }}</h3>
-                    <p class="text-xs theme-text-muted mt-0.5">{{ { '1_mes': 'Último mes', '3_meses': 'Últimos 3 meses', 'historico': 'Histórico' }[reporteRango] }}</p>
-                  </div>
-                  <div class="flex gap-1">
-                    <button @click="rotacionChartType = 'bar'; renderRotacionChart()" class="px-3 py-1.5 rounded-lg text-xs font-medium transition-all" :class="rotacionChartType === 'bar' ? 'bg-accent/10 text-accent border border-accent/20' : 'theme-text-muted hover:theme-text'">Barras</button>
-                    <button @click="rotacionChartType = 'pie'; renderRotacionChart()" class="px-3 py-1.5 rounded-lg text-xs font-medium transition-all" :class="rotacionChartType === 'pie' ? 'bg-accent/10 text-accent border border-accent/20' : 'theme-text-muted hover:theme-text'">Pastel</button>
-                  </div>
-                </div>
-                <div class="relative" style="height: 350px;">
-                  <canvas ref="rotacionCanvasRef"></canvas>
-                </div>
-              </div>
-
-              <div class="card-dark rounded-xl overflow-hidden overflow-x-auto">
-                <div class="px-6 py-4 border-b theme-border">
-                  <h3 class="font-semibold theme-text">Detalle de rotación</h3>
-                </div>
-                <table class="w-full">
-                  <thead class="border-b theme-border">
-                    <tr>
-                      <th class="px-6 py-3 text-left text-xs theme-text-muted uppercase tracking-wider font-medium">#</th>
-                      <th class="px-6 py-3 text-left text-xs theme-text-muted uppercase tracking-wider font-medium">Producto</th>
-                      <th class="px-6 py-3 text-left text-xs theme-text-muted uppercase tracking-wider font-medium">Categoría</th>
-                      <th class="px-6 py-3 text-left text-xs theme-text-muted uppercase tracking-wider font-medium">Especificación</th>
-                      <th class="px-6 py-3 text-right text-xs theme-text-muted uppercase tracking-wider font-medium">Unidades vendidas</th>
-                    </tr>
-                  </thead>
-                  <tbody class="divide-y theme-divide">
-                    <tr v-for="(item, idx) in rotacionData" :key="idx" class="theme-row-hover">
-                      <td class="px-6 py-3.5 text-sm font-mono theme-text-muted">{{ idx + 1 }}</td>
-                      <td class="px-6 py-3.5 text-sm font-medium theme-text">{{ item.producto_nombre }}</td>
-                      <td class="px-6 py-3.5 text-sm theme-text-muted">{{ item.categoria }}</td>
-                      <td class="px-6 py-3.5 text-sm theme-text-muted">{{ item.especificacion }}</td>
-                      <td class="px-6 py-3.5 text-sm font-mono text-accent font-semibold text-right">{{ Number(item.total_salida).toLocaleString() }}</td>
-                    </tr>
-                  </tbody>
-                </table>
-              </div>
-            </div>
-
-            <div v-else-if="rotacionFetched && rotacionData.length === 0" class="card-dark rounded-xl p-12 text-center">
-              <Mailbox class="w-10 h-10 mx-auto mb-3 text-text-muted" stroke-width="1.5" />
-              <p class="theme-text font-semibold mb-1">Sin movimientos</p>
-              <p class="theme-text-muted text-sm">No se encontraron cotizaciones para esta bodega en el rango seleccionado.</p>
-            </div>
-          </template>
-
-          <!-- CONSUMO POR PROVEEDOR -->
-          <template v-if="reporteTab === 'consumo'">
-            <div class="card-dark rounded-xl p-6 mb-6">
-              <h3 class="text-sm font-semibold theme-text mb-4">Filtros</h3>
-              <div class="flex flex-wrap gap-4 items-end">
-                <div class="flex-1 min-w-[200px]">
-                  <label class="block text-xs theme-text-muted mb-1.5">Proveedor</label>
-                  <select v-model="reporteProveedorId" class="w-full theme-bg border theme-border rounded-lg px-3 py-2.5 text-sm theme-text focus:outline-none focus:border-accent transition-colors">
-                    <option value="">Seleccionar proveedor...</option>
-                    <option v-for="p in reporteProveedores" :key="p.id" :value="p.id">{{ p.nombre }}</option>
-                  </select>
-                </div>
-                <button @click="fetchConsumo" :disabled="!reporteProveedorId || loadingConsumo" class="px-5 py-2.5 rounded-lg text-sm font-medium bg-accent text-white hover:bg-accent-hover transition-colors disabled:opacity-40 disabled:cursor-not-allowed shadow-lg shadow-accent/20">
-                  {{ loadingConsumo ? 'Cargando...' : 'Generar reporte' }}
-                </button>
-              </div>
-            </div>
-
-            <div v-if="loadingConsumo" class="card-dark rounded-xl p-12 text-center">
-              <div class="inline-block w-8 h-8 border-2 border-accent/30 border-t-accent rounded-full animate-spin mb-3"></div>
-              <p class="theme-text-muted text-sm">Generando reporte...</p>
-            </div>
-
-            <div v-else-if="consumoData.length > 0" class="space-y-6">
-              <div class="grid grid-cols-3 gap-4">
-                <div class="card-dark rounded-xl p-5">
-                  <p class="theme-text-muted text-xs uppercase tracking-wider mb-2">Proveedor</p>
-                  <p class="text-lg font-bold theme-text">{{ consumoProveedorNombre }}</p>
-                </div>
-                <div class="card-dark rounded-xl p-5">
-                  <p class="theme-text-muted text-xs uppercase tracking-wider mb-2">Total unidades consumidas</p>
-                  <p class="text-3xl font-bold text-accent font-mono">{{ consumoTotalGeneral.toLocaleString() }}</p>
-                </div>
-                <div class="card-dark rounded-xl p-5">
-                  <p class="theme-text-muted text-xs uppercase tracking-wider mb-2">Bodegas activas</p>
-                  <p class="text-3xl font-bold theme-text font-mono">{{ consumoData.length }}</p>
-                </div>
-              </div>
-
-              <div class="card-dark rounded-xl p-6">
-                <h3 class="font-semibold theme-text mb-4">Distribución de consumo por bodega</h3>
-                <div class="relative" style="height: 350px;">
-                  <canvas ref="consumoCanvasRef"></canvas>
-                </div>
-              </div>
-
-              <div class="card-dark rounded-xl overflow-hidden overflow-x-auto">
-                <div class="px-6 py-4 border-b theme-border">
-                  <h3 class="font-semibold theme-text">Detalle por bodega</h3>
-                </div>
-                <table class="w-full">
-                  <thead class="border-b theme-border">
-                    <tr>
-                      <th class="px-6 py-3 text-left text-xs theme-text-muted uppercase tracking-wider font-medium">Bodega</th>
-                      <th class="px-6 py-3 text-right text-xs theme-text-muted uppercase tracking-wider font-medium">Unidades consumidas</th>
-                      <th class="px-6 py-3 text-right text-xs theme-text-muted uppercase tracking-wider font-medium">Participación</th>
-                    </tr>
-                  </thead>
-                  <tbody class="divide-y theme-divide">
-                    <tr v-for="item in consumoData" :key="item.bodega_id" class="theme-row-hover">
-                      <td class="px-6 py-3.5 text-sm font-medium theme-text">{{ item.bodega_nombre }}</td>
-                      <td class="px-6 py-3.5 text-sm font-mono text-accent font-semibold text-right">{{ item.total_consumido.toLocaleString() }}</td>
-                      <td class="px-6 py-3.5 text-right">
-                        <div class="flex items-center justify-end gap-2">
-                          <div class="w-20 h-2 rounded-full bg-gray-700 overflow-hidden">
-                            <div class="h-full rounded-full bg-accent transition-all duration-500" :style="{ width: item.porcentaje + '%' }"></div>
-                          </div>
-                          <span class="text-sm font-mono theme-text-muted">{{ item.porcentaje }}%</span>
-                        </div>
-                      </td>
-                    </tr>
-                  </tbody>
-                </table>
-              </div>
-            </div>
-
-            <div v-else-if="consumoFetched && consumoData.length === 0" class="card-dark rounded-xl p-12 text-center">
-              <Mailbox class="w-10 h-10 mx-auto mb-3 text-text-muted" stroke-width="1.5" />
-              <p class="theme-text font-semibold mb-1">Sin consumo registrado</p>
-              <p class="theme-text-muted text-sm">Este proveedor aún no tiene componentes cotizados en sus bodegas.</p>
-            </div>
-          </template>
-        </template>
-
       </div>
     </main>
 
@@ -1011,12 +814,11 @@
             </div>
             <p class="text-xs theme-text-muted mt-1">Debe ser un número colombiano válido (3XX XXX XXXX)</p>
           </div>
-          <div>
-            <label class="block text-sm font-medium theme-text mb-2">Proveedor asignado</label>
-            <select v-model="editingBodega.proveedor_id" class="w-full theme-bg border theme-border rounded-lg px-4 py-3 text-sm theme-text focus:outline-none focus:border-accent transition-colors">
-              <option :value="null">Sin proveedor</option>
-              <option v-for="p in proveedores.filter(p => p.activo == 1)" :key="p.id" :value="p.id">{{ p.nombre }}</option>
-            </select>
+          <div class="p-3.5 rounded-xl bg-accent/5 border border-accent/20 text-xs">
+            <p class="font-medium text-accent mb-1">Proveedores asociados a esta bodega:</p>
+            <p v-if="editingBodega.proveedor_nombre" class="theme-text font-medium">{{ editingBodega.proveedor_nombre }}</p>
+            <p v-else class="theme-text-muted">Sin proveedores asociados aún (se asocian al incorporar componentes).</p>
+            <p class="text-[11px] theme-text-muted mt-2">Las bodegas pueden seleccionar componentes de múltiples proveedores desde el catálogo.</p>
           </div>
           <div>
             <label class="block text-sm font-medium theme-text mb-2">Estado</label>
@@ -1190,14 +992,13 @@
       <div class="relative card-dark rounded-2xl p-6 w-full max-w-lg my-auto shadow-2xl">
         <div class="flex items-center justify-between mb-6">
           <div>
-            <h2 class="text-lg font-bold theme-text">Crear Componente Maestro</h2>
-            <p class="text-xs theme-text-muted mt-0.5">Agrega especificaciones técnicas para que proveedores lo usen</p>
+            <h2 class="text-lg font-bold theme-text">Nuevo Componente Maestro</h2>
+            <p class="text-xs theme-text-muted mt-0.5">Selecciona un producto base del catálogo para activarlo como componente maestro</p>
           </div>
           <button @click="closeAddModal" class="theme-text-muted hover:theme-text transition-colors text-2xl leading-none w-8 h-8 flex items-center justify-center rounded-lg hover:theme-bg">×</button>
         </div>
 
-        <div class="space-y-5 max-h-[60vh] overflow-y-auto pr-2">
-
+        <div class="space-y-5">
           <!-- Select buscable de producto -->
           <div>
             <label class="block text-sm font-medium theme-text mb-2">Producto Base <span class="text-red-400">*</span></label>
@@ -1207,7 +1008,7 @@
                 @input="showProductoDropdown = true"
                 @focus="showProductoDropdown = true"
                 type="text"
-                placeholder="Buscar producto..."
+                placeholder="Buscar producto base en catálogo..."
                 class="w-full theme-bg border theme-border rounded-lg px-4 py-3 text-sm theme-text placeholder-text-muted focus:outline-none focus:border-accent transition-colors"
                 :class="{ 'border-accent': newComp.producto_id }"
                 autocomplete="off"
@@ -1224,52 +1025,12 @@
             </p>
           </div>
 
-          <!-- Especificación -->
-          <div>
-            <label class="block text-sm font-medium theme-text mb-2">Especificación técnica <span class="text-red-400">*</span></label>
-            <input v-model="newComp.especificacion" type="text" placeholder="Ej: 6 núcleos / 12 hilos · 3.7GHz · AM4" class="w-full theme-bg border theme-border rounded-lg px-4 py-3 text-sm theme-text placeholder-text-muted focus:outline-none focus:border-accent transition-colors" />
-          </div>
-
-          <!-- Gama -->
-          <div>
-            <label class="block text-sm font-medium theme-text mb-3">Gama <span class="text-red-400">*</span></label>
-            <div class="grid grid-cols-3 gap-3">
-              <button v-for="tier in ['alta', 'media', 'baja']" :key="tier" @click="newComp.gama = tier"
-                class="py-2.5 rounded-lg border text-sm font-medium transition-all"
-                :class="newComp.gama === tier ? 'border-accent bg-accent/10 text-accent' : 'theme-border theme-text-muted hover:border-accent/40'">
-                {{ tier.charAt(0).toUpperCase() + tier.slice(1) }}
-              </button>
-            </div>
-          </div>
-
-          <!-- Especificaciones Avanzadas -->
-          <div class="grid grid-cols-2 gap-4">
-            <div>
-              <label class="block text-sm font-medium theme-text mb-2">Núcleos (Opcional)</label>
-              <input v-model="newComp.nucleos" type="number" min="1" placeholder="Ej: 8" class="w-full theme-bg border theme-border rounded-lg px-4 py-3 text-sm theme-text focus:outline-none focus:border-accent transition-colors" />
-            </div>
-            <div>
-              <label class="block text-sm font-medium theme-text mb-2">Hilos (Opcional)</label>
-              <input v-model="newComp.hilos" type="number" min="1" placeholder="Ej: 16" class="w-full theme-bg border theme-border rounded-lg px-4 py-3 text-sm theme-text focus:outline-none focus:border-accent transition-colors" />
-            </div>
-          </div>
-
-            <div class="col-span-2">
-              <label class="block text-sm font-medium theme-text mb-2">Frecuencia GHz (Opcional)</label>
-              <input v-model="newComp.frecuencia_hz" type="number" step="0.1" min="0" placeholder="Ej: 3.5" class="w-full theme-bg border theme-border rounded-lg px-4 py-3 text-sm theme-text focus:outline-none focus:border-accent transition-colors" />
-            </div>
-
-          <div>
-            <label class="block text-sm font-medium theme-text mb-1">Imagen del Componente (Opcional)</label>
-            <input @change="handleCompImageChange" type="file" accept=".jpeg,.png,.jpg,.webp" class="w-full text-sm theme-text-muted file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:theme-bg file:text-accent hover:file:bg-accent/10 transition-colors" />
-          </div>
-
           <p v-if="addCompError" class="text-xs text-red-400 bg-red-500/10 border border-red-500/20 rounded-lg px-4 py-2.5">{{ addCompError }}</p>
         </div>
 
         <div class="flex gap-3 mt-8">
           <button @click="saveNewComp" :disabled="savingAddComp" class="btn-primary flex-1 text-sm">
-            {{ savingAddComp ? 'Creando...' : 'Crear Componente Maestro' }}
+            {{ savingAddComp ? 'Activando...' : 'Activar Componente Maestro' }}
           </button>
           <button @click="closeAddModal" class="btn-secondary text-sm px-5">Cancelar</button>
         </div>
@@ -1296,17 +1057,6 @@
 
           <div class="grid grid-cols-2 gap-4">
             <div>
-              <label class="block text-sm font-medium theme-text mb-2">Precio ($)</label>
-              <input v-model="editingComp.precio" type="number" class="w-full theme-bg border theme-border rounded-lg px-4 py-3 text-sm theme-text focus:outline-none focus:border-accent transition-colors" />
-            </div>
-            <div>
-              <label class="block text-sm font-medium theme-text mb-2">Stock</label>
-              <input v-model="editingComp.stock" type="number" min="0" class="w-full theme-bg border theme-border rounded-lg px-4 py-3 text-sm theme-text focus:outline-none focus:border-accent transition-colors" />
-            </div>
-          </div>
-
-          <div class="grid grid-cols-2 gap-4">
-            <div>
               <label class="block text-sm font-medium theme-text mb-2">Núcleos (Opcional)</label>
               <input v-model="editingComp.nucleos" type="number" min="1" placeholder="Ej: 8" class="w-full theme-bg border theme-border rounded-lg px-4 py-3 text-sm theme-text focus:outline-none focus:border-accent transition-colors" />
             </div>
@@ -1316,25 +1066,14 @@
             </div>
           </div>
 
-            <div class="col-span-2">
-              <label class="block text-sm font-medium theme-text mb-2">Frecuencia GHz (Opcional)</label>
-              <input v-model="editingComp.frecuencia_hz" type="number" step="0.1" min="0" placeholder="Ej: 3.5" class="w-full theme-bg border theme-border rounded-lg px-4 py-3 text-sm theme-text focus:outline-none focus:border-accent transition-colors" />
-            </div>
+          <div>
+            <label class="block text-sm font-medium theme-text mb-2">Frecuencia GHz (Opcional)</label>
+            <input v-model="editingComp.frecuencia_hz" type="number" step="0.1" min="0" placeholder="Ej: 3.5" class="w-full theme-bg border theme-border rounded-lg px-4 py-3 text-sm theme-text focus:outline-none focus:border-accent transition-colors" />
+          </div>
 
           <div>
             <label class="block text-sm font-medium theme-text mb-1">Actualizar Imagen (Opcional)</label>
             <input @change="handleEditCompImageChange" type="file" accept=".jpeg,.png,.jpg,.webp" class="w-full text-sm theme-text-muted file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:theme-bg file:text-accent hover:file:bg-accent/10 transition-colors" />
-          </div>
-
-          <div>
-            <label class="block text-sm font-medium theme-text mb-3">Gama del componente</label>
-            <div class="grid grid-cols-3 gap-3">
-              <button v-for="tier in ['alta', 'media', 'baja']" :key="tier" @click="editingComp.gama = tier"
-                class="py-2.5 rounded-lg border text-sm font-medium transition-all"
-                :class="editingComp.gama === tier ? 'border-accent bg-accent/10 text-accent' : 'theme-border theme-text-muted hover:border-accent/40'">
-                {{ tier.charAt(0).toUpperCase() + tier.slice(1) }}
-              </button>
-            </div>
           </div>
 
           <p v-if="editCompError" class="text-xs text-red-400 bg-red-500/10 border border-red-500/20 rounded-lg px-4 py-2.5">{{ editCompError }}</p>
@@ -1535,15 +1274,13 @@
 </template>
 
 <script setup>
-import { FileText, MapPin, BarChart3, Package, Mailbox, UserPlus, Check, Trash2, Pencil, Sun, Moon, Info, Wrench, Shield, Briefcase, Gamepad2, Palette, BookOpen, Building2, Store, Users, Lock, ClipboardList, Crown, User, AlertTriangle, ShieldCheck, CheckCircle2, Loader2, X } from 'lucide-vue-next';
+import { FileText, MapPin, Package, UserPlus, Check, Trash2, Pencil, Sun, Moon, Info, Wrench, Shield, Briefcase, Gamepad2, Palette, BookOpen, Building2, Store, Users, Lock, ClipboardList, Crown, User, AlertTriangle, ShieldCheck, CheckCircle2, Loader2, X } from 'lucide-vue-next';
 
 
 
 import { useTheme } from '../composables/useTheme'
 const { isDark, toggleTheme } = useTheme()
 import { ref, markRaw, computed, onMounted, nextTick, watch, reactive } from 'vue'
-import { Chart, BarController, PieController, ArcElement, BarElement, CategoryScale, LinearScale, Tooltip, Legend } from 'chart.js'
-Chart.register(BarController, PieController, ArcElement, BarElement, CategoryScale, LinearScale, Tooltip, Legend)
 import { useRouter } from 'vue-router'
 import { useAuth } from '../composables/useAuth'
 import { useToast } from '../composables/useToast'
@@ -1636,13 +1373,12 @@ const sections = computed(() => [
   { id: 'proveedores',       icon: markRaw(Building2), label: 'Proveedores',       description: `${proveedores.value.length} proveedores`,       cta: '+ Agregar proveedor', count: proveedores.value.length   },
   { id: 'bodegas',           icon: markRaw(Store), label: 'Bodegas',           description: `${bodegas.value.length} bodegas`,               cta: '+ Agregar bodega',                  count: bodegas.value.length        },
   { id: 'catalogo',          icon: markRaw(Package), label: 'Catálogo Base',     description: 'Productos predefinidos',                        cta: '+ Añadir Producto',   count: null                        },
-  { id: 'componentes',       icon: markRaw(Wrench), label: 'Componentes',       description: `${componentes.value.length} componentes en inventario`, cta: '+ Nuevo Componente Maestro', count: componentes.value.length    },
+  { id: 'componentes',       icon: markRaw(Wrench), label: 'Componentes',       description: `${componentes.value.filter(c => !c.bodega_id).length} componentes maestros`, cta: '+ Nuevo Componente Maestro', count: componentes.value.filter(c => !c.bodega_id).length    },
   { id: 'cotizaciones',      icon: markRaw(FileText), label: 'Cotizaciones',      description: `${cotizaciones.value.length} cotizaciones`,     cta: null,                  count: cotizaciones.value.length   },
   { id: 'crear-usuario',     icon: markRaw(UserPlus), label: 'Crear usuario',     description: 'Registrar nuevo usuario',                       cta: null,                  count: null                        },
   { id: 'gestionar-usuarios',icon: markRaw(Users), label: 'Gestionar usuarios',description: `${usuarios.value.length} usuarios`,            cta: '+ Crear usuario',     count: usuarios.value.length       },
   { id: 'perfiles',          icon: markRaw(Lock), label: 'Perfiles y Permisos',description: `${perfiles.value.length} perfiles`,           cta: '+ Crear perfil',      count: perfiles.value.length       },
   { id: 'historial',         icon: markRaw(ClipboardList), label: 'Historial',         description: 'Registro global de acciones',                   cta: null,                  count: historial.value.length      },
-  { id: 'reportes',          icon: markRaw(BarChart3), label: 'Reportes',          description: 'Analíticas y estadísticas',                     cta: null,                  count: null                        },
 ])
 
 const currentSection = computed(() => sections.value.find(s => s.id === activeSection.value))
@@ -2140,6 +1876,7 @@ async function confirmDeleteBodega() {
 
  */
 
+const showUserModal = ref(false)
 function closeUserModal() {
   showUserModal.value = false
 }
@@ -2260,7 +1997,7 @@ async function fetchProductosCatalogo() {
  */
 
 function openAddModal() {
-  newComp.value = { producto_id: '', nombre: '', categoria: '', especificacion: '', nucleos: '', hilos: '', frecuencia_hz: '', enfoque_uso: '', gama: 'media', imagen: null }
+  newComp.value = { producto_id: '', nombre: '', categoria: '' }
   addCompError.value = ''
   productoSearch.value = ''
   showProductoDropdown.value = false
@@ -2288,45 +2025,30 @@ function selectProducto(prod) {
 }
 
 /**
-
- * Valida y envía los datos del formulario al backend (POST/PUT).
-
- * Maneja la lógica de guardado y muestra feedback al usuario.
-
+ * Activa un producto del catálogo base como componente maestro.
  */
-
 async function saveNewComp() {
   addCompError.value = ''
   const c = newComp.value
-  if (!c.producto_id || !c.especificacion || !c.gama) {
-    return addCompError.value = 'El producto, especificación y gama son obligatorios'
+  if (!c.producto_id) {
+    return addCompError.value = 'Debes seleccionar un producto base del catálogo'
   }
   savingAddComp.value = true
-  
-  const formData = new FormData()
-  formData.append('producto_id', c.producto_id)
-  formData.append('especificacion', c.especificacion)
-  formData.append('gama', c.gama)
-  if (c.nucleos) formData.append('nucleos', c.nucleos)
-  if (c.hilos) formData.append('hilos', c.hilos)
-  if (c.frecuencia_hz) formData.append('frecuencia_hz', c.frecuencia_hz)
-  if (c.enfoque_uso) formData.append('enfoque_uso', c.enfoque_uso)
-  if (c.imagen) formData.append('imagen', c.imagen)
 
   try {
     const res = await fetch(`${API}/componentes`, {
       method: 'POST',
-      headers: { Accept: 'application/json', Authorization: `Bearer ${getToken()}` },
-      body: formData
+      headers: { 'Content-Type': 'application/json', Accept: 'application/json', Authorization: `Bearer ${getToken()}` },
+      body: JSON.stringify({ producto_id: c.producto_id })
     })
     const data = await res.json()
     if (!res.ok) {
-      toast.error(data.message ?? 'Error al guardar')
-      return addCompError.value = data.message ?? 'Error al guardar'
+      toast.error(data.message ?? 'Error al activar')
+      return addCompError.value = data.message ?? 'Error al activar'
     }
     await fetchComponentes()
     closeAddModal()
-    toast.success('Componente maestro creado exitosamente')
+    toast.success('Componente maestro activado exitosamente')
   } catch(e) {
     addCompError.value = 'Error de conexión'
     toast.error('Error de conexión')
@@ -2335,44 +2057,18 @@ async function saveNewComp() {
   }
 }
 
-const filterNucleos = ref('')
-const filterHilos = ref('')
-const filterFrecuenciaMin = ref('')
-const filterFrecuenciaMax = ref('')
-const filterEnfoque = ref('')
-const filterGama = ref('')
-
-
 /**
-
-
- * Propiedad computada que filtra dinámicamente los registros basándose en los criterios de búsqueda.
-
-
+ * Propiedad computada que filtra dinámicamente los registros de componentes por término de búsqueda.
  */
-
-
 const filteredComponentes = computed(() => {
-  let result = [...componentes.value]
-  
-  if (filterComponente.value.trim()) {
-    const q = filterComponente.value.toLowerCase()
-    result = result.filter(c =>
-      c.nombre?.toLowerCase().includes(q) ||
-      c.categoria?.toLowerCase().includes(q) ||
-      c.especificacion?.toLowerCase().includes(q) ||
-      (c.bodega_nombre || c.bodega?.nombre)?.toLowerCase().includes(q)
-    )
-  }
-  
-  if (filterNucleos.value) result = result.filter(c => c.nucleos === parseInt(filterNucleos.value))
-  if (filterHilos.value) result = result.filter(c => c.hilos === parseInt(filterHilos.value))
-  if (filterFrecuenciaMin.value) result = result.filter(c => (c.frecuencia_hz || 0) >= parseFloat(filterFrecuenciaMin.value))
-  if (filterFrecuenciaMax.value) result = result.filter(c => (c.frecuencia_hz || 0) <= parseFloat(filterFrecuenciaMax.value))
-  if (filterEnfoque.value) result = result.filter(c => c.enfoque_uso === filterEnfoque.value)
-  if (filterGama.value) result = result.filter(c => c.gama === filterGama.value)
-  
-  return result
+  const list = componentes.value.filter(c => !c.bodega_id)
+  if (!filterComponente.value.trim()) return list
+  const q = filterComponente.value.toLowerCase()
+  return list.filter(c =>
+    c.nombre?.toLowerCase().includes(q) ||
+    c.categoria?.toLowerCase().includes(q) ||
+    c.especificacion?.toLowerCase().includes(q)
+  )
 })
 
 /**
@@ -2386,7 +2082,7 @@ const filteredComponentes = computed(() => {
 async function fetchComponentes() {
   loadingComponentes.value = true
   try {
-    const res = await fetch(`${API}/componentes/admin`, { headers: { Accept: 'application/json', Authorization: `Bearer ${getToken()}` } })
+    const res = await fetch(`${API}/componentes/admin?solo_maestros=true`, { headers: { Accept: 'application/json', Authorization: `Bearer ${getToken()}` } })
     const data = await res.json()
     if (res.ok) componentes.value = data.componentes
   } catch(e) { console.error(e) } finally { loadingComponentes.value = false }
@@ -2531,14 +2227,6 @@ async function saveNewProducto() {
 
 async function saveEditComp() {
   editCompError.value = ''
-  
-  if (editingComp.value.precio !== undefined && Number(editingComp.value.precio) <= 0) {
-    return editCompError.value = 'El precio debe ser mayor a 0'
-  }
-  if (editingComp.value.stock !== undefined && Number(editingComp.value.stock) < 0) {
-    return editCompError.value = 'El stock no puede ser negativo'
-  }
-
   savingEditComp.value = true
   
   const formData = new FormData()
@@ -3053,125 +2741,6 @@ async function deletePerfil() {
   }
 }
 
-// ── Analíticas ────────────────────────────────────────────
-const reporteTab = ref('rotacion')
-const reporteBodegas = ref([])
-const reporteProveedores = ref([])
-
-const reporteBodegaId = ref('')
-const reporteRango = ref('historico')
-const loadingRotacion = ref(false)
-const rotacionData = ref([])
-const rotacionBodegaNombre = ref('')
-const rotacionFetched = ref(false)
-const rotacionChartType = ref('bar')
-const rotacionCanvasRef = ref(null)
-let rotacionChartInstance = null
-
-const reporteProveedorId = ref('')
-const loadingConsumo = ref(false)
-const consumoData = ref([])
-const consumoProveedorNombre = ref('')
-const consumoTotalGeneral = ref(0)
-const consumoFetched = ref(false)
-const consumoCanvasRef = ref(null)
-let consumoChartInstance = null
-
-const chartColors = [
-  'rgba(99, 102, 241, 0.8)', 'rgba(16, 185, 129, 0.8)', 'rgba(245, 158, 11, 0.8)',
-  'rgba(239, 68, 68, 0.8)', 'rgba(139, 92, 246, 0.8)', 'rgba(6, 182, 212, 0.8)',
-  'rgba(236, 72, 153, 0.8)', 'rgba(34, 197, 94, 0.8)', 'rgba(251, 146, 60, 0.8)',
-  'rgba(168, 85, 247, 0.8)',
-]
-
-async function fetchSelectores() {
-  try {
-    const res = await fetch(`${API}/analiticas/selectores`, { headers: { Authorization: `Bearer ${getToken()}` } })
-    const data = await res.json()
-    if (res.ok) {
-      reporteBodegas.value = data.bodegas || []
-      reporteProveedores.value = data.proveedores || []
-    }
-  } catch (e) { console.error(e) }
-}
-
-async function fetchRotacion() {
-  if (!reporteBodegaId.value) return
-  loadingRotacion.value = true
-  rotacionFetched.value = false
-  try {
-    const res = await fetch(`${API}/analiticas/rotacion-bodega?bodega_id=${reporteBodegaId.value}&rango_fecha=${reporteRango.value}&limit=10`, { headers: { Authorization: `Bearer ${getToken()}` } })
-    const data = await res.json()
-    if (res.ok) {
-      rotacionData.value = data.data || []
-      rotacionBodegaNombre.value = data.bodega_nombre || ''
-      rotacionFetched.value = true
-    }
-  } catch (e) { console.error(e) } finally { 
-    loadingRotacion.value = false 
-    await nextTick()
-    renderRotacionChart()
-  }
-}
-
-function renderRotacionChart() {
-  if (!rotacionCanvasRef.value || rotacionData.value.length === 0) return
-  if (rotacionChartInstance) rotacionChartInstance.destroy()
-  const labels = rotacionData.value.map(d => d.producto_nombre.length > 20 ? d.producto_nombre.slice(0, 20) + '…' : d.producto_nombre)
-  const values = rotacionData.value.map(d => Number(d.total_salida))
-  const colors = rotacionData.value.map((_, i) => chartColors[i % chartColors.length])
-  const textColor = isDark.value ? '#94a3b8' : '#64748b'
-  const gridColor = isDark.value ? 'rgba(148, 163, 184, 0.08)' : 'rgba(100, 116, 139, 0.1)'
-  const config = rotacionChartType.value === 'bar'
-    ? { type: 'bar', data: { labels, datasets: [{ label: 'Unidades vendidas', data: values, backgroundColor: colors, borderRadius: 6, borderSkipped: false, maxBarThickness: 48 }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false }, tooltip: { backgroundColor: isDark.value ? '#1e293b' : '#fff', titleColor: isDark.value ? '#e2e8f0' : '#1e293b', bodyColor: isDark.value ? '#94a3b8' : '#64748b', borderColor: isDark.value ? '#334155' : '#e2e8f0', borderWidth: 1, padding: 12, cornerRadius: 8 } }, scales: { x: { ticks: { color: textColor, font: { size: 11 } }, grid: { display: false } }, y: { beginAtZero: true, ticks: { color: textColor, font: { size: 11 } }, grid: { color: gridColor } } }, animation: { duration: 700, easing: 'easeOutQuart' } } }
-    : { type: 'pie', data: { labels, datasets: [{ data: values, backgroundColor: colors, borderWidth: 0 }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'right', labels: { color: textColor, font: { size: 12 }, padding: 12 } }, tooltip: { backgroundColor: isDark.value ? '#1e293b' : '#fff', titleColor: isDark.value ? '#e2e8f0' : '#1e293b', bodyColor: isDark.value ? '#94a3b8' : '#64748b', borderColor: isDark.value ? '#334155' : '#e2e8f0', borderWidth: 1, padding: 12, cornerRadius: 8 } }, animation: { duration: 700, easing: 'easeOutQuart' } } }
-  rotacionChartInstance = new Chart(rotacionCanvasRef.value, config)
-}
-
-async function fetchConsumo() {
-  if (!reporteProveedorId.value) return
-  loadingConsumo.value = true
-  consumoFetched.value = false
-  try {
-    const res = await fetch(`${API}/analiticas/consumo-proveedor?proveedor_id=${reporteProveedorId.value}`, { headers: { Authorization: `Bearer ${getToken()}` } })
-    const data = await res.json()
-    if (res.ok) {
-      consumoData.value = data.data || []
-      consumoProveedorNombre.value = data.proveedor_nombre || ''
-      consumoTotalGeneral.value = data.total_general || 0
-      consumoFetched.value = true
-    }
-  } catch (e) { console.error(e) } finally { 
-    loadingConsumo.value = false 
-    await nextTick()
-    renderConsumoChart()
-  }
-}
-
-function renderConsumoChart() {
-  if (!consumoCanvasRef.value || consumoData.value.length === 0) return
-  if (consumoChartInstance) consumoChartInstance.destroy()
-  const labels = consumoData.value.map(d => d.bodega_nombre)
-  const values = consumoData.value.map(d => d.total_consumido)
-  const colors = consumoData.value.map((_, i) => chartColors[i % chartColors.length])
-  const textColor = isDark.value ? '#94a3b8' : '#64748b'
-  consumoChartInstance = new Chart(consumoCanvasRef.value, {
-    type: 'pie',
-    data: { labels, datasets: [{ data: values, backgroundColor: colors, borderWidth: 0 }] },
-    options: {
-      responsive: true, maintainAspectRatio: false,
-      plugins: {
-        legend: { position: 'right', labels: { color: textColor, font: { size: 12 }, padding: 12, generateLabels(chart) {
-          const ds = chart.data.datasets[0]
-          return chart.data.labels.map((label, i) => ({ text: `${label} (${consumoData.value[i]?.porcentaje ?? 0}%)`, fillStyle: ds.backgroundColor[i], hidden: false, index: i }))
-        } } },
-        tooltip: { backgroundColor: isDark.value ? '#1e293b' : '#fff', titleColor: isDark.value ? '#e2e8f0' : '#1e293b', bodyColor: isDark.value ? '#94a3b8' : '#64748b', borderColor: isDark.value ? '#334155' : '#e2e8f0', borderWidth: 1, padding: 12, cornerRadius: 8 }
-      },
-      animation: { duration: 700, easing: 'easeOutQuart' }
-    }
-  })
-}
-
 // ── Carga y Lifecycle de Módulos ──────────────────────────
 const loadedSections = ref(new Set())
 
@@ -3210,9 +2779,6 @@ function loadSectionData(section) {
     case 'historial':
       fetchHistorial()
       break
-    case 'reportes':
-      fetchSelectores()
-      break
   }
 }
 
@@ -3231,9 +2797,8 @@ onMounted(async () => {
     fetchUsuarios(),
     fetchPerfiles(),
     fetchPermisosDisponibles(),
-    fetchHistorial(),
-    fetchSelectores()
+    fetchHistorial()
   ])
-  ;['proveedores', 'bodegas', 'catalogo', 'componentes', 'cotizaciones', 'crear-usuario', 'gestionar-usuarios', 'perfiles', 'historial', 'reportes'].forEach(s => loadedSections.value.add(s))
+  ;['proveedores', 'bodegas', 'catalogo', 'componentes', 'cotizaciones', 'crear-usuario', 'gestionar-usuarios', 'perfiles', 'historial'].forEach(s => loadedSections.value.add(s))
 })
 </script>

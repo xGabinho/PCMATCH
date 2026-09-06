@@ -126,66 +126,24 @@
         <template v-if="activeSection === 'componentes'">
           <div class="card-dark rounded-xl overflow-hidden overflow-x-auto">
             <div class="px-6 py-4 border-b theme-border flex items-center justify-between">
-              <div class="flex items-center justify-between">
-                <h2 class="font-semibold theme-text">Listado de componentes</h2>
-                <div class="flex items-center gap-3">
-                  <input v-model="filterComponente" type="text" placeholder="Buscar..." class="theme-bg border theme-border rounded-lg px-4 py-2 text-sm theme-text placeholder-text-muted focus:outline-none focus:border-accent transition-colors w-48" />
-                  <button @click="showAdvancedFilters = !showAdvancedFilters" class="btn-secondary text-sm px-4 py-2 flex items-center gap-2">
-                    <span><Settings class="w-4 h-4 inline-block mr-1" /></span> Filtros
-                  </button>
-                </div>
-              </div>
-              
-              <!-- Advanced Filters Panel -->
-              <div v-if="showAdvancedFilters" class="p-4 theme-bg border theme-border rounded-xl grid grid-cols-2 md:grid-cols-5 gap-4 animate-fade-in mt-4">
-                <div>
-                  <label class="block text-xs font-medium theme-text-muted mb-1.5">Gama</label>
-                  <select v-model="filterGama" class="w-full theme-card border theme-border rounded-lg px-3 py-2 text-sm theme-text focus:outline-none focus:border-accent transition-colors">
-                    <option value="">Todas</option>
-                    <option value="alta">Alta</option>
-                    <option value="media">Media</option>
-                    <option value="baja">Baja</option>
-                  </select>
-                </div>
-                <div>
-                  <label class="block text-xs font-medium theme-text-muted mb-1.5">Enfoque</label>
-                  <select v-model="filterEnfoque" class="w-full theme-card border theme-border rounded-lg px-3 py-2 text-sm theme-text focus:outline-none focus:border-accent transition-colors">
-                    <option value="">Todos</option>
-                    <option value="gaming">Gaming</option>
-                    <option value="diseño">Diseño</option>
-                    <option value="estudio">Estudio</option>
-                    <option value="oficina">Oficina</option>
-                  </select>
-                </div>
-                <div>
-                  <label class="block text-xs font-medium theme-text-muted mb-1.5">Núcleos</label>
-                  <input v-model="filterNucleos" type="number" min="1" placeholder="Ej: 6" class="w-full theme-card border theme-border rounded-lg px-3 py-2 text-sm theme-text focus:outline-none focus:border-accent transition-colors" />
-                </div>
-                <div>
-                  <label class="block text-xs font-medium theme-text-muted mb-1.5">Hilos</label>
-                  <input v-model="filterHilos" type="number" min="1" placeholder="Ej: 12" class="w-full theme-card border theme-border rounded-lg px-3 py-2 text-sm theme-text focus:outline-none focus:border-accent transition-colors" />
-                </div>
-                <div>
-                  <label class="block text-xs font-medium theme-text-muted mb-1.5">Frec. mínima (GHz)</label>
-                  <input v-model="filterFrecuenciaMin" type="number" step="0.1" min="0" placeholder="Ej: 3.5" class="w-full theme-card border theme-border rounded-lg px-3 py-2 text-sm theme-text focus:outline-none focus:border-accent transition-colors" />
-                </div>
+              <h2 class="font-semibold theme-text">Listado de componentes</h2>
+              <div class="flex items-center gap-3">
+                <input v-model="filterComponente" type="text" placeholder="Buscar por nombre o categoría..." class="theme-bg border theme-border rounded-lg px-4 py-2 text-sm theme-text placeholder-text-muted focus:outline-none focus:border-accent transition-colors w-72" />
               </div>
             </div>
             <div v-if="loadingComponentes" class="px-6 py-12 text-center theme-text-muted text-sm">Cargando componentes...</div>
             <table v-else class="w-full min-w-[640px]">
               <thead class="border-b theme-border">
-                <tr><th v-for="h in ['Componente','Categoría','Especificación','Gama','Precio','Bodega','Stock','Estado','Acciones']" :key="h" class="px-6 py-3 text-left text-xs theme-text-muted uppercase tracking-wider font-medium">{{ h }}</th></tr>
+                <tr><th v-for="h in ['Componente','Categoría','Estado','Acciones']" :key="h" class="px-6 py-3 text-left text-xs theme-text-muted uppercase tracking-wider font-medium">{{ h }}</th></tr>
               </thead>
               <tbody class="divide-y theme-border">
-                <tr v-if="filteredComponentes.length === 0"><td colspan="8" class="px-6 py-12 text-center theme-text-muted text-sm">Sin componentes</td></tr>
+                <tr v-if="filteredComponentes.length === 0"><td colspan="4" class="px-6 py-12 text-center theme-text-muted text-sm">Sin componentes</td></tr>
                 <tr v-for="c in filteredComponentes" :key="c.id" class="hover:bg-gray-100 dark:hover:bg-dark-bg/50 transition-colors">
-                  <td class="px-6 py-4 text-sm font-medium theme-text">{{ c.nombre }}</td>
+                  <td class="px-6 py-4 text-sm font-medium theme-text">
+                    <div>{{ c.nombre }}</div>
+                    <div class="text-xs theme-text-muted opacity-75 truncate max-w-xs">{{ c.especificacion }}</div>
+                  </td>
                   <td class="px-6 py-4"><span class="badge text-xs bg-accent/10 text-accent border border-accent/20">{{ c.categoria }}</span></td>
-                  <td class="px-6 py-4 text-sm theme-text-muted max-w-48 truncate">{{ c.especificacion }}</td>
-                  <td class="px-6 py-4"><span class="text-xs px-2 py-0.5 rounded-full font-medium border" :class="tierStyles[c.gama]">{{ c.gama }}</span></td>
-                  <td class="px-6 py-4 text-sm text-accent font-mono font-medium">${{ Number(c.precio).toLocaleString() }}</td>
-                  <td class="px-6 py-4 text-sm theme-text-muted">{{ c.bodega_nombre }}</td>
-                  <td class="px-6 py-4 text-sm font-mono" :class="c.stock <= 3 ? 'text-yellow-400' : 'theme-text'">{{ c.stock }}</td>
                   <td class="px-6 py-4">
                     <span class="badge text-xs px-2.5 py-1" :class="c.activo == 1 ? 'bg-green-500/10 text-green-400 border border-green-500/20' : 'bg-red-500/10 text-red-400 border border-red-500/20'">
                       {{ c.activo == 1 ? 'Activo' : 'Inactivo' }}
@@ -842,14 +800,13 @@
       <div class="relative card-dark rounded-2xl p-6 w-full max-w-lg my-auto shadow-2xl">
         <div class="flex items-center justify-between mb-6">
           <div>
-            <h2 class="text-lg font-bold theme-text">Crear Componente Maestro</h2>
-            <p class="text-xs theme-text-muted mt-0.5">Agrega especificaciones técnicas para que proveedores lo usen</p>
+            <h2 class="text-lg font-bold theme-text">Nuevo Componente Maestro</h2>
+            <p class="text-xs theme-text-muted mt-0.5">Selecciona un producto base del catálogo para activarlo como componente maestro</p>
           </div>
           <button @click="closeAddModal" class="theme-text-muted hover:theme-text transition-colors text-2xl leading-none w-8 h-8 flex items-center justify-center rounded-lg hover:theme-bg">×</button>
         </div>
 
-        <div class="space-y-5 max-h-[60vh] overflow-y-auto pr-2">
-
+        <div class="space-y-5">
           <!-- Select buscable de producto -->
           <div>
             <label class="block text-sm font-medium theme-text mb-2">Producto Base <span class="text-red-400">*</span></label>
@@ -859,7 +816,7 @@
                 @input="showProductoDropdown = true"
                 @focus="showProductoDropdown = true"
                 type="text"
-                placeholder="Buscar producto..."
+                placeholder="Buscar producto base en catálogo..."
                 class="w-full theme-bg border theme-border rounded-lg px-4 py-3 text-sm theme-text placeholder-text-muted focus:outline-none focus:border-accent transition-colors"
                 :class="{ 'border-accent': newComp.producto_id }"
                 autocomplete="off"
@@ -876,59 +833,12 @@
             </p>
           </div>
 
-          <!-- Especificación -->
-          <div>
-            <label class="block text-sm font-medium theme-text mb-2">Especificación técnica <span class="text-red-400">*</span></label>
-            <input v-model="newComp.especificacion" type="text" placeholder="Ej: 6 núcleos / 12 hilos · 3.7GHz · AM4" class="w-full theme-bg border theme-border rounded-lg px-4 py-3 text-sm theme-text placeholder-text-muted focus:outline-none focus:border-accent transition-colors" />
-          </div>
-
-          <!-- Gama -->
-          <div>
-            <label class="block text-sm font-medium theme-text mb-3">Gama <span class="text-red-400">*</span></label>
-            <div class="grid grid-cols-3 gap-3">
-              <button v-for="tier in ['alta', 'media', 'baja']" :key="tier" @click="newComp.gama = tier"
-                class="py-2.5 rounded-lg border text-sm font-medium transition-all"
-                :class="newComp.gama === tier ? 'border-accent bg-accent/10 text-accent' : 'theme-border theme-text-muted hover:border-accent/40'">
-                {{ tier.charAt(0).toUpperCase() + tier.slice(1) }}
-              </button>
-            </div>
-          </div>
-
-          <!-- Especificaciones Avanzadas -->
-          <div class="grid grid-cols-2 gap-4">
-            <div>
-              <label class="block text-sm font-medium theme-text mb-2">Núcleos (Opcional)</label>
-              <input v-model="newComp.nucleos" type="number" min="1" placeholder="Ej: 8" class="w-full theme-bg border theme-border rounded-lg px-4 py-3 text-sm theme-text focus:outline-none focus:border-accent transition-colors" />
-            </div>
-            <div>
-              <label class="block text-sm font-medium theme-text mb-2">Hilos (Opcional)</label>
-              <input v-model="newComp.hilos" type="number" min="1" placeholder="Ej: 16" class="w-full theme-bg border theme-border rounded-lg px-4 py-3 text-sm theme-text focus:outline-none focus:border-accent transition-colors" />
-            </div>
-          </div>
-
-          <div class="grid grid-cols-2 gap-4">
-            <div>
-              <label class="block text-sm font-medium theme-text mb-2">Frecuencia GHz (Opcional)</label>
-              <input v-model="newComp.frecuencia_hz" type="number" step="0.1" min="0" placeholder="Ej: 3.5" class="w-full theme-bg border theme-border rounded-lg px-4 py-3 text-sm theme-text focus:outline-none focus:border-accent transition-colors" />
-            </div>
-            <div>
-              <label class="block text-sm font-medium theme-text mb-2">Enfoque de uso</label>
-              <select v-model="newComp.enfoque_uso" class="w-full theme-bg border theme-border rounded-lg px-4 py-3 text-sm theme-text focus:outline-none focus:border-accent transition-colors">
-                <option :value="null">Ninguno</option>
-                <option value="estudio">Estudio</option>
-                <option value="oficina">Oficina</option>
-                <option value="gaming">Gaming</option>
-                <option value="diseño">Diseño</option>
-              </select>
-            </div>
-          </div>
-
           <p v-if="addCompError" class="text-xs text-red-400 bg-red-500/10 border border-red-500/20 rounded-lg px-4 py-2.5">{{ addCompError }}</p>
         </div>
 
         <div class="flex gap-3 mt-8">
           <button @click="saveNewComp" :disabled="savingAddComp" class="btn-primary flex-1 text-sm">
-            {{ savingAddComp ? 'Creando...' : 'Crear Componente Maestro' }}
+            {{ savingAddComp ? 'Activando...' : 'Activar Componente Maestro' }}
           </button>
           <button @click="closeAddModal" class="btn-secondary text-sm px-5">Cancelar</button>
         </div>
@@ -951,28 +861,6 @@
           <div>
             <label class="block text-sm font-medium theme-text mb-2">Especificación técnica</label>
             <input v-model="editingComp.especificacion" type="text" class="allow-special w-full theme-bg border theme-border rounded-lg px-4 py-3 text-sm theme-text focus:outline-none focus:border-accent transition-colors" />
-          </div>
-
-          <div class="grid grid-cols-2 gap-4">
-            <div>
-              <label class="block text-sm font-medium theme-text mb-2">Precio ($)</label>
-              <input v-model="editingComp.precio" type="number" class="w-full theme-bg border theme-border rounded-lg px-4 py-3 text-sm theme-text focus:outline-none focus:border-accent transition-colors" />
-            </div>
-            <div>
-              <label class="block text-sm font-medium theme-text mb-2">Stock</label>
-              <input v-model="editingComp.stock" type="number" min="0" class="w-full theme-bg border theme-border rounded-lg px-4 py-3 text-sm theme-text focus:outline-none focus:border-accent transition-colors" />
-            </div>
-          </div>
-
-          <div>
-            <label class="block text-sm font-medium theme-text mb-3">Gama del componente</label>
-            <div class="grid grid-cols-3 gap-3">
-              <button v-for="tier in ['alta', 'media', 'baja']" :key="tier" @click="editingComp.gama = tier"
-                class="py-2.5 rounded-lg border text-sm font-medium transition-all"
-                :class="editingComp.gama === tier ? 'border-accent bg-accent/10 text-accent' : 'theme-border theme-text-muted hover:border-accent/40'">
-                {{ tier.charAt(0).toUpperCase() + tier.slice(1) }}
-              </button>
-            </div>
           </div>
 
           <p v-if="editCompError" class="text-xs text-red-400 bg-red-500/10 border border-red-500/20 rounded-lg px-4 py-2.5">{{ editCompError }}</p>
@@ -1487,7 +1375,7 @@ async function fetchProductosCatalogo() {
  */
 
 function openAddModal() {
-  newComp.value = { producto_id: '', nombre: '', categoria: '', especificacion: '', nucleos: '', hilos: '', frecuencia_hz: '', enfoque_uso: '', gama: 'media' }
+  newComp.value = { producto_id: '', nombre: '', categoria: '' }
   addCompError.value = ''
   productoSearch.value = ''
   showProductoDropdown.value = false
@@ -1515,18 +1403,13 @@ function selectProducto(prod) {
 }
 
 /**
- * Guarda un nuevo componente maestro asociado a un producto del catálogo.
- * Valida campos obligatorios antes de enviar la petición POST al servidor.
- */
-/**
- * Valida y envía los datos del formulario al backend (POST/PUT).
- * Maneja la lógica de guardado y muestra feedback al usuario.
+ * Guarda y activa un componente maestro asociado a un producto del catálogo base.
  */
 async function saveNewComp() {
   addCompError.value = ''
   const c = newComp.value
-  if (!c.producto_id || !c.especificacion || !c.gama) {
-    return addCompError.value = 'El producto, especificación y gama son obligatorios'
+  if (!c.producto_id) {
+    return addCompError.value = 'Debes seleccionar un producto base del catálogo'
   }
   savingAddComp.value = true
   try {
@@ -1534,23 +1417,17 @@ async function saveNewComp() {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', Accept: 'application/json', Authorization: `Bearer ${getToken()}` },
       body: JSON.stringify({
-        producto_id: c.producto_id,
-        especificacion: c.especificacion,
-        nucleos: c.nucleos,
-        hilos: c.hilos,
-        frecuencia_hz: c.frecuencia_hz,
-        enfoque_uso: c.enfoque_uso,
-        gama: c.gama
+        producto_id: c.producto_id
       })
     })
     const data = await res.json()
     if (!res.ok) {
-      toast.error(data.message ?? 'Error al guardar')
-      return addCompError.value = data.message ?? 'Error al guardar'
+      toast.error(data.message ?? 'Error al activar')
+      return addCompError.value = data.message ?? 'Error al activar'
     }
     await fetchComponentes()
     closeAddModal()
-    toast.success('Componente maestro creado exitosamente')
+    toast.success('Componente maestro activado exitosamente')
   } catch(e) {
     addCompError.value = 'Error de conexión'
     toast.error('Error de conexión')
@@ -1559,37 +1436,14 @@ async function saveNewComp() {
   }
 }
 
-
-const showAdvancedFilters = ref(false)
-const filterGama = ref('')
-const filterEnfoque = ref('')
-const filterNucleos = ref('')
-const filterHilos = ref('')
-const filterFrecuenciaMin = ref('')
-
 /**
- * Filtrado avanzado de componentes. 
- * Combina la barra de búsqueda de texto con filtros específicos (gama, núcleos, hilos, frecuencia).
- * Se actualiza automáticamente cuando cualquier filtro cambia gracias a 'computed'.
- */
-/**
- * Propiedad computada que filtra dinámicamente los registros basándose en los criterios de búsqueda.
+ * Propiedad computada que filtra dinámicamente los componentes por nombre o categoría.
  */
 const filteredComponentes = computed(() => {
-  let result = componentes.value
-  
-  if (filterComponente.value.trim()) {
-    const q = filterComponente.value.toLowerCase()
-    result = result.filter(c => c.nombre.toLowerCase().includes(q) || c.categoria.toLowerCase().includes(q))
-  }
-  
-  if (filterGama.value) result = result.filter(c => c.gama === filterGama.value)
-  if (filterEnfoque.value) result = result.filter(c => c.enfoque_uso === filterEnfoque.value)
-  if (filterNucleos.value) result = result.filter(c => c.nucleos == filterNucleos.value)
-  if (filterHilos.value) result = result.filter(c => c.hilos == filterHilos.value)
-  if (filterFrecuenciaMin.value) result = result.filter(c => (c.frecuencia_hz || 0) >= parseFloat(filterFrecuenciaMin.value))
-  
-  return result
+  const list = componentes.value.filter(c => !c.bodega_id)
+  if (!filterComponente.value.trim()) return list
+  const q = filterComponente.value.toLowerCase()
+  return list.filter(c => c.nombre?.toLowerCase().includes(q) || c.categoria?.toLowerCase().includes(q) || c.especificacion?.toLowerCase().includes(q))
 })
 
 /**
@@ -1603,7 +1457,7 @@ const filteredComponentes = computed(() => {
 async function fetchComponentes() {
   loadingComponentes.value = true
   try {
-    const res = await fetch(`${API}/componentes/admin`, { headers: { Authorization: `Bearer ${getToken()}` } })
+    const res = await fetch(`${API}/componentes/admin?solo_maestros=true`, { headers: { Authorization: `Bearer ${getToken()}` } })
     const data = await res.json()
     if (res.ok) componentes.value = data.componentes
   } catch(e) { console.error(e) } finally { loadingComponentes.value = false }
@@ -1625,14 +1479,6 @@ function openEditComp(comp) {
 
 async function saveEditComp() {
   editCompError.value = ''
-  
-  if (editingComp.value.precio !== undefined && Number(editingComp.value.precio) <= 0) {
-    return editCompError.value = 'El precio debe ser mayor a 0'
-  }
-  if (editingComp.value.stock !== undefined && Number(editingComp.value.stock) < 0) {
-    return editCompError.value = 'El stock no puede ser negativo'
-  }
-
   savingEditComp.value = true
   try {
     const res = await fetch(`${API}/componentes`, {
@@ -1641,9 +1487,6 @@ async function saveEditComp() {
       body: JSON.stringify({
         id:             editingComp.value.id,
         especificacion: editingComp.value.especificacion,
-        gama:           editingComp.value.gama,
-        precio:         editingComp.value.precio,
-        stock:          editingComp.value.stock,
       })
     })
     const data = await res.json()
@@ -2229,7 +2072,7 @@ function renderConsumoChart() {
 const sections = computed(() => {
   const all = [
     { id: 'bodegas',            icon: markRaw(Store), label: 'Bodegas',            description: `${bodegas.value.length} bodegas registradas`,    cta: '+ Agregar bodega', count: bodegas.value.length    },
-    { id: 'componentes',        icon: markRaw(Wrench), label: 'Componentes',        description: `${componentes.value.length} componentes en total`, cta: '+ Nuevo Componente Maestro',               count: componentes.value.length },
+    { id: 'componentes',        icon: markRaw(Wrench), label: 'Componentes',        description: `${componentes.value.filter(c => !c.bodega_id).length} componentes maestros`, cta: '+ Nuevo Componente Maestro',               count: componentes.value.filter(c => !c.bodega_id).length },
     { id: 'cotizaciones',       icon: markRaw(FileText), label: 'Cotizaciones',       description: 'Historial de cotizaciones',                       cta: null,               count: null },
     { id: 'crear-usuario',      icon: markRaw(UserPlus), label: 'Crear usuario',      description: 'Registrar nuevo usuario',                        cta: null,               count: null },
     { id: 'gestionar-usuarios', icon: markRaw(Users), label: 'Gestionar usuarios', description: `${usuarios.value.length} usuarios registrados`,   cta: '+ Crear usuario',  count: usuarios.value.length   },

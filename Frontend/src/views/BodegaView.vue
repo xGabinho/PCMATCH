@@ -51,8 +51,8 @@
           <h1 class="font-semibold theme-text">{{ currentSection.label }}</h1>
           <p class="text-xs theme-text-muted mt-0.5">{{ currentSection.description }}</p>
         </div>
-        <button v-if="activeSection === 'componentes'" @click="openAddModal" class="btn-primary text-sm">
-          + Añadir componente
+        <button v-if="activeSection === 'componentes'" @click="activeSection = 'proveedores'" class="btn-primary text-sm flex items-center gap-1.5">
+          <Store class="w-4 h-4 inline-block" /> Explorar Proveedores
         </button>
       </div>
 
@@ -102,6 +102,52 @@
                     Actualizar stock
                   </button>
                 </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Flujo de componentes (Chart.js) -->
+          <div class="mt-8">
+            <div class="flex items-center justify-between mb-4">
+              <div class="flex items-center gap-2">
+                <BarChart3 class="w-5 h-5 text-accent" />
+                <h2 class="font-semibold theme-text">Flujo de componentes</h2>
+              </div>
+              <select
+                v-model="flujoRango"
+                @change="fetchFlujoBodega"
+                class="theme-card border theme-border rounded-lg px-3 py-1.5 text-xs theme-text focus:outline-none focus:border-accent transition-colors"
+              >
+                <option value="historico" class="theme-bg">Histórico</option>
+                <option value="3_meses" class="theme-bg">Últimos 3 meses</option>
+                <option value="1_mes" class="theme-bg">Último mes</option>
+              </select>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <div class="card-dark rounded-xl p-5">
+                <FlowBarChart
+                  title="Mayor flujo (más vendidos)"
+                  :items="flujoMayorItems"
+                  orientation="y"
+                  variant="accent"
+                  unit-label="unidades vendidas"
+                  :is-dark="isDark"
+                  :loading="loadingFlujo"
+                  empty-text="Sin ventas registradas en este período"
+                />
+              </div>
+              <div class="card-dark rounded-xl p-5">
+                <FlowBarChart
+                  title="Menor flujo (baja rotación)"
+                  :items="flujoMenorItems"
+                  orientation="y"
+                  variant="warning"
+                  unit-label="unidades vendidas"
+                  :is-dark="isDark"
+                  :loading="loadingFlujo"
+                  empty-text="Todos los componentes tienen movimiento"
+                />
               </div>
             </div>
           </div>
@@ -177,7 +223,7 @@
             <table class="w-full min-w-[640px]">
               <thead class="border-b theme-border">
                 <tr>
-                  <th v-for="h in ['Componente', 'Categoría', 'Especificación', 'Gama', 'Precio', 'Stock', 'Estado', 'Acciones']"
+                  <th v-for="h in ['Componente', 'Categoría', 'Proveedor', 'Especificación', 'Gama', 'Precio', 'Stock', 'Estado', 'Acciones']"
                     :key="h" class="px-6 py-3 text-left text-xs theme-text-muted uppercase tracking-wider font-medium">
                     {{ h }}
                   </th>
@@ -185,12 +231,24 @@
               </thead>
               <tbody class="divide-y divide-dark-border">
                 <tr v-if="filteredComponents.length === 0">
-                  <td colspan="8" class="px-6 py-12 text-center theme-text-muted text-sm">Sin componentes</td>
+                  <td colspan="9" class="px-6 py-12 text-center theme-text-muted text-sm">
+                    <p class="font-medium text-base theme-text mb-1">Aún no tienes componentes en tu inventario</p>
+                    <p class="text-xs max-w-md mx-auto mb-4">La incorporación de componentes se realiza seleccionando productos desde los catálogos de los proveedores.</p>
+                    <button @click="activeSection = 'proveedores'" class="btn-primary text-xs px-4 py-2 inline-flex items-center gap-1.5">
+                      <Store class="w-3.5 h-3.5" /> Ir a Catálogo de Proveedores
+                    </button>
+                  </td>
                 </tr>
                 <tr v-for="comp in filteredComponents" :key="comp.id" class="hover:bg-gray-100 dark:bg-dark-bg/50 transition-colors">
                   <td class="px-6 py-4 text-sm font-medium theme-text">{{ comp.nombre }}</td>
                   <td class="px-6 py-4">
                     <span class="badge text-xs bg-accent/10 text-accent border border-accent/20">{{ comp.categoria }}</span>
+                  </td>
+                  <td class="px-6 py-4">
+                    <span v-if="comp.proveedor_nombre" class="badge text-xs bg-accent/10 text-accent border border-accent/20">
+                      {{ comp.proveedor_nombre }}
+                    </span>
+                    <span v-else class="text-xs theme-text-muted">—</span>
                   </td>
                   <td class="px-6 py-4 text-sm theme-text-muted max-w-48 truncate">{{ comp.especificacion }}</td>
                   <td class="px-6 py-4">
@@ -286,10 +344,10 @@
             <div v-if="loadingCatalogo" class="px-6 py-12 text-center theme-text-muted text-sm">Cargando catálogo...</div>
             <table v-else class="w-full min-w-[640px] bg-dark-bg/30 rounded-xl overflow-hidden">
               <thead class="border-b theme-border">
-                <tr><th v-for="h in ['Producto','Categoría','Gama','Precio Mayorista','Acción']" :key="h" class="px-6 py-3 text-left text-xs theme-text-muted uppercase tracking-wider font-medium">{{ h }}</th></tr>
+                <tr><th v-for="h in ['Producto','Categoría','Gama','Precio Mayorista','Stock Disponible','Acción']" :key="h" class="px-6 py-3 text-left text-xs theme-text-muted uppercase tracking-wider font-medium">{{ h }}</th></tr>
               </thead>
               <tbody class="divide-y divide-dark-border">
-                <tr v-if="proveedorCatalogo.length === 0"><td colspan="5" class="px-6 py-12 text-center theme-text-muted text-sm">Este proveedor no tiene productos en su catálogo</td></tr>
+                <tr v-if="proveedorCatalogo.length === 0"><td colspan="6" class="px-6 py-12 text-center theme-text-muted text-sm">Este proveedor no tiene productos en su catálogo</td></tr>
                 <tr v-for="p in proveedorCatalogo" :key="p.id" class="hover:bg-gray-100 dark:bg-dark-bg/50 transition-colors">
                   <td class="px-6 py-4">
                     <p class="text-sm font-medium theme-text">{{ p.nombre }}</p>
@@ -298,10 +356,23 @@
                   <td class="px-6 py-4"><span class="badge text-xs bg-accent/10 text-accent border border-accent/20">{{ p.categoria }}</span></td>
                   <td class="px-6 py-4"><span class="text-xs px-2 py-0.5 rounded-full font-medium border" :class="tierStyles[p.gama]">{{ p.gama }}</span></td>
                   <td class="px-6 py-4 text-sm font-mono text-accent font-medium">${{ Number(p.precio_mayorista).toLocaleString() }}</td>
+                  <td class="px-6 py-4 text-sm font-mono" :class="(p.stock ?? 0) <= 0 ? 'text-red-400' : 'theme-text'">
+                    {{ p.stock ?? 0 }} unid.
+                  </td>
                   <td class="px-6 py-4">
-                    <button @click="openImportModal(p)" class="btn-secondary text-xs px-3 py-1.5 flex items-center gap-1.5">
-                      <Plus class="w-4 h-4 inline-block" /> Añadir
+                    <button
+                      v-if="(p.stock ?? 0) > 0"
+                      @click="openImportModal(p)"
+                      class="btn-secondary text-xs px-3 py-1.5 flex items-center gap-1.5"
+                    >
+                      <Plus class="w-4 h-4 inline-block" /> Añadir a mi catálogo
                     </button>
+                    <span
+                      v-else
+                      class="text-xs px-2.5 py-1 rounded bg-red-500/10 text-red-400 border border-red-500/20 font-medium inline-block"
+                    >
+                      Sin stock
+                    </span>
                   </td>
                 </tr>
               </tbody>
@@ -309,62 +380,355 @@
           </div>
         </template>
 
+        <!-- ===== BUSCAR COTIZACIÓN ===== -->
+        <template v-if="activeSection === 'buscar-cotizacion'">
+          <!-- Card Buscador -->
+          <div class="card-dark rounded-xl p-6 mb-8">
+            <div class="max-w-2xl">
+              <div class="flex items-center gap-2 text-accent mb-2">
+                <Search class="w-5 h-5" />
+                <span class="text-xs uppercase font-bold tracking-wider">Buscador de Cotizaciones</span>
+              </div>
+              <h2 class="text-xl font-bold theme-text mb-1">Buscar cotización por código</h2>
+              <p class="text-xs theme-text-muted mb-5">
+                Ingresa el código alfanumérico generado por el armador (formato <span class="font-mono text-accent">COT-XXXXXXXX</span>) para ver el desglose completo de productos, precios y datos del cliente.
+              </p>
+
+              <form @submit.prevent="validateAndSearch" class="flex flex-col sm:flex-row gap-3">
+                <div class="relative flex-1">
+                  <input
+                    v-model="searchCodigo"
+                    type="text"
+                    placeholder="Ej: COT-5E348CB2"
+                    class="allow-special w-full theme-bg border theme-border rounded-lg pl-4 pr-10 py-3 text-sm font-mono uppercase theme-text placeholder-text-muted focus:outline-none focus:border-accent transition-colors"
+                    :class="{ 'border-red-400': searchError }"
+                    autocomplete="off"
+                  />
+                  <button
+                    v-if="searchCodigo"
+                    type="button"
+                    @click="clearSearch"
+                    class="absolute right-3 top-1/2 -translate-y-1/2 theme-text-muted hover:theme-text text-sm p-1"
+                    title="Limpiar"
+                  >✕</button>
+                </div>
+                <button
+                  type="submit"
+                  :disabled="loadingSearch"
+                  class="btn-primary text-sm px-6 py-3 flex items-center justify-center gap-2 flex-shrink-0"
+                >
+                  <Search v-if="!loadingSearch" class="w-4 h-4" />
+                  <span v-else class="animate-spin text-sm">⟳</span>
+                  {{ loadingSearch ? 'Buscando...' : 'Buscar' }}
+                </button>
+                <button
+                  v-if="cotizacionResultado"
+                  type="button"
+                  @click="clearSearch"
+                  class="btn-secondary text-sm px-4 py-3 flex items-center justify-center gap-1.5 flex-shrink-0"
+                >
+                  Nueva búsqueda
+                </button>
+              </form>
+
+              <!-- Mensaje de error / no encontrada -->
+              <div v-if="searchError" class="mt-4 p-4 rounded-lg bg-red-500/10 border border-red-500/20 text-red-400 text-sm flex items-start gap-3">
+                <AlertTriangle class="w-5 h-5 flex-shrink-0 mt-0.5" />
+                <div>
+                  <p class="font-semibold">{{ searchError }}</p>
+                  <p class="text-xs opacity-80 mt-0.5">Asegúrate de que el código corresponda exactamente a una cotización generada (incluyendo el prefijo "COT-").</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Estado de carga -->
+          <div v-if="loadingSearch" class="card-dark rounded-xl p-12 text-center">
+            <div class="inline-block animate-spin text-accent text-3xl mb-3">⟳</div>
+            <p class="theme-text font-medium text-sm">Consultando base de datos...</p>
+            <p class="theme-text-muted text-xs mt-1">Obteniendo productos y cotización asociada</p>
+          </div>
+
+          <!-- Estado inicial (sin búsqueda aún) -->
+          <div v-else-if="!cotizacionResultado && !searchError" class="card-dark rounded-xl p-12 text-center border border-dashed theme-border">
+            <div class="w-16 h-16 mx-auto mb-4 rounded-2xl bg-accent/10 flex items-center justify-center text-accent">
+              <FileText class="w-8 h-8" />
+            </div>
+            <h3 class="font-semibold text-base theme-text mb-1">Sin cotización seleccionada</h3>
+            <p class="text-xs theme-text-muted max-w-md mx-auto">
+              Escribe un código en el buscador superior y presiona <strong class="theme-text">Buscar</strong> o la tecla <strong class="theme-text">Enter</strong> para consultar los detalles.
+            </p>
+          </div>
+
+          <!-- Detalle de la Cotización Encontrada -->
+          <div v-else-if="cotizacionResultado" class="space-y-6 animate-fade-in">
+            <!-- Banner Resumen Superior -->
+            <div class="card-dark rounded-xl p-6 border-l-4 border-accent">
+              <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                <div>
+                  <div class="flex items-center gap-3 mb-1.5">
+                    <span class="text-xs px-2.5 py-0.5 rounded-full font-semibold border bg-accent/10 text-accent border-accent/20 uppercase tracking-wide">
+                      {{ perfilLabel(cotizacionResultado.perfil) }}
+                    </span>
+                    <span
+                      class="text-xs px-2.5 py-0.5 rounded-full font-medium border"
+                      :class="cotizacionResultado.stock_restaurado ? 'bg-yellow-500/10 text-yellow-400 border-yellow-500/20' : 'bg-green-500/10 text-green-400 border-green-500/20'"
+                    >
+                      {{ cotizacionResultado.stock_restaurado ? 'Cancelada / Stock Restaurado' : 'Activa / Confirmada' }}
+                    </span>
+                  </div>
+                  <div class="flex items-center gap-3">
+                    <h2 class="text-2xl font-bold font-mono theme-text">{{ cotizacionResultado.codigo }}</h2>
+                    <button
+                      @click="copyCodigo(cotizacionResultado.codigo)"
+                      class="theme-text-muted hover:text-accent transition-colors text-xs flex items-center gap-1 border theme-border px-2 py-1 rounded"
+                      title="Copiar código"
+                    >
+                      Copiar
+                    </button>
+                  </div>
+                  <p class="text-xs theme-text-muted mt-1">Generada el {{ formatDate(cotizacionResultado.created_at) }}</p>
+                </div>
+
+                <div class="text-left md:text-right">
+                  <p class="text-xs uppercase tracking-wider theme-text-muted font-medium">Total Cotizado</p>
+                  <p class="text-3xl font-bold font-mono text-accent mt-0.5">
+                    ${{ Number(cotizacionResultado.total).toLocaleString('es-CO') }}
+                  </p>
+                  <p class="text-xs theme-text-muted mt-1">{{ cotizacionResultado.total_items }} componentes en orden</p>
+                </div>
+              </div>
+            </div>
+
+            <!-- Información del Cliente y de la Orden -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <!-- Cliente -->
+              <div class="card-dark rounded-xl p-5">
+                <div class="flex items-center gap-2 text-sm font-semibold theme-text mb-4 pb-3 border-b theme-border">
+                  <User class="w-4 h-4 text-accent" />
+                  <span>Información del Cliente</span>
+                </div>
+                <div class="space-y-3 text-sm">
+                  <div class="flex justify-between items-center">
+                    <span class="theme-text-muted text-xs">Nombre:</span>
+                    <span class="font-medium theme-text">{{ cotizacionResultado.cliente?.nombre_completo || 'Cliente Registrado' }}</span>
+                  </div>
+                  <div class="flex justify-between items-center">
+                    <span class="theme-text-muted text-xs">Correo Electrónico:</span>
+                    <span class="font-mono text-xs theme-text">{{ cotizacionResultado.cliente?.correo || '—' }}</span>
+                  </div>
+                  <div class="flex justify-between items-center">
+                    <span class="theme-text-muted text-xs">Teléfono de Contacto:</span>
+                    <span class="font-mono text-xs theme-text">{{ cotizacionResultado.cliente?.telefono || '—' }}</span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Resumen de Orden -->
+              <div class="card-dark rounded-xl p-5">
+                <div class="flex items-center gap-2 text-sm font-semibold theme-text mb-4 pb-3 border-b theme-border">
+                  <FileText class="w-4 h-4 text-accent" />
+                  <span>Datos de la Cotización</span>
+                </div>
+                <div class="space-y-3 text-sm">
+                  <div class="flex justify-between items-center">
+                    <span class="theme-text-muted text-xs">Código:</span>
+                    <span class="font-mono font-bold text-accent">{{ cotizacionResultado.codigo }}</span>
+                  </div>
+                  <div class="flex justify-between items-center">
+                    <span class="theme-text-muted text-xs">Propósito / Enfoque:</span>
+                    <span class="theme-text font-medium">{{ perfilLabel(cotizacionResultado.perfil) }}</span>
+                  </div>
+                  <div class="flex justify-between items-center">
+                    <span class="theme-text-muted text-xs">Fecha y Hora:</span>
+                    <span class="theme-text text-xs">{{ formatDate(cotizacionResultado.created_at) }}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Tabla de Componentes Cotizados -->
+            <div class="card-dark rounded-xl overflow-hidden">
+              <div class="px-6 py-4 border-b theme-border flex items-center justify-between">
+                <div>
+                  <h3 class="font-semibold theme-text">Componentes de la Cotización</h3>
+                  <p class="text-xs theme-text-muted mt-0.5">Lista detallada de piezas seleccionadas por el cliente</p>
+                </div>
+                <span class="badge bg-accent/10 text-accent border border-accent/20 text-xs">
+                  {{ cotizacionResultado.items?.length || 0 }} productos
+                </span>
+              </div>
+
+              <div class="overflow-x-auto">
+                <table class="w-full text-left">
+                  <thead>
+                    <tr class="border-b theme-border text-xs uppercase tracking-wider theme-text-muted bg-black/5 dark:bg-white/5">
+                      <th class="px-6 py-3.5">Componente</th>
+                      <th class="px-6 py-3.5">Bodega / Origen</th>
+                      <th class="px-6 py-3.5 text-center">Cant.</th>
+                      <th class="px-6 py-3.5 text-right">Precio Unit.</th>
+                      <th class="px-6 py-3.5 text-right">Subtotal</th>
+                    </tr>
+                  </thead>
+                  <tbody class="divide-y theme-border">
+                    <tr v-for="item in cotizacionResultado.items" :key="item.id" class="hover:bg-black/5 dark:hover:bg-white/5 transition-colors">
+                      <!-- Componente Info -->
+                      <td class="px-6 py-4">
+                        <div class="flex items-start gap-3">
+                          <div class="flex-1 min-w-0">
+                            <div class="flex items-center gap-2 mb-1">
+                              <span class="badge text-xs bg-accent/10 text-accent border border-accent/20">
+                                {{ item.categoria }}
+                              </span>
+                              <span v-if="item.gama" class="text-xs px-2 py-0.5 rounded-full font-medium border" :class="tierStyles[item.gama] || 'border-zinc-500/20 text-zinc-400'">
+                                {{ item.gama }}
+                              </span>
+                            </div>
+                            <p class="text-sm font-semibold theme-text">{{ item.producto_nombre }}</p>
+                            <p v-if="item.especificacion" class="text-xs theme-text-muted mt-0.5">{{ item.especificacion }}</p>
+                            <p v-if="item.sku" class="text-[11px] font-mono theme-text-muted mt-1 opacity-70">SKU: {{ item.sku }}</p>
+                          </div>
+                        </div>
+                      </td>
+
+                      <!-- Bodega / Origen -->
+                      <td class="px-6 py-4">
+                        <div class="text-xs">
+                          <p class="font-medium theme-text flex items-center gap-1.5">
+                            <Store class="w-3.5 h-3.5 text-accent flex-shrink-0" />
+                            {{ item.bodega_nombre || 'Bodega Principal' }}
+                          </p>
+                          <span
+                            v-if="item.bodega_id === user?.id"
+                            class="inline-block mt-1 text-[10px] font-semibold px-2 py-0.5 rounded bg-green-500/10 text-green-400 border border-green-500/20"
+                          >
+                            Tu bodega
+                          </span>
+                          <p v-if="item.proveedor_nombre" class="theme-text-muted mt-0.5 text-[11px]">
+                            Prov: {{ item.proveedor_nombre }}
+                          </p>
+                        </div>
+                      </td>
+
+                      <!-- Cantidad -->
+                      <td class="px-6 py-4 text-center">
+                        <span class="font-mono font-bold text-sm theme-text bg-accent/10 px-2.5 py-1 rounded-md">
+                          {{ item.cantidad }}
+                        </span>
+                      </td>
+
+                      <!-- Precio Unitario -->
+                      <td class="px-6 py-4 text-right">
+                        <span class="font-mono text-sm theme-text">
+                          ${{ Number(item.precio_unitario).toLocaleString('es-CO') }}
+                        </span>
+                      </td>
+
+                      <!-- Subtotal -->
+                      <td class="px-6 py-4 text-right">
+                        <span class="font-mono font-bold text-sm text-accent">
+                          ${{ Number(item.subtotal).toLocaleString('es-CO') }}
+                        </span>
+                      </td>
+                    </tr>
+                  </tbody>
+                  <tfoot>
+                    <tr class="bg-black/5 dark:bg-white/5 font-bold">
+                      <td colspan="3" class="px-6 py-4 text-sm uppercase tracking-wider theme-text text-right">
+                        Total Final:
+                      </td>
+                      <td colspan="2" class="px-6 py-4 text-right text-xl font-mono text-accent">
+                        ${{ Number(cotizacionResultado.total).toLocaleString('es-CO') }}
+                      </td>
+                    </tr>
+                  </tfoot>
+                </table>
+              </div>
+            </div>
+          </div>
+        </template>
+
       </div>
     </main>
 
-    <!-- ==== MODAL AÑADIR COMPONENTE ==== -->
+    <!-- ==== MODAL AÑADIR COMPONENTE DESDE PROVEEDOR ==== -->
     <div v-if="showAddModal" class="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto py-6 px-4">
       <div class="fixed inset-0 bg-black/60 backdrop-blur-sm" @click="closeAddModal"></div>
       <div class="relative card-dark rounded-2xl p-6 w-full max-w-lg my-auto shadow-2xl">
         <div class="flex items-center justify-between mb-6">
           <div>
-            <h2 class="text-lg font-bold theme-text">{{ isImporting ? 'Importar Componente' : 'Añadir Componente' }}</h2>
-            <p class="text-xs theme-text-muted mt-0.5">{{ isImporting ? 'Define tu precio y stock inicial' : 'Registra un nuevo producto en tu inventario' }}</p>
+            <h2 class="text-lg font-bold theme-text">Añadir a mi catálogo</h2>
+            <p class="text-xs theme-text-muted mt-0.5">Incorpora stock desde el proveedor a tu inventario</p>
           </div>
           <button @click="closeAddModal" class="theme-text-muted hover:theme-text transition-colors text-2xl leading-none w-8 h-8 flex items-center justify-center rounded-lg hover:theme-bg">×</button>
         </div>
 
         <div class="space-y-5 max-h-[60vh] overflow-y-auto pr-2">
           
-          <div v-if="isImporting" class="p-3 rounded bg-accent/10 border border-accent/20 mb-4">
-            <p class="text-sm font-bold text-accent">{{ newComp.nombre }}</p>
-            <p class="text-xs theme-text-muted">Precio mayorista: ${{ Number(newComp.precio_mayorista).toLocaleString() }}</p>
-          </div>
-
-          <div v-if="!isImporting" class="mb-4 relative">
-            <label class="block text-sm font-medium theme-text mb-2">Producto Base <span class="text-red-400">*</span></label>
-            <div class="relative">
-              <input
-                v-model="productoSearch"
-                @input="showProductoDropdown = true; newComp.master_component_id = ''; newComp.producto_id = ''; newComp.categoria = ''"
-                @focus="showProductoDropdown = true"
-                type="text"
-                placeholder="Buscar componente maestro..."
-                class="allow-special w-full theme-bg border theme-border rounded-lg px-4 py-3 text-sm theme-text placeholder-text-muted focus:outline-none focus:border-accent transition-colors"
-                :class="{ 'border-accent': newComp.master_component_id || newComp.producto_id }"
-                autocomplete="off"
-              />
-              <div v-if="showProductoDropdown && productosFiltrados.length > 0" class="absolute top-full left-0 right-0 mt-1 theme-card border theme-border rounded-lg shadow-xl z-20 max-h-52 overflow-y-auto">
-                <button v-for="prod in productosFiltrados" :key="prod.id" @click="selectProducto(prod)" class="w-full flex items-center justify-between px-4 py-2.5 text-sm hover:theme-bg transition-colors text-left">
-                  <span class="theme-text">{{ prod.nombre }} <span v-if="prod.especificacion" class="text-xs opacity-70 ml-1">- {{ prod.especificacion }}</span></span>
-                  <span class="text-xs theme-text-muted ml-3 flex-shrink-0">{{ prod.categoria }}</span>
-                </button>
+          <!-- Ficha de resumen del producto del proveedor -->
+          <div class="p-4 rounded-xl bg-accent/10 border border-accent/20">
+            <div class="flex items-start justify-between gap-3 mb-2">
+              <div>
+                <span class="badge text-xs bg-accent/20 text-accent border border-accent/30 font-semibold mb-1">
+                  {{ newComp.categoria }}
+                </span>
+                <h3 class="text-base font-bold theme-text">{{ newComp.nombre }}</h3>
+                <p v-if="newComp.especificacion" class="text-xs theme-text-muted mt-0.5">{{ newComp.especificacion }}</p>
+              </div>
+              <span v-if="newComp.gama" class="text-xs px-2 py-0.5 rounded-full font-medium border" :class="tierStyles[newComp.gama]">
+                {{ newComp.gama }}
+              </span>
+            </div>
+            
+            <div class="grid grid-cols-2 gap-3 mt-3 pt-3 border-t border-accent/15 text-xs">
+              <div>
+                <span class="theme-text-muted">Proveedor:</span>
+                <p class="font-semibold theme-text truncate">{{ newComp.proveedor_nombre || selectedProveedor?.nombre }}</p>
+              </div>
+              <div>
+                <span class="theme-text-muted">Precio mayorista:</span>
+                <p class="font-mono font-bold text-accent">${{ Number(newComp.precio_mayorista || 0).toLocaleString() }}</p>
+              </div>
+              <div class="col-span-2">
+                <span class="theme-text-muted">Stock disponible en proveedor:</span>
+                <p class="font-mono font-bold text-green-400">{{ newComp.proveedor_stock }} unidades</p>
               </div>
             </div>
-            <p v-if="newComp.categoria" class="text-xs text-accent mt-1.5 flex items-center gap-1">
-              <span><Check class="w-4 h-4 inline-block mr-1" /></span> Categoría: {{ newComp.categoria }}
-            </p>
           </div>
 
-          <!-- Precio y Stock -->
+          <!-- Cantidad a tomar y Precio Retail -->
           <div class="grid grid-cols-2 gap-4">
             <div>
-              <label class="block text-sm font-medium theme-text mb-2">Precio Retail ($) <span class="text-red-400">*</span></label>
-              <input v-model="newComp.precio" type="number" min="0" step="1" @keydown="blockInvalidChars($event)" class="w-full theme-bg border theme-border rounded-lg px-4 py-3 text-sm theme-text focus:outline-none focus:border-accent transition-colors" />
+              <label class="block text-sm font-medium theme-text mb-2">
+                Cantidad a tomar <span class="text-red-400">*</span>
+              </label>
+              <input
+                v-model="newComp.stock"
+                type="number"
+                min="1"
+                :max="newComp.proveedor_stock"
+                step="1"
+                @keydown="blockInvalidCharsStock($event)"
+                class="w-full theme-bg border theme-border rounded-lg px-4 py-3 text-sm theme-text focus:outline-none focus:border-accent transition-colors font-mono"
+                placeholder="Ej: 5"
+              />
+              <p class="text-[11px] theme-text-muted mt-1">Máximo: {{ newComp.proveedor_stock }} unid.</p>
             </div>
+
             <div>
-              <label class="block text-sm font-medium theme-text mb-2">Stock inicial <span class="text-red-400">*</span></label>
-              <input v-model="newComp.stock" type="number" min="0" step="1" @keydown="blockInvalidCharsStock($event)" class="w-full theme-bg border theme-border rounded-lg px-4 py-3 text-sm theme-text focus:outline-none focus:border-accent transition-colors" />
+              <label class="block text-sm font-medium theme-text mb-2">
+                Precio Retail ($) <span class="text-red-400">*</span>
+              </label>
+              <input
+                v-model="newComp.precio"
+                type="number"
+                min="0"
+                step="1"
+                @keydown="blockInvalidChars($event)"
+                class="w-full theme-bg border theme-border rounded-lg px-4 py-3 text-sm theme-text focus:outline-none focus:border-accent transition-colors font-mono"
+                placeholder="Ej: 150000"
+              />
+              <p class="text-[11px] theme-text-muted mt-1">Tu precio de venta final</p>
             </div>
           </div>
 
@@ -378,7 +742,7 @@
 
         <div class="flex gap-3 mt-8">
           <button @click="saveNewComp" :disabled="savingAdd" class="btn-primary flex-1 text-sm">
-            {{ savingAdd ? 'Guardando...' : (isImporting ? 'Importar componente' : 'Crear componente') }}
+            {{ savingAdd ? 'Incorporando...' : 'Confirmar incorporación' }}
           </button>
           <button @click="closeAddModal" class="btn-secondary text-sm px-5">Cancelar</button>
         </div>
@@ -467,16 +831,15 @@
 </template>
 
 <script setup>
-import { Store, AlertTriangle, Plus, BarChart3, Check, Trash2, Sun, Moon, Wrench, Settings } from 'lucide-vue-next';
-
-
+import { Store, AlertTriangle, Plus, BarChart3, Check, Trash2, Sun, Moon, Wrench, Settings, Search, FileText, User } from 'lucide-vue-next';
+import FlowBarChart from '../components/charts/FlowBarChart.vue'
 
 import { useTheme } from '../composables/useTheme'
 const { isDark, toggleTheme } = useTheme()
 import { useRouter } from 'vue-router'
 import { useAuth } from '../composables/useAuth'
 import { useToast } from '../composables/useToast'
-import { ref, markRaw, computed, onMounted, onBeforeUnmount } from 'vue'
+import { ref, markRaw, computed, onMounted, onBeforeUnmount, nextTick } from 'vue'
 
 import { API } from '@/config/api'
 const toast = useToast()
@@ -496,9 +859,10 @@ const bodegaCorreo = user.value?.correo ?? ''
 // Secciones
 const activeSection = ref('dashboard')
 const sections = [
-  { id: 'dashboard',   icon: BarChart3, label: 'Dashboard',       description: 'Resumen de tu bodega',          count: null },
-  { id: 'componentes', icon: markRaw(Wrench), label: 'Mis componentes', description: 'Gestiona tu catálogo y stock',  count: true },
-  { id: 'proveedores', icon: markRaw(Store), label: 'Proveedores',     description: 'Explora catálogos mayoristas',  count: null },
+  { id: 'dashboard',         icon: BarChart3,        label: 'Dashboard',         description: 'Resumen de tu bodega',                 count: null },
+  { id: 'componentes',       icon: markRaw(Wrench),   label: 'Mis componentes',   description: 'Gestiona tu catálogo y stock',         count: true },
+  { id: 'proveedores',       icon: markRaw(Store),    label: 'Proveedores',       description: 'Explora catálogos mayoristas',         count: null },
+  { id: 'buscar-cotizacion', icon: markRaw(Search),   label: 'Buscar Cotización', description: 'Consulta el detalle de una cotización por su código', count: null },
 ]
 const currentSection = computed(() => sections.find(s => s.id === activeSection.value))
 
@@ -548,6 +912,9 @@ function openImportModal(prod) {
   newComp.value = {
     master_component_id: prod.id,
     producto_id: prod.id,
+    proveedor_id: selectedProveedor.value?.id,
+    proveedor_nombre: selectedProveedor.value?.nombre,
+    proveedor_stock: prod.stock ?? 0,
     nombre: prod.nombre,
     precio_mayorista: prod.precio_mayorista,
     categoria: prod.categoria,
@@ -558,7 +925,7 @@ function openImportModal(prod) {
     frecuencia_hz: prod.frecuencia_hz,
     enfoque_uso: prod.enfoque_uso,
     precio: '',
-    stock: '',
+    stock: 1,
     descuento_porcentaje: 0,
     descuento_activo: 0
   }
@@ -683,7 +1050,7 @@ function selectProducto(prod) {
   newComp.value.hilos = prod.hilos || ''
   newComp.value.frecuencia_hz = prod.frecuencia_hz || ''
   newComp.value.enfoque_uso = prod.enfoque_uso || ''
-  productoSearch.value = `${prod.nombre} - ${prod.especificacion}`
+  productoSearch.value = prod.nombre
   showProductoDropdown.value = false
 }
 
@@ -707,33 +1074,27 @@ async function fetchCategoriasBase() {
   try {
     const res = await fetch(`${API}/componentes/maestros`, { headers: { Authorization: `Bearer ${getToken()}` } })
     const data = await res.json()
-    if (res.ok) categoriasBase.value = data.componentes || []
-  } catch(e) { console.error(e) }
+    if (res.ok && (data.componentes || data.productos)) {
+      categoriasBase.value = data.componentes || data.productos || []
+    }
+  } catch(e) {
+    console.error('Error al cargar componentes maestros habilitados', e)
+  }
 }
 
 /**
-
  * Abre el modal correspondiente e inicializa los datos necesarios.
-
  */
-
+/**
+ * Redirige a la sección de proveedores para incorporar componentes.
+ */
 function openAddModal() {
-  isImporting.value = false
-  newComp.value = { master_component_id: '', producto_id: '', nombre: '', categoria: '', especificacion: '', nucleos: '', hilos: '', frecuencia_hz: '', enfoque_uso: '', gama: 'media', precio: '', stock: '', descuento_porcentaje: 0, descuento_activo: 0 }
-  addImageFile.value = null
-  addImagePreview.value = null
-  addFileName.value = ''
-  addError.value = ''
-  if (categoriasBase.value.length === 0) fetchCategoriasBase()
-  showAddModal.value = true
+  activeSection.value = 'proveedores'
 }
 
 /**
-
  * Cierra el modal activo y limpia los errores.
-
  */
-
 function closeAddModal() {
   showAddModal.value = false
 }
@@ -753,25 +1114,45 @@ function onFileChange(e, type) {
 }
 
 /**
-
- * Valida y envía los datos del formulario al backend (POST/PUT).
-
- * Maneja la lógica de guardado y muestra feedback al usuario.
-
+ * Valida y envía los datos para incorporar el componente desde el catálogo del proveedor.
+ * Descuenta stock del proveedor y suma/crea stock en la bodega.
  */
-
 async function saveNewComp() {
   addError.value = ''
-  if (!newComp.value.master_component_id && (!newComp.value.producto_id || !newComp.value.especificacion || !newComp.value.gama)) {
-    return addError.value = 'Debes seleccionar un maestro o proporcionar el producto, especificación y gama'
+  const prodId = newComp.value.producto_id || newComp.value.master_component_id
+  if (!prodId) {
+    return addError.value = 'Debes seleccionar un producto base'
   }
-  if (!newComp.value.precio || newComp.value.stock === '') {
-    return addError.value = 'El precio y stock son requeridos'
+  if (!newComp.value.proveedor_id) {
+    return addError.value = 'Proveedor no identificado'
+  }
+  if (newComp.value.precio === undefined || newComp.value.precio === '' || Number(String(newComp.value.precio).replace(',', '.')) <= 0) {
+    return addError.value = 'El precio retail debe ser mayor a 0'
+  }
+  const qty = Number(newComp.value.stock)
+  if (!Number.isInteger(qty) || qty <= 0) {
+    return addError.value = 'La cantidad a tomar debe ser un número entero mayor a 0'
+  }
+  const maxStock = Number(newComp.value.proveedor_stock ?? 0)
+  if (qty > maxStock) {
+    return addError.value = `No puedes tomar más de ${maxStock} unidades disponibles del proveedor`
   }
 
   savingAdd.value = true
   const formData = new FormData()
-  Object.entries(newComp.value).forEach(([k,v]) => { if(v !== '' && v !== null) formData.append(k, v) })
+  formData.append('producto_id', prodId)
+  formData.append('proveedor_id', String(newComp.value.proveedor_id))
+  formData.append('precio', String(newComp.value.precio).replace(',', '.'))
+  formData.append('stock', String(qty))
+
+  if (newComp.value.especificacion) formData.append('especificacion', newComp.value.especificacion)
+  if (newComp.value.gama) formData.append('gama', newComp.value.gama)
+  if (newComp.value.nucleos) formData.append('nucleos', newComp.value.nucleos)
+  if (newComp.value.hilos) formData.append('hilos', newComp.value.hilos)
+  if (newComp.value.frecuencia_hz) formData.append('frecuencia_hz', newComp.value.frecuencia_hz)
+  if (newComp.value.enfoque_uso) formData.append('enfoque_uso', newComp.value.enfoque_uso)
+  if (newComp.value.descuento_porcentaje) formData.append('descuento_porcentaje', newComp.value.descuento_porcentaje)
+  if (newComp.value.descuento_activo) formData.append('descuento_activo', newComp.value.descuento_activo)
   if (addImageFile.value) formData.append('imagen', addImageFile.value)
 
   try {
@@ -782,12 +1163,15 @@ async function saveNewComp() {
     })
     const data = await res.json()
     if (!res.ok) {
-      toast.error(data.message ?? 'Error al guardar el componente')
-      return addError.value = data.message ?? 'Error al guardar el componente'
+      toast.error(data.message ?? 'Error al incorporar el componente')
+      return addError.value = data.message ?? 'Error al incorporar el componente'
     }
     await fetchComponents()
+    if (selectedProveedor.value) {
+      await viewProveedorCatalogo(selectedProveedor.value)
+    }
     closeAddModal()
-    toast.success('Componente creado exitosamente')
+    toast.success('Componente incorporado a tu catálogo exitosamente')
   } catch (e) {
     toast.error('Error de conexión con el servidor')
     addError.value = 'Error de conexión con el servidor'
@@ -900,6 +1284,7 @@ async function confirmDelete() {
     const data = await res.json()
     if (!res.ok) {
       deleteError.value = data.message ?? 'Error al eliminar el componente'
+      toast.error(deleteError.value)
       return
     }
     await fetchComponents()
@@ -913,10 +1298,131 @@ async function confirmDelete() {
   }
 }
 
+// ── Analítica: Flujo de componentes ──────────────────────
+const flujoRango = ref('historico')
+const loadingFlujo = ref(false)
+const flujoMayorData = ref([])
+const flujoMenorData = ref([])
+
+const flujoMayorItems = computed(() =>
+  flujoMayorData.value.map(d => ({
+    label: d.producto_nombre + (d.especificacion ? ` (${d.especificacion})` : ''),
+    value: Number(d.total_salida),
+    sublabel: `${d.categoria} · stock: ${d.stock}`,
+  }))
+)
+
+const flujoMenorItems = computed(() =>
+  flujoMenorData.value.map(d => ({
+    label: d.producto_nombre + (d.especificacion ? ` (${d.especificacion})` : ''),
+    value: Number(d.total_salida),
+    sublabel: `${d.categoria} · stock: ${d.stock}`,
+  }))
+)
+
+async function fetchFlujoBodega() {
+  loadingFlujo.value = true
+  try {
+    const res = await fetch(
+      `${API}/analiticas/bodega/flujo?rango_fecha=${flujoRango.value}&limit=10`,
+      { headers: { Authorization: `Bearer ${getToken()}` } }
+    )
+    const data = await res.json()
+    if (res.ok) {
+      flujoMayorData.value = data.mayor_flujo || []
+      flujoMenorData.value = data.menor_flujo || []
+    }
+  } catch (e) {
+    console.error('Error fetching flujo bodega:', e)
+  } finally {
+    loadingFlujo.value = false
+  }
+}
+
+// ── Buscar Cotización ────────────────────────────────────
+const searchCodigo = ref('')
+const loadingSearch = ref(false)
+const searchError = ref('')
+const cotizacionResultado = ref(null)
+
+function validateAndSearch() {
+  const query = searchCodigo.value.trim()
+  if (!query) {
+    searchError.value = 'Por favor ingresa un código de cotización'
+    cotizacionResultado.value = null
+    return
+  }
+  searchCotizacion(query)
+}
+
+async function searchCotizacion(codigo) {
+  loadingSearch.value = true
+  searchError.value = ''
+  cotizacionResultado.value = null
+
+  try {
+    const res = await fetch(`${API}/cotizaciones/buscar/${encodeURIComponent(codigo)}`, {
+      headers: {
+        Authorization: `Bearer ${getToken()}`,
+        Accept: 'application/json'
+      }
+    })
+    const data = await res.json()
+
+    if (!res.ok || !data.success || !data.cotizacion) {
+      searchError.value = data.message || 'Cotización no encontrada'
+      return
+    }
+
+    cotizacionResultado.value = data.cotizacion
+    toast.success(`Cotización ${data.cotizacion.codigo} encontrada`)
+  } catch (e) {
+    searchError.value = 'Error de conexión con el servidor al buscar la cotización'
+    toast.error(searchError.value)
+  } finally {
+    loadingSearch.value = false
+  }
+}
+
+function clearSearch() {
+  searchCodigo.value = ''
+  searchError.value = ''
+  cotizacionResultado.value = null
+}
+
+function formatDate(dateStr) {
+  if (!dateStr) return '—'
+  const d = new Date(dateStr)
+  return isNaN(d) ? dateStr : d.toLocaleDateString('es-CO', {
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit'
+  })
+}
+
+function perfilLabel(perfil) {
+  const labels = {
+    gaming: 'Gaming',
+    oficina: 'Oficina / Productividad',
+    diseño: 'Diseño / Creación',
+    estudio: 'Estudio / Básico'
+  }
+  return labels[perfil] || (perfil ? perfil.charAt(0).toUpperCase() + perfil.slice(1) : 'Personalizado')
+}
+
+function copyCodigo(codigo) {
+  if (!codigo) return
+  navigator.clipboard.writeText(codigo)
+  toast.success('Código copiado al portapapeles')
+}
+
 onMounted(() => {
   fetchComponents()
   fetchProveedores()
   fetchCategoriasBase()
+  fetchFlujoBodega()
   document.addEventListener('click', handleClickOutside)
 })
 

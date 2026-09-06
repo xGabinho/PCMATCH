@@ -47,13 +47,16 @@ class CotizacionController extends Controller
                 ->groupBy('c.id', 'c.perfil', 'c.total', 'c.created_at', 'u.nombre', 'u.apellido', 'u.correo');
         } 
         elseif ($rol === 'proveedor') {
-            // Proveedor ve cotizaciones que incluyen componentes de sus bodegas
+            // Proveedor ve cotizaciones que incluyen componentes suministrados por él o de sus bodegas
             $query = DB::table('cotizaciones as c')
                 ->join('usuarios as u', 'c.usuario_id', '=', 'u.id')
                 ->leftJoin('cotizacion_items as ci', 'ci.cotizacion_id', '=', 'c.id')
                 ->leftJoin('componentes as comp', 'ci.componente_id', '=', 'comp.id')
                 ->leftJoin('bodegas as b', 'comp.bodega_id', '=', 'b.id')
-                ->where('b.proveedor_id', $user->id)
+                ->where(function ($q) use ($user) {
+                    $q->where('comp.proveedor_id', $user->id)
+                      ->orWhere('b.proveedor_id', $user->id);
+                })
                 ->select(
                     'c.id', 'c.perfil', 'c.total', 'c.created_at',
                     'u.nombre', 'u.apellido', 'u.correo',
@@ -163,7 +166,8 @@ class CotizacionController extends Controller
             ->join('componentes as c', 'ci.componente_id', '=', 'c.id')
             ->join('productos_catalogo as pc', 'c.producto_id', '=', 'pc.id')
             ->leftJoin('bodegas as b', 'c.bodega_id', '=', 'b.id')
-            ->leftJoin('proveedores as p', 'b.proveedor_id', '=', 'p.id')
+            ->leftJoin('proveedores as p', 'c.proveedor_id', '=', 'p.id')
+            ->leftJoin('proveedores as pb', 'b.proveedor_id', '=', 'pb.id')
             ->where('ci.cotizacion_id', $cotizacionId)
             ->select(
                 'ci.cantidad',
@@ -172,7 +176,7 @@ class CotizacionController extends Controller
                 'pc.categoria',
                 'c.especificacion',
                 'b.nombre as nombre_bodega',
-                'p.nombre as nombre_proveedor'
+                DB::raw('COALESCE(p.razon_social, p.nombre, pb.razon_social, pb.nombre) as nombre_proveedor')
             )
             ->get();
 
@@ -251,6 +255,87 @@ class CotizacionController extends Controller
         AuditLog::log($request, "Eliminó la cotización (ID: {$id})", 'Cotizaciones');
 
         return response()->json(['message' => 'Cotización eliminada']);
+    }
+
+    /**
+     * Buscar una cotización por su código único y retornar el detalle completo.
+     * Accesible por bodega, admin, superadmin, proveedor y cliente.
+     */
+    public function buscarPorCodigo(Request $request, $codigo = null)
+    {
+        $codigoBuscado = trim($codigo ?? $request->query('codigo', ''));
+        if (empty($codigoBuscado)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'El código de cotización es requerido'
+            ], 400);
+        }
+
+        // Búsqueda insensible a mayúsculas
+        $cotizacion = DB::table('cotizaciones')
+            ->whereRaw('UPPER(codigo) = ?', [strtoupper($codigoBuscado)])
+            ->first();
+
+        if (!$cotizacion) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Cotización no encontrada'
+            ], 404);
+        }
+
+        // Datos del cliente
+        $cliente = DB::table('usuarios')
+            ->where('id', $cotizacion->usuario_id)
+            ->select('id', 'nombre', 'apellido', 'correo', 'telefono')
+            ->first();
+
+        // Items de la cotización con detalles de componentes, catálogo y bodegas
+        $items = DB::table('cotizacion_items as ci')
+            ->leftJoin('componentes as c', 'ci.componente_id', '=', 'c.id')
+            ->leftJoin('productos_catalogo as pc', 'c.producto_id', '=', 'pc.id')
+            ->leftJoin('bodegas as b', 'c.bodega_id', '=', 'b.id')
+            ->leftJoin('proveedores as p', 'c.proveedor_id', '=', 'p.id')
+            ->leftJoin('proveedores as pb', 'b.proveedor_id', '=', 'pb.id')
+            ->where('ci.cotizacion_id', $cotizacion->id)
+            ->select([
+                'ci.id',
+                'ci.cantidad',
+                'ci.precio_unitario',
+                DB::raw('(ci.cantidad * ci.precio_unitario) as subtotal'),
+                'ci.componente_id',
+                'c.sku',
+                'c.especificacion',
+                'c.gama',
+                'c.imagen_url',
+                'c.stock as stock_actual',
+                'c.bodega_id',
+                'pc.nombre as producto_nombre',
+                'pc.categoria',
+                'b.nombre as bodega_nombre',
+                DB::raw('COALESCE(p.razon_social, p.nombre, pb.razon_social, pb.nombre) as proveedor_nombre')
+            ])
+            ->get();
+
+        return response()->json([
+            'success' => true,
+            'cotizacion' => [
+                'id'               => $cotizacion->id,
+                'codigo'           => $cotizacion->codigo,
+                'perfil'           => $cotizacion->perfil,
+                'total'            => (float) $cotizacion->total,
+                'created_at'       => $cotizacion->created_at,
+                'stock_restaurado' => (bool) $cotizacion->stock_restaurado,
+                'cliente'          => $cliente ? [
+                    'nombre_completo' => trim("{$cliente->nombre} {$cliente->apellido}"),
+                    'nombre'          => $cliente->nombre,
+                    'apellido'        => $cliente->apellido,
+                    'correo'          => $cliente->correo,
+                    'telefono'        => $cliente->telefono ?? '—',
+                ] : null,
+                'total_items'      => (int) $items->sum('cantidad'),
+                'items'            => $items,
+            ]
+        ], 200);
     }
 
     private function getRole(Request $request): ?string

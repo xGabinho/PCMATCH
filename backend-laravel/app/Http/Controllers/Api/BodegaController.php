@@ -51,20 +51,29 @@ class BodegaController extends Controller
             ->groupBy('b.id', 'b.nombre', 'b.telefono', 'b.correo', 'b.activa', 'b.proveedor_id');
 
         if ($rol === 'proveedor') {
-            // Proveedor solo ve sus bodegas y cuenta los componentes
-            $query->where('b.proveedor_id', $user->id)
-                  ->select(
-                      'b.id', 'b.nombre', 'b.telefono', 'b.correo', 'b.activa', 'b.proveedor_id',
-                      DB::raw('COUNT(c.id) AS total_componentes')
-                  );
+            // Proveedor ve las bodegas que tienen componentes suministrados por él o asociadas
+            $query->where(function ($q) use ($user) {
+                $q->where('b.proveedor_id', $user->id)
+                  ->orWhereExists(function ($sub) use ($user) {
+                      $sub->select(DB::raw(1))
+                          ->from('componentes as comp')
+                          ->whereColumn('comp.bodega_id', 'b.id')
+                          ->where('comp.proveedor_id', $user->id)
+                          ->whereNull('comp.deleted_at');
+                  });
+            })
+            ->select(
+                'b.id', 'b.nombre', 'b.telefono', 'b.correo', 'b.activa', 'b.proveedor_id',
+                DB::raw('COUNT(CASE WHEN c.proveedor_id = ' . (int)$user->id . ' THEN c.id END) AS total_componentes')
+            );
         } else {
-            // Admin y Superadmin ven todas, además cruzamos el nombre del proveedor
-            $query->leftJoin('proveedores as p', 'p.id', '=', 'b.proveedor_id')
-                  ->groupBy('p.razon_social')
+            // Admin y Superadmin ven todas, agrupando los proveedores asociados de sus componentes
+            $query->leftJoin('proveedores as p', 'p.id', '=', 'c.proveedor_id')
+                  ->leftJoin('proveedores as pb', 'pb.id', '=', 'b.proveedor_id')
                   ->select(
                       'b.id', 'b.nombre', 'b.telefono', 'b.correo', 'b.activa', 'b.proveedor_id',
-                      'p.razon_social AS proveedor_nombre',
-                      DB::raw('COUNT(c.id) AS total_componentes')
+                      DB::raw("STRING_AGG(DISTINCT COALESCE(p.razon_social, p.nombre, pb.razon_social, pb.nombre), ', ') AS proveedor_nombre"),
+                      DB::raw('COUNT(DISTINCT c.id) AS total_componentes')
                   );
         }
 

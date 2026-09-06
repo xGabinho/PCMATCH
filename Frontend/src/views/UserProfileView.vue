@@ -92,7 +92,6 @@
               <input
                 id="profile-telefono"
                 v-model="form.telefono"
-                @input="handleTelefonoInput"
                 type="text"
                 class="theme-input"
                 placeholder="+57 300 123 4567"
