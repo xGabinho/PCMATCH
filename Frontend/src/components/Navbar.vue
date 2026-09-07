@@ -10,7 +10,7 @@
           PC
         </div>
         <span class="font-bold text-lg tracking-tight theme-text">
-          PCMATCH
+          MATCH
         </span>
       </router-link>
 

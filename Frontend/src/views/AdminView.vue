@@ -6,7 +6,7 @@
       <div class="h-16 px-5 flex items-center border-b theme-border gap-2.5">
         <div class="w-7 h-7 rounded-lg bg-accent flex items-center justify-center text-white font-bold text-xs">PC</div>
         <div>
-          <p class="theme-text font-semibold text-sm leading-none">PCMATCH</p>
+          <p class="theme-text font-semibold text-sm leading-none">MATCH</p>
           <p class="theme-text-muted text-xs mt-0.5">Panel Admin</p>
         </div>
       </div>

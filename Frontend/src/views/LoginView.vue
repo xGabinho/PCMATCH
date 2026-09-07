@@ -13,7 +13,7 @@
       <div class="text-center mb-8">
         <div class="inline-flex items-center gap-2.5 mb-4">
           <div class="w-10 h-10 rounded-xl bg-accent flex items-center justify-center text-white font-bold">PC</div>
-          <span class="font-bold theme-text text-2xl tracking-tight">PCMATCH</span>
+          <span class="font-bold theme-text text-2xl tracking-tight">MATCH</span>
         </div>
         <h1 class="text-2xl font-bold theme-text">Bienvenido de vuelta</h1>
         <p class="theme-text-muted mt-2 text-sm">Inicia sesión para comenzar a armar tu PC</p>
