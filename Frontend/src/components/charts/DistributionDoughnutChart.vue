@@ -29,7 +29,7 @@
 </template>
 
 <script setup>
-import { ref, watch, onBeforeUnmount, nextTick } from 'vue'
+import { ref, watch, onMounted, onBeforeUnmount, nextTick } from 'vue'
 import { Chart, CHART_COLORS, tooltipOptions } from '@/config/chartjs'
 
 const props = defineProps({
@@ -115,13 +115,18 @@ function render() {
   })
 }
 
+onMounted(async () => {
+  await nextTick()
+  render()
+})
+
 watch(
-  () => [props.labels, props.values, props.isDark, props.percentages],
+  () => [props.labels, props.values, props.isDark, props.percentages, props.loading],
   async () => {
     await nextTick()
     render()
   },
-  { deep: true }
+  { deep: true, immediate: true }
 )
 
 onBeforeUnmount(() => {

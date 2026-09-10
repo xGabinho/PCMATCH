@@ -172,7 +172,15 @@ class ComponenteController extends Controller
                 DB::raw('COALESCE(componentes.hilos, productos_catalogo.hilos) as hilos'),
                 DB::raw('COALESCE(componentes.frecuencia_hz, productos_catalogo.frecuencia_hz) as frecuencia_hz'),
                 DB::raw('COALESCE(componentes.enfoque_uso, productos_catalogo.enfoque_uso) as enfoque_uso'),
-                DB::raw('COALESCE(componentes.gama, productos_catalogo.gama) as gama')
+                DB::raw('COALESCE(componentes.gama, productos_catalogo.gama) as gama'),
+                'productos_catalogo.socket',
+                'productos_catalogo.tipo_ram',
+                'productos_catalogo.factor_forma',
+                'productos_catalogo.consumo_watts',
+                'productos_catalogo.wattage',
+                'productos_catalogo.largo_mm',
+                'productos_catalogo.espacio_gpu_mm',
+                'productos_catalogo.marca'
             );
 
         if ($request->filled('categoria')) {
@@ -215,7 +223,7 @@ class ComponenteController extends Controller
         $rol = $this->resolverRol($user);
 
         $query = Componente::with(['producto:id,nombre,categoria', 'proveedor:id,nombre,razon_social'])
-            ->select('id', 'sku', 'producto_id', 'especificacion', 'nucleos', 'hilos', 'frecuencia_hz', 'enfoque_uso', 'gama', 'precio', 'stock', 'bodega_id', 'proveedor_id', 'activo');
+            ->select('id', 'sku', 'producto_id', 'especificacion', 'nucleos', 'hilos', 'frecuencia_hz', 'enfoque_uso', 'gama', 'precio', 'descuento_porcentaje', 'descuento_activo', 'stock', 'bodega_id', 'proveedor_id', 'activo', 'imagen_url');
 
         if ($rol === 'bodega') {
             $query->where('bodega_id', $user->id);
@@ -649,6 +657,73 @@ class ComponenteController extends Controller
 
     }
 
+    /**
+     * Habilita todos los productos del catálogo base como componentes maestros
+     */
+    public function activarTodosMaestros(Request $request)
+    {
+        $user = $request->user();
+        $rol = $this->resolverRol($user);
+
+        if (!in_array($rol, ['admin', 'superadmin'])) {
+            return response()->json(['success' => false, 'message' => 'No autorizado. Solo administradores pueden activar componentes maestros.'], 403);
+        }
+
+        if ($rol === 'admin' && !$user->hasPermission('componentes.crear')) {
+            return response()->json(['success' => false, 'message' => 'No autorizado. Permiso insuficiente.'], 403);
+        }
+
+        $productos = DB::table('productos_catalogo')->get();
+        $activados = 0;
+        $reactivados = 0;
+
+        foreach ($productos as $producto) {
+            $masterExistente = Componente::withTrashed()
+                ->whereNull('bodega_id')
+                ->where('producto_id', $producto->id)
+                ->first();
+
+            if ($masterExistente) {
+                if ($masterExistente->trashed()) {
+                    $masterExistente->restore();
+                }
+                $masterExistente->update([
+                    'activo' => DB::raw('true')
+                ]);
+                $reactivados++;
+            } else {
+                $sku = Componente::generarSku($producto->id, 0);
+                Componente::create([
+                    'sku'            => $sku,
+                    'bodega_id'      => null,
+                    'proveedor_id'   => null,
+                    'producto_id'    => $producto->id,
+                    'especificacion' => $producto->especificacion ?: ($producto->nombre),
+                    'nucleos'        => $producto->nucleos,
+                    'hilos'          => $producto->hilos,
+                    'frecuencia_hz'  => $producto->frecuencia_hz,
+                    'enfoque_uso'    => $producto->enfoque_uso,
+                    'gama'           => $producto->gama ?: 'media',
+                    'precio'         => 0,
+                    'stock'          => 0,
+                    'activo'         => DB::raw('true'),
+                    'imagen_url'     => $producto->imagen_url,
+                ]);
+                $activados++;
+            }
+        }
+
+        AuditLog::log($request, "Habilitó todos los componentes ({$activados} creados, {$reactivados} reactivados) como componentes maestros", 'Componentes');
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Todos los componentes del catálogo base han sido habilitados como componentes maestros',
+            'activados' => $activados,
+            'reactivados' => $reactivados,
+            'total' => $productos->count()
+        ]);
+    }
+
     // ══════════════════════════════════════════════════════════════
     // RF-17 – Modificar componente (ya existente, se mantiene)
     // ══════════════════════════════════════════════════════════════
@@ -707,6 +782,20 @@ class ComponenteController extends Controller
             if (!$bodega && $comp->proveedor_id != $user->id) {
                 return response()->json(['success' => false, 'message' => 'No puedes editar componentes que no te pertenecen'], 403);
             }
+        }
+
+        // Normalizar valores booleanos que pueden llegar como string ("true", "false", "1", "0") desde FormData
+        if ($request->has('activo')) {
+            $val = $request->input('activo');
+            $request->merge([
+                'activo' => filter_var($val, FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE) ?? (in_array($val, ['1', 1, true, 'true'], true))
+            ]);
+        }
+        if ($request->has('descuento_activo')) {
+            $val = $request->input('descuento_activo');
+            $request->merge([
+                'descuento_activo' => filter_var($val, FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE) ?? (in_array($val, ['1', 1, true, 'true'], true))
+            ]);
         }
 
         // ── RN02: Validación estricta de datos actualizados ──────
@@ -771,24 +860,27 @@ class ComponenteController extends Controller
                 $viejo = $comp->$campo;
                 $data[$campo] = $nuevo;
 
-                if ((string) $viejo !== (string) $nuevo) {
-                    $label = $labels[$campo];
-                    if ($campo === 'activo') {
-                        $nuevoBool = filter_var($nuevo, FILTER_VALIDATE_BOOLEAN);
-                        $viejoLabel = $viejo ? 'Activo' : 'Inactivo';
+                if ($campo === 'activo' || $campo === 'descuento_activo') {
+                    $nuevoBool = filter_var($nuevo, FILTER_VALIDATE_BOOLEAN);
+                    $viejoBool = (bool) $viejo;
+                    $data[$campo] = $nuevoBool ? \Illuminate\Support\Facades\DB::raw('true') : \Illuminate\Support\Facades\DB::raw('false');
+                    if ($viejoBool !== $nuevoBool) {
+                        $label = $labels[$campo];
+                        $viejoLabel = $viejoBool ? 'Activo' : 'Inactivo';
                         $nuevoLabel = $nuevoBool ? 'Activo' : 'Inactivo';
                         $cambios[] = "{$label}: {$viejoLabel} → {$nuevoLabel}";
-                        $data[$campo] = $nuevoBool ? \Illuminate\Support\Facades\DB::raw('true') : \Illuminate\Support\Facades\DB::raw('false');
-                    } elseif ($campo === 'precio') {
+                    }
+                } elseif ((string) $viejo !== (string) $nuevo) {
+                    $label = $labels[$campo];
+                    if ($campo === 'precio') {
                         $cambios[] = "{$label}: \$" . number_format((float)$viejo, 0, ',', '.') . " → \$" . number_format((float)$nuevo, 0, ',', '.');
+                    } elseif ($campo === 'descuento_porcentaje') {
+                        $cambios[] = "{$label}: {$viejo}% → {$nuevo}%";
                     } elseif ($campo === 'gama') {
                         $cambios[] = "{$label}: " . ucfirst($viejo) . " → " . ucfirst($nuevo);
                     } else {
                         $cambios[] = "{$label}: '{$viejo}' → '{$nuevo}'";
                     }
-                } else if (in_array($campo, ['activo', 'descuento_activo'])) {
-                    $nuevoBool = filter_var($nuevo, FILTER_VALIDATE_BOOLEAN);
-                    $data[$campo] = $nuevoBool ? \Illuminate\Support\Facades\DB::raw('true') : \Illuminate\Support\Facades\DB::raw('false');
                 }
             }
         }

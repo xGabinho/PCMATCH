@@ -296,7 +296,18 @@
               <tbody class="divide-y divide-dark-border">
                 <tr v-if="filteredComponentes.length === 0"><td colspan="6" class="px-6 py-12 text-center theme-text-muted text-sm">Sin componentes</td></tr>
                 <tr v-for="c in filteredComponentes" :key="c.id" class="hover:bg-gray-100 dark:bg-dark-bg/50 transition-colors">
-                  <td class="px-6 py-4 text-sm font-medium theme-text">{{ c.nombre }}</td>
+                  <td class="px-6 py-4 text-sm font-medium theme-text">
+                    <div class="flex items-center gap-3">
+                      <div class="w-10 h-10 rounded-lg border theme-border bg-black/5 dark:bg-white/5 flex items-center justify-center overflow-hidden flex-shrink-0">
+                        <img v-if="c.imagen_url && !imageErrors[c.id]" :src="c.imagen_url" :alt="c.nombre" @error="imageErrors[c.id] = true" class="w-full h-full object-contain p-0.5" />
+                        <Package v-else class="w-5 h-5 theme-text-muted opacity-40" />
+                      </div>
+                      <div>
+                        <div>{{ c.nombre }}</div>
+                        <div v-if="c.especificacion" class="text-xs theme-text-muted opacity-70 truncate max-w-xs">{{ c.especificacion }}</div>
+                      </div>
+                    </div>
+                  </td>
                   <td class="px-6 py-4"><span class="badge text-xs bg-accent/10 text-accent border border-accent/20">{{ c.categoria }}</span></td>
                   <td class="px-6 py-4"><span class="text-xs px-2 py-0.5 rounded-full font-medium border" :class="tierStyles[c.gama]">{{ c.gama }}</span></td>
                   <td class="px-6 py-4 text-sm font-mono">
@@ -331,26 +342,46 @@
               <!-- Select buscable de producto -->
               <div>
                 <label class="block text-sm font-medium theme-text mb-2">Producto Base <span class="text-red-400">*</span></label>
+                
+                <!-- Filtro rápido por Categoría -->
+                <div class="flex flex-wrap gap-1.5 mb-2.5">
+                  <button
+                    v-for="cat in categoriasDisponibles"
+                    :key="cat"
+                    type="button"
+                    @click="modalCategoriaFilter = cat; showProductoDropdown = true"
+                    class="px-2.5 py-1 rounded-md text-xs font-medium border transition-all cursor-pointer"
+                    :class="modalCategoriaFilter === cat
+                      ? 'bg-accent/15 text-accent border-accent/40 font-semibold'
+                      : 'theme-bg theme-border theme-text-muted hover:theme-text hover:border-accent/30'"
+                  >
+                    {{ cat }}
+                  </button>
+                </div>
+
                 <div class="relative">
                   <input
                     v-model="productoSearch"
                     @input="showProductoDropdown = true; newComp.master_component_id = ''; newComp.producto_id = ''; newComp.categoria = ''"
                     @focus="showProductoDropdown = true"
                     type="text"
-                    placeholder="Buscar componente maestro..."
+                    placeholder="Buscar componente maestro por nombre o especificación..."
                     class="allow-special w-full theme-bg border theme-border rounded-lg px-4 py-3 text-sm theme-text placeholder-text-muted focus:outline-none focus:border-accent transition-colors"
                     :class="{ 'border-accent': newComp.master_component_id || newComp.producto_id }"
                     autocomplete="off"
                   />
-                  <div v-if="showProductoDropdown && productosFiltrados.length > 0" class="absolute top-full left-0 right-0 mt-1 theme-card border theme-border rounded-lg shadow-xl z-20 max-h-52 overflow-y-auto">
-                    <button v-for="prod in productosFiltrados" :key="prod.id" @click="selectProducto(prod)" class="w-full flex items-center justify-between px-4 py-2.5 text-sm hover:theme-bg transition-colors text-left">
+                  <div v-if="showProductoDropdown" class="absolute top-full left-0 right-0 mt-1 theme-card border theme-border rounded-lg shadow-xl z-20 max-h-64 overflow-y-auto">
+                    <div v-if="productosFiltrados.length === 0" class="px-4 py-3 text-xs text-center theme-text-muted">
+                      No se encontraron componentes en esta categoría
+                    </div>
+                    <button v-for="prod in productosFiltrados" :key="prod.id" @click="selectProducto(prod)" class="w-full flex items-center justify-between px-4 py-2.5 text-sm hover:theme-bg transition-colors text-left border-b border-white/[0.03] last:border-0">
                       <span class="theme-text">{{ prod.nombre }} <span v-if="prod.especificacion" class="text-xs opacity-70 ml-1">- {{ prod.especificacion }}</span></span>
-                      <span class="text-xs theme-text-muted ml-3 flex-shrink-0">{{ prod.categoria }}</span>
+                      <span class="text-xs px-2 py-0.5 rounded-full bg-accent/10 text-accent border border-accent/20 ml-3 flex-shrink-0 font-medium">{{ prod.categoria }}</span>
                     </button>
                   </div>
                 </div>
                 <p v-if="newComp.categoria" class="text-xs text-accent mt-1.5 flex items-center gap-1">
-                  <span><Check class="w-4 h-4 inline-block mr-1" /></span> Categoría: {{ newComp.categoria }}
+                  <span><Check class="w-4 h-4 inline-block mr-1" /></span> Categoría seleccionada: {{ newComp.categoria }}
                 </p>
               </div>
 
@@ -384,26 +415,194 @@
                 </select>
               </div>
 
-              <!-- Especificaciones avanzadas -->
-              <div class="grid grid-cols-3 gap-3">
-                <div>
-                  <label class="block text-sm font-medium theme-text mb-2">Núcleos</label>
-                  <input v-model="newComp.nucleos" type="number" min="1" placeholder="Ej: 8" class="w-full theme-bg border theme-border rounded-lg px-4 py-3 text-sm theme-text focus:outline-none focus:border-accent transition-colors font-mono" />
+              <!-- Especificaciones técnicas avanzadas / compatibilidad -->
+              <div class="p-3.5 rounded-xl border theme-border bg-black/5 dark:bg-white/[0.02] space-y-3">
+                <div class="flex items-center justify-between">
+                  <span class="text-xs font-semibold uppercase tracking-wider text-accent">Datos Técnicos y Compatibilidad</span>
+                  <span class="text-[11px] theme-text-muted">Afecta filtros y chatbot</span>
                 </div>
+
+                <!-- Campo Marca (Aplica a todo) -->
                 <div>
-                  <label class="block text-sm font-medium theme-text mb-2">Hilos</label>
-                  <input v-model="newComp.hilos" type="number" min="1" placeholder="Ej: 16" class="w-full theme-bg border theme-border rounded-lg px-4 py-3 text-sm theme-text focus:outline-none focus:border-accent transition-colors font-mono" />
+                  <label class="block text-xs font-medium theme-text mb-1">Marca / Fabricante</label>
+                  <input v-model="newComp.marca" type="text" placeholder="Ej: AMD, Intel, NVIDIA, ASUS, Kingston..." class="allow-special w-full theme-bg border theme-border rounded-lg px-3 py-2 text-sm theme-text placeholder-text-muted focus:outline-none focus:border-accent transition-colors" />
                 </div>
-                <div>
-                  <label class="block text-sm font-medium theme-text mb-2">Frecuencia (GHz)</label>
-                  <input v-model="newComp.frecuencia_hz" type="number" step="0.1" min="0" placeholder="Ej: 3.8" class="w-full theme-bg border theme-border rounded-lg px-4 py-3 text-sm theme-text focus:outline-none focus:border-accent transition-colors font-mono" />
-                </div>
+
+                <!-- Si es Procesador / CPU -->
+                <template v-if="newComp.categoria === 'Procesador' || newComp.categoria === 'CPU'">
+                  <div class="grid grid-cols-3 gap-3">
+                    <div>
+                      <label class="block text-xs font-medium theme-text mb-1">Núcleos</label>
+                      <input v-model="newComp.nucleos" type="number" min="1" placeholder="Ej: 6" class="w-full theme-bg border theme-border rounded-lg px-3 py-2 text-sm theme-text focus:outline-none focus:border-accent font-mono" />
+                    </div>
+                    <div>
+                      <label class="block text-xs font-medium theme-text mb-1">Hilos</label>
+                      <input v-model="newComp.hilos" type="number" min="1" placeholder="Ej: 12" class="w-full theme-bg border theme-border rounded-lg px-3 py-2 text-sm theme-text focus:outline-none focus:border-accent font-mono" />
+                    </div>
+                    <div>
+                      <label class="block text-xs font-medium theme-text mb-1">Frecuencia (GHz)</label>
+                      <input v-model="newComp.frecuencia_hz" type="number" step="0.1" min="0" placeholder="Ej: 4.4" class="w-full theme-bg border theme-border rounded-lg px-3 py-2 text-sm theme-text focus:outline-none focus:border-accent font-mono" />
+                    </div>
+                  </div>
+                  <div class="grid grid-cols-2 gap-3">
+                    <div>
+                      <label class="block text-xs font-medium theme-text mb-1">Socket</label>
+                      <input v-model="newComp.socket" type="text" placeholder="Ej: AM4, AM5, LGA1700" class="allow-special w-full theme-bg border theme-border rounded-lg px-3 py-2 text-sm theme-text uppercase font-mono focus:outline-none focus:border-accent" />
+                    </div>
+                    <div>
+                      <label class="block text-xs font-medium theme-text mb-1">Consumo (TDP Watts)</label>
+                      <input v-model="newComp.consumo_watts" type="number" min="0" placeholder="Ej: 65" class="w-full theme-bg border theme-border rounded-lg px-3 py-2 text-sm theme-text font-mono focus:outline-none focus:border-accent" />
+                    </div>
+                  </div>
+                </template>
+
+                <!-- Si es Tarjeta de Video / GPU -->
+                <template v-else-if="newComp.categoria === 'Tarjeta de Video' || newComp.categoria === 'GPU'">
+                  <div class="grid grid-cols-2 gap-3">
+                    <div>
+                      <label class="block text-xs font-medium theme-text mb-1">Consumo (Watts TGP)</label>
+                      <input v-model="newComp.consumo_watts" type="number" min="0" placeholder="Ej: 200" class="w-full theme-bg border theme-border rounded-lg px-3 py-2 text-sm theme-text font-mono focus:outline-none focus:border-accent" />
+                    </div>
+                    <div>
+                      <label class="block text-xs font-medium theme-text mb-1">Largo Tarjeta (mm)</label>
+                      <input v-model="newComp.largo_mm" type="number" min="0" placeholder="Ej: 242" class="w-full theme-bg border theme-border rounded-lg px-3 py-2 text-sm theme-text font-mono focus:outline-none focus:border-accent" />
+                    </div>
+                  </div>
+                </template>
+
+                <!-- Si es Placa Madre / Motherboard -->
+                <template v-else-if="newComp.categoria === 'Placa Madre' || newComp.categoria === 'Motherboard'">
+                  <div class="grid grid-cols-3 gap-3">
+                    <div>
+                      <label class="block text-xs font-medium theme-text mb-1">Socket</label>
+                      <input v-model="newComp.socket" type="text" placeholder="AM4, AM5, LGA1700" class="allow-special w-full theme-bg border theme-border rounded-lg px-3 py-2 text-sm theme-text uppercase font-mono focus:outline-none focus:border-accent" />
+                    </div>
+                    <div>
+                      <label class="block text-xs font-medium theme-text mb-1">Tipo de RAM</label>
+                      <select v-model="newComp.tipo_ram" class="w-full theme-bg border theme-border rounded-lg px-3 py-2 text-sm theme-text font-mono focus:outline-none focus:border-accent">
+                        <option value="">Seleccionar...</option>
+                        <option value="DDR4">DDR4</option>
+                        <option value="DDR5">DDR5</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label class="block text-xs font-medium theme-text mb-1">Factor Forma</label>
+                      <select v-model="newComp.factor_forma" class="w-full theme-bg border theme-border rounded-lg px-3 py-2 text-sm theme-text font-mono focus:outline-none focus:border-accent">
+                        <option value="">Seleccionar...</option>
+                        <option value="ATX">ATX</option>
+                        <option value="Micro-ATX">Micro-ATX</option>
+                        <option value="Mini-ITX">Mini-ITX</option>
+                        <option value="E-ATX">E-ATX</option>
+                      </select>
+                    </div>
+                  </div>
+                </template>
+
+                <!-- Si es Memoria RAM -->
+                <template v-else-if="newComp.categoria === 'Memoria RAM' || newComp.categoria === 'RAM'">
+                  <div>
+                    <label class="block text-xs font-medium theme-text mb-1">Tipo de Memoria RAM</label>
+                    <select v-model="newComp.tipo_ram" class="w-full theme-bg border theme-border rounded-lg px-3 py-2 text-sm theme-text font-mono focus:outline-none focus:border-accent">
+                      <option value="">Seleccionar...</option>
+                      <option value="DDR4">DDR4</option>
+                      <option value="DDR5">DDR5</option>
+                    </select>
+                  </div>
+                </template>
+
+                <!-- Si es Fuente de Poder / PSU -->
+                <template v-else-if="newComp.categoria === 'Fuente de Poder' || newComp.categoria === 'PSU'">
+                  <div>
+                    <label class="block text-xs font-medium theme-text mb-1">Potencia Fuente (Watts)</label>
+                    <input v-model="newComp.wattage" type="number" min="0" placeholder="Ej: 650" class="w-full theme-bg border theme-border rounded-lg px-3 py-2 text-sm theme-text font-mono focus:outline-none focus:border-accent" />
+                  </div>
+                </template>
+
+                <!-- Si es Gabinete / Case -->
+                <template v-else-if="newComp.categoria === 'Gabinete' || newComp.categoria === 'Case'">
+                  <div class="grid grid-cols-2 gap-3">
+                    <div>
+                      <label class="block text-xs font-medium theme-text mb-1">Factor Forma Soportado</label>
+                      <select v-model="newComp.factor_forma" class="w-full theme-bg border theme-border rounded-lg px-3 py-2 text-sm theme-text font-mono focus:outline-none focus:border-accent">
+                        <option value="">Seleccionar...</option>
+                        <option value="ATX">ATX (Soporta ATX, Micro-ATX, Mini-ITX)</option>
+                        <option value="Micro-ATX">Micro-ATX</option>
+                        <option value="Mini-ITX">Mini-ITX</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label class="block text-xs font-medium theme-text mb-1">Espacio Máx. GPU (mm)</label>
+                      <input v-model="newComp.espacio_gpu_mm" type="number" min="0" placeholder="Ej: 360" class="w-full theme-bg border theme-border rounded-lg px-3 py-2 text-sm theme-text font-mono focus:outline-none focus:border-accent" />
+                    </div>
+                  </div>
+                </template>
+
+                <!-- Si es Refrigeración / Cooler -->
+                <template v-else-if="newComp.categoria === 'Refrigeración' || newComp.categoria === 'Cooler'">
+                  <div>
+                    <label class="block text-xs font-medium theme-text mb-1">Socket(s) Soportados</label>
+                    <input v-model="newComp.socket" type="text" placeholder="Ej: AM4, AM5, LGA1700" class="allow-special w-full theme-bg border theme-border rounded-lg px-3 py-2 text-sm theme-text font-mono focus:outline-none focus:border-accent" />
+                  </div>
+                </template>
+
+                <!-- Si es Almacenamiento -->
+                <template v-else-if="newComp.categoria === 'Almacenamiento'">
+                  <div>
+                    <label class="block text-xs font-medium theme-text mb-1">Tipo / Factor de Forma</label>
+                    <select v-model="newComp.factor_forma" class="w-full theme-bg border theme-border rounded-lg px-3 py-2 text-sm theme-text font-mono focus:outline-none focus:border-accent">
+                      <option value="">Seleccionar...</option>
+                      <option value="M.2 NVMe">M.2 NVMe</option>
+                      <option value="SATA 2.5&quot;">SATA 2.5"</option>
+                      <option value="HDD 3.5&quot;">HDD 3.5"</option>
+                    </select>
+                  </div>
+                </template>
+
+                <!-- Fallback general si no tiene categoría seleccionada -->
+                <template v-else>
+                  <div class="grid grid-cols-3 gap-3">
+                    <div>
+                      <label class="block text-xs font-medium theme-text mb-1">Núcleos</label>
+                      <input v-model="newComp.nucleos" type="number" min="1" placeholder="Ej: 8" class="w-full theme-bg border theme-border rounded-lg px-3 py-2 text-sm theme-text focus:outline-none focus:border-accent font-mono" />
+                    </div>
+                    <div>
+                      <label class="block text-xs font-medium theme-text mb-1">Hilos</label>
+                      <input v-model="newComp.hilos" type="number" min="1" placeholder="Ej: 16" class="w-full theme-bg border theme-border rounded-lg px-3 py-2 text-sm theme-text focus:outline-none focus:border-accent font-mono" />
+                    </div>
+                    <div>
+                      <label class="block text-xs font-medium theme-text mb-1">Frecuencia (GHz)</label>
+                      <input v-model="newComp.frecuencia_hz" type="number" step="0.1" min="0" placeholder="Ej: 3.8" class="w-full theme-bg border theme-border rounded-lg px-3 py-2 text-sm theme-text focus:outline-none focus:border-accent font-mono" />
+                    </div>
+                  </div>
+                </template>
               </div>
 
               <!-- Descripción Comercial -->
               <div>
                 <label class="block text-sm font-medium theme-text mb-2">Descripción Comercial propia (Opcional)</label>
                 <textarea v-model="newComp.descripcion_comercial" rows="2" placeholder="Ej: Precio especial por lotes de 10+. Garantía directa con fabricante." class="allow-special w-full theme-bg border theme-border rounded-lg px-4 py-3 text-sm theme-text placeholder-text-muted focus:outline-none focus:border-accent transition-colors resize-none"></textarea>
+              </div>
+
+              <!-- Imagen del Componente -->
+              <div>
+                <label class="block text-sm font-medium theme-text mb-2">Imagen del Componente (Opcional)</label>
+                <div class="flex items-center gap-4 p-3 rounded-xl border theme-border theme-bg/50">
+                  <div class="w-16 h-16 rounded-lg border theme-border bg-black/10 dark:bg-white/5 flex items-center justify-center overflow-hidden flex-shrink-0">
+                    <img v-if="(addImagePreview || newComp.imagen_url) && !addImageError" :src="addImagePreview || newComp.imagen_url" @error="addImageError = true" alt="Preview" class="w-full h-full object-contain p-1" />
+                    <Package v-else class="w-7 h-7 theme-text-muted opacity-40" />
+                  </div>
+                  <div class="flex-1 min-w-0">
+                    <input
+                      @change="onFileChange($event, 'add')"
+                      type="file"
+                      accept=".jpeg,.png,.jpg,.webp"
+                      class="w-full text-xs theme-text-muted file:mr-3 file:py-2 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:theme-bg file:text-accent hover:file:bg-accent/10 transition-colors cursor-pointer"
+                    />
+                    <p class="text-[11px] theme-text-muted mt-1 truncate">
+                      {{ addFileName ? `Archivo: ${addFileName}` : 'Formatos: JPG, PNG o WebP (máx. 5MB). Si no subes una, se usará la imagen base.' }}
+                    </p>
+                  </div>
+                </div>
               </div>
 
               <div class="grid grid-cols-2 gap-4">
@@ -530,26 +729,194 @@
             </select>
           </div>
 
-          <!-- Especificaciones avanzadas -->
-          <div class="grid grid-cols-3 gap-3">
-            <div>
-              <label class="block text-sm font-medium theme-text mb-2">Núcleos</label>
-              <input v-model="editingComp.nucleos" type="number" min="1" placeholder="Ej: 8" class="w-full theme-bg border theme-border rounded-lg px-4 py-3 text-sm theme-text focus:outline-none focus:border-accent transition-colors font-mono" />
+          <!-- Especificaciones técnicas avanzadas / compatibilidad -->
+          <div class="p-3.5 rounded-xl border theme-border bg-black/5 dark:bg-white/[0.02] space-y-3">
+            <div class="flex items-center justify-between">
+              <span class="text-xs font-semibold uppercase tracking-wider text-accent">Datos Técnicos y Compatibilidad</span>
+              <span class="text-[11px] theme-text-muted">Afecta filtros y chatbot</span>
             </div>
+
+            <!-- Campo Marca (Aplica a todo) -->
             <div>
-              <label class="block text-sm font-medium theme-text mb-2">Hilos</label>
-              <input v-model="editingComp.hilos" type="number" min="1" placeholder="Ej: 16" class="w-full theme-bg border theme-border rounded-lg px-4 py-3 text-sm theme-text focus:outline-none focus:border-accent transition-colors font-mono" />
+              <label class="block text-xs font-medium theme-text mb-1">Marca / Fabricante</label>
+              <input v-model="editingComp.marca" type="text" placeholder="Ej: AMD, Intel, NVIDIA, ASUS, Kingston..." class="allow-special w-full theme-bg border theme-border rounded-lg px-3 py-2 text-sm theme-text placeholder-text-muted focus:outline-none focus:border-accent transition-colors" />
             </div>
-            <div>
-              <label class="block text-sm font-medium theme-text mb-2">Frecuencia (GHz)</label>
-              <input v-model="editingComp.frecuencia_hz" type="number" step="0.1" min="0" placeholder="Ej: 3.8" class="w-full theme-bg border theme-border rounded-lg px-4 py-3 text-sm theme-text focus:outline-none focus:border-accent transition-colors font-mono" />
-            </div>
+
+            <!-- Si es Procesador / CPU -->
+            <template v-if="editingComp.categoria === 'Procesador' || editingComp.categoria === 'CPU'">
+              <div class="grid grid-cols-3 gap-3">
+                <div>
+                  <label class="block text-xs font-medium theme-text mb-1">Núcleos</label>
+                  <input v-model="editingComp.nucleos" type="number" min="1" placeholder="Ej: 6" class="w-full theme-bg border theme-border rounded-lg px-3 py-2 text-sm theme-text focus:outline-none focus:border-accent font-mono" />
+                </div>
+                <div>
+                  <label class="block text-xs font-medium theme-text mb-1">Hilos</label>
+                  <input v-model="editingComp.hilos" type="number" min="1" placeholder="Ej: 12" class="w-full theme-bg border theme-border rounded-lg px-3 py-2 text-sm theme-text focus:outline-none focus:border-accent font-mono" />
+                </div>
+                <div>
+                  <label class="block text-xs font-medium theme-text mb-1">Frecuencia (GHz)</label>
+                  <input v-model="editingComp.frecuencia_hz" type="number" step="0.1" min="0" placeholder="Ej: 4.4" class="w-full theme-bg border theme-border rounded-lg px-3 py-2 text-sm theme-text focus:outline-none focus:border-accent font-mono" />
+                </div>
+              </div>
+              <div class="grid grid-cols-2 gap-3">
+                <div>
+                  <label class="block text-xs font-medium theme-text mb-1">Socket</label>
+                  <input v-model="editingComp.socket" type="text" placeholder="Ej: AM4, AM5, LGA1700" class="allow-special w-full theme-bg border theme-border rounded-lg px-3 py-2 text-sm theme-text uppercase font-mono focus:outline-none focus:border-accent" />
+                </div>
+                <div>
+                  <label class="block text-xs font-medium theme-text mb-1">Consumo (TDP Watts)</label>
+                  <input v-model="editingComp.consumo_watts" type="number" min="0" placeholder="Ej: 65" class="w-full theme-bg border theme-border rounded-lg px-3 py-2 text-sm theme-text font-mono focus:outline-none focus:border-accent" />
+                </div>
+              </div>
+            </template>
+
+            <!-- Si es Tarjeta de Video / GPU -->
+            <template v-else-if="editingComp.categoria === 'Tarjeta de Video' || editingComp.categoria === 'GPU'">
+              <div class="grid grid-cols-2 gap-3">
+                <div>
+                  <label class="block text-xs font-medium theme-text mb-1">Consumo (Watts TGP)</label>
+                  <input v-model="editingComp.consumo_watts" type="number" min="0" placeholder="Ej: 200" class="w-full theme-bg border theme-border rounded-lg px-3 py-2 text-sm theme-text font-mono focus:outline-none focus:border-accent" />
+                </div>
+                <div>
+                  <label class="block text-xs font-medium theme-text mb-1">Largo Tarjeta (mm)</label>
+                  <input v-model="editingComp.largo_mm" type="number" min="0" placeholder="Ej: 242" class="w-full theme-bg border theme-border rounded-lg px-3 py-2 text-sm theme-text font-mono focus:outline-none focus:border-accent" />
+                </div>
+              </div>
+            </template>
+
+            <!-- Si es Placa Madre / Motherboard -->
+            <template v-else-if="editingComp.categoria === 'Placa Madre' || editingComp.categoria === 'Motherboard'">
+              <div class="grid grid-cols-3 gap-3">
+                <div>
+                  <label class="block text-xs font-medium theme-text mb-1">Socket</label>
+                  <input v-model="editingComp.socket" type="text" placeholder="AM4, AM5, LGA1700" class="allow-special w-full theme-bg border theme-border rounded-lg px-3 py-2 text-sm theme-text uppercase font-mono focus:outline-none focus:border-accent" />
+                </div>
+                <div>
+                  <label class="block text-xs font-medium theme-text mb-1">Tipo de RAM</label>
+                  <select v-model="editingComp.tipo_ram" class="w-full theme-bg border theme-border rounded-lg px-3 py-2 text-sm theme-text font-mono focus:outline-none focus:border-accent">
+                    <option value="">Seleccionar...</option>
+                    <option value="DDR4">DDR4</option>
+                    <option value="DDR5">DDR5</option>
+                  </select>
+                </div>
+                <div>
+                  <label class="block text-xs font-medium theme-text mb-1">Factor Forma</label>
+                  <select v-model="editingComp.factor_forma" class="w-full theme-bg border theme-border rounded-lg px-3 py-2 text-sm theme-text font-mono focus:outline-none focus:border-accent">
+                    <option value="">Seleccionar...</option>
+                    <option value="ATX">ATX</option>
+                    <option value="Micro-ATX">Micro-ATX</option>
+                    <option value="Mini-ITX">Mini-ITX</option>
+                    <option value="E-ATX">E-ATX</option>
+                  </select>
+                </div>
+              </div>
+            </template>
+
+            <!-- Si es Memoria RAM -->
+            <template v-else-if="editingComp.categoria === 'Memoria RAM' || editingComp.categoria === 'RAM'">
+              <div>
+                <label class="block text-xs font-medium theme-text mb-1">Tipo de Memoria RAM</label>
+                <select v-model="editingComp.tipo_ram" class="w-full theme-bg border theme-border rounded-lg px-3 py-2 text-sm theme-text font-mono focus:outline-none focus:border-accent">
+                  <option value="">Seleccionar...</option>
+                  <option value="DDR4">DDR4</option>
+                  <option value="DDR5">DDR5</option>
+                </select>
+              </div>
+            </template>
+
+            <!-- Si es Fuente de Poder / PSU -->
+            <template v-else-if="editingComp.categoria === 'Fuente de Poder' || editingComp.categoria === 'PSU'">
+              <div>
+                <label class="block text-xs font-medium theme-text mb-1">Potencia Fuente (Watts)</label>
+                <input v-model="editingComp.wattage" type="number" min="0" placeholder="Ej: 650" class="w-full theme-bg border theme-border rounded-lg px-3 py-2 text-sm theme-text font-mono focus:outline-none focus:border-accent" />
+              </div>
+            </template>
+
+            <!-- Si es Gabinete / Case -->
+            <template v-else-if="editingComp.categoria === 'Gabinete' || editingComp.categoria === 'Case'">
+              <div class="grid grid-cols-2 gap-3">
+                <div>
+                  <label class="block text-xs font-medium theme-text mb-1">Factor Forma Soportado</label>
+                  <select v-model="editingComp.factor_forma" class="w-full theme-bg border theme-border rounded-lg px-3 py-2 text-sm theme-text font-mono focus:outline-none focus:border-accent">
+                    <option value="">Seleccionar...</option>
+                    <option value="ATX">ATX (Soporta ATX, Micro-ATX, Mini-ITX)</option>
+                    <option value="Micro-ATX">Micro-ATX</option>
+                    <option value="Mini-ITX">Mini-ITX</option>
+                  </select>
+                </div>
+                <div>
+                  <label class="block text-xs font-medium theme-text mb-1">Espacio Máx. GPU (mm)</label>
+                  <input v-model="editingComp.espacio_gpu_mm" type="number" min="0" placeholder="Ej: 360" class="w-full theme-bg border theme-border rounded-lg px-3 py-2 text-sm theme-text font-mono focus:outline-none focus:border-accent" />
+                </div>
+              </div>
+            </template>
+
+            <!-- Si es Refrigeración / Cooler -->
+            <template v-else-if="editingComp.categoria === 'Refrigeración' || editingComp.categoria === 'Cooler'">
+              <div>
+                <label class="block text-xs font-medium theme-text mb-1">Socket(s) Soportados</label>
+                <input v-model="editingComp.socket" type="text" placeholder="Ej: AM4, AM5, LGA1700" class="allow-special w-full theme-bg border theme-border rounded-lg px-3 py-2 text-sm theme-text font-mono focus:outline-none focus:border-accent" />
+              </div>
+            </template>
+
+            <!-- Si es Almacenamiento -->
+            <template v-else-if="editingComp.categoria === 'Almacenamiento'">
+              <div>
+                <label class="block text-xs font-medium theme-text mb-1">Tipo / Factor de Forma</label>
+                <select v-model="editingComp.factor_forma" class="w-full theme-bg border theme-border rounded-lg px-3 py-2 text-sm theme-text font-mono focus:outline-none focus:border-accent">
+                  <option value="">Seleccionar...</option>
+                  <option value="M.2 NVMe">M.2 NVMe</option>
+                  <option value="SATA 2.5&quot;">SATA 2.5"</option>
+                  <option value="HDD 3.5&quot;">HDD 3.5"</option>
+                </select>
+              </div>
+            </template>
+
+            <!-- Fallback general si no tiene categoría seleccionada -->
+            <template v-else>
+              <div class="grid grid-cols-3 gap-3">
+                <div>
+                  <label class="block text-xs font-medium theme-text mb-1">Núcleos</label>
+                  <input v-model="editingComp.nucleos" type="number" min="1" placeholder="Ej: 8" class="w-full theme-bg border theme-border rounded-lg px-3 py-2 text-sm theme-text focus:outline-none focus:border-accent font-mono" />
+                </div>
+                <div>
+                  <label class="block text-xs font-medium theme-text mb-1">Hilos</label>
+                  <input v-model="editingComp.hilos" type="number" min="1" placeholder="Ej: 16" class="w-full theme-bg border theme-border rounded-lg px-3 py-2 text-sm theme-text focus:outline-none focus:border-accent font-mono" />
+                </div>
+                <div>
+                  <label class="block text-xs font-medium theme-text mb-1">Frecuencia (GHz)</label>
+                  <input v-model="editingComp.frecuencia_hz" type="number" step="0.1" min="0" placeholder="Ej: 3.8" class="w-full theme-bg border theme-border rounded-lg px-3 py-2 text-sm theme-text focus:outline-none focus:border-accent font-mono" />
+                </div>
+              </div>
+            </template>
           </div>
 
           <!-- Descripción Comercial -->
           <div>
             <label class="block text-sm font-medium theme-text mb-2">Descripción Comercial propia (Opcional)</label>
             <textarea v-model="editingComp.descripcion_comercial" rows="2" placeholder="Ej: Precio especial por lotes. Garantía con fabricante." class="allow-special w-full theme-bg border theme-border rounded-lg px-4 py-3 text-sm theme-text placeholder-text-muted focus:outline-none focus:border-accent transition-colors resize-none"></textarea>
+          </div>
+
+          <!-- Imagen del Componente -->
+          <div>
+            <label class="block text-sm font-medium theme-text mb-2">Imagen del Componente (Opcional)</label>
+            <div class="flex items-center gap-4 p-3 rounded-xl border theme-border theme-bg/50">
+              <div class="w-16 h-16 rounded-lg border theme-border bg-black/10 dark:bg-white/5 flex items-center justify-center overflow-hidden flex-shrink-0">
+                <img v-if="(editImagePreview || editingComp.imagen_url) && !editImageError" :src="editImagePreview || editingComp.imagen_url" @error="editImageError = true" alt="Preview" class="w-full h-full object-contain p-1" />
+                <Package v-else class="w-7 h-7 theme-text-muted opacity-40" />
+              </div>
+              <div class="flex-1 min-w-0">
+                <input
+                  @change="onFileChange($event, 'edit')"
+                  type="file"
+                  accept=".jpeg,.png,.jpg,.webp"
+                  class="w-full text-xs theme-text-muted file:mr-3 file:py-2 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:theme-bg file:text-accent hover:file:bg-accent/10 transition-colors cursor-pointer"
+                />
+                <p class="text-[11px] theme-text-muted mt-1 truncate">
+                  {{ editFileName ? `Archivo: ${editFileName}` : 'Formatos: JPG, PNG o WebP (máx. 5MB).' }}
+                </p>
+              </div>
+            </div>
           </div>
 
           <div class="grid grid-cols-2 gap-4">
@@ -596,13 +963,13 @@
 </template>
 
 <script setup>
-import { Store, BarChart3, Check, Trash2, Sun, Moon, Wrench, FileText, Briefcase, Gamepad2, Palette, BookOpen, Settings } from 'lucide-vue-next';
+import { Store, BarChart3, Check, Trash2, Sun, Moon, Wrench, FileText, Briefcase, Gamepad2, Palette, BookOpen, Settings, Package } from 'lucide-vue-next';
 import FlowBarChart from '../components/charts/FlowBarChart.vue'
 import DistributionDoughnutChart from '../components/charts/DistributionDoughnutChart.vue'
 
 import { useTheme } from '../composables/useTheme'
 const { isDark, toggleTheme } = useTheme()
-import { ref, markRaw, computed, onMounted, nextTick } from 'vue'
+import { ref, markRaw, computed, watch, onMounted, nextTick } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuth } from '../composables/useAuth'
 import { useToast } from '../composables/useToast'
@@ -618,6 +985,13 @@ function perfilLabel(p) { return ({ office: 'Oficina', gaming: 'Gaming', design:
 
 // ── Secciones ─────────────────────────────────────────────
 const activeSection = ref('dashboard')
+
+watch(activeSection, (sec) => {
+  if (sec === 'dashboard') {
+    fetchFlujoProveedor()
+    fetchRendimientoBodegas()
+  }
+})
 
 const sections = computed(() => [
   { id: 'dashboard',    icon: BarChart3, label: 'Dashboard',    description: 'Resumen general de tus bodegas',           cta: null,            count: null                  },
@@ -863,32 +1237,63 @@ const filteredComponentes = computed(() => {
 
 // Variables para Add Component
 const showAddCompModal = ref(false)
-const newComp = ref({ producto_id: '', especificacion: '', nucleos: '', hilos: '', frecuencia_hz: '', enfoque_uso: '', gama: 'media', precio: '', stock: '', descripcion_comercial: '' })
+const newComp = ref({
+  producto_id: '',
+  especificacion: '',
+  nucleos: '',
+  hilos: '',
+  frecuencia_hz: '',
+  enfoque_uso: '',
+  gama: 'media',
+  precio: '',
+  stock: '',
+  descripcion_comercial: '',
+  socket: '',
+  tipo_ram: '',
+  factor_forma: '',
+  consumo_watts: '',
+  wattage: '',
+  largo_mm: '',
+  espacio_gpu_mm: '',
+  marca: ''
+})
 const addCompError = ref('')
 const savingAddComp = ref(false)
 const addImageFile = ref(null)
 const addImagePreview = ref(null)
 const addFileName = ref('')
+const imageErrors = ref({})
+const addImageError = ref(false)
+const editImageError = ref(false)
 
 const categoriasBase = ref([])
 
 const productoSearch = ref('')
 const showProductoDropdown = ref(false)
+const modalCategoriaFilter = ref('Todas')
+
+const categoriasDisponibles = computed(() => {
+  const cats = new Set(categoriasBase.value.map(p => p.categoria).filter(Boolean))
+  return ['Todas', ...Array.from(cats)]
+})
 
 /**
-
- * Propiedad computada que filtra el catálogo de productos disponible en tiempo real.
-
+ * Propiedad computada que filtra el catálogo de componentes maestros disponibles.
  */
-
 const productosFiltrados = computed(() => {
-  if (!productoSearch.value.trim()) return categoriasBase.value.slice(0, 10)
-  const q = productoSearch.value.toLowerCase()
-  return categoriasBase.value.filter(p =>
-    (p.nombre && p.nombre.toLowerCase().includes(q)) ||
-    (p.categoria && p.categoria.toLowerCase().includes(q)) ||
-    (p.especificacion && p.especificacion.toLowerCase().includes(q))
-  ).slice(0, 10)
+  let list = categoriasBase.value
+  if (modalCategoriaFilter.value && modalCategoriaFilter.value !== 'Todas') {
+    list = list.filter(p => p.categoria?.toLowerCase() === modalCategoriaFilter.value.toLowerCase())
+  }
+  if (productoSearch.value.trim()) {
+    const q = productoSearch.value.toLowerCase()
+    list = list.filter(p =>
+      (p.nombre && p.nombre.toLowerCase().includes(q)) ||
+      (p.categoria && p.categoria.toLowerCase().includes(q)) ||
+      (p.especificacion && p.especificacion.toLowerCase().includes(q))
+    )
+  }
+  return list
 })
 
 function selectProducto(prod) {
@@ -902,6 +1307,16 @@ function selectProducto(prod) {
   newComp.value.hilos = prod.hilos || ''
   newComp.value.frecuencia_hz = prod.frecuencia_hz || ''
   newComp.value.enfoque_uso = prod.enfoque_uso || ''
+  newComp.value.imagen_url = prod.imagen_url || ''
+  newComp.value.socket = prod.socket || ''
+  newComp.value.tipo_ram = prod.tipo_ram || ''
+  newComp.value.factor_forma = prod.factor_forma || ''
+  newComp.value.consumo_watts = prod.consumo_watts !== null && prod.consumo_watts !== undefined ? prod.consumo_watts : ''
+  newComp.value.wattage = prod.wattage !== null && prod.wattage !== undefined ? prod.wattage : ''
+  newComp.value.largo_mm = prod.largo_mm !== null && prod.largo_mm !== undefined ? prod.largo_mm : ''
+  newComp.value.espacio_gpu_mm = prod.espacio_gpu_mm !== null && prod.espacio_gpu_mm !== undefined ? prod.espacio_gpu_mm : ''
+  newComp.value.marca = prod.marca || ''
+  addImageError.value = false
   productoSearch.value = prod.nombre
   showProductoDropdown.value = false
 }
@@ -936,21 +1351,32 @@ function openAddModal() {
     gama: 'media',
     precio: '',
     stock: '',
-    descripcion_comercial: ''
+    descripcion_comercial: '',
+    imagen_url: '',
+    socket: '',
+    tipo_ram: '',
+    factor_forma: '',
+    consumo_watts: '',
+    wattage: '',
+    largo_mm: '',
+    espacio_gpu_mm: '',
+    marca: ''
   }
   productoSearch.value = ''
+  modalCategoriaFilter.value = 'Todas'
   showProductoDropdown.value = false
   addCompError.value = ''
+  addImageFile.value = null
+  addImagePreview.value = null
+  addFileName.value = ''
+  addImageError.value = false
   showAddCompModal.value = true
   fetchCategoriasBase()
 }
 
 /**
-
  * Cierra el modal activo y limpia los errores.
-
  */
-
 function closeAddModal() {
   showAddCompModal.value = false
 }
@@ -962,10 +1388,12 @@ function onFileChange(e, type) {
     addImageFile.value = file
     addFileName.value = file.name
     addImagePreview.value = URL.createObjectURL(file)
+    addImageError.value = false
   } else {
     editImageFile.value = file
     editFileName.value = file.name
     editImagePreview.value = URL.createObjectURL(file)
+    editImageError.value = false
   }
 }
 
@@ -973,13 +1401,9 @@ function blockInvalidChars(e) { if (['e', 'E', '+', '-'].includes(e.key)) e.prev
 function blockInvalidCharsStock(e) { if (['e', 'E', '+', '-', '.'].includes(e.key)) e.preventDefault() }
 
 /**
-
  * Valida y envía los datos del formulario al backend (POST/PUT).
-
  * Maneja la lógica de guardado y muestra feedback al usuario.
-
  */
-
 async function saveNewComp() {
   if (!newComp.value.producto_id) return addCompError.value = 'Selecciona un producto base'
   if (!newComp.value.precio) return addCompError.value = 'El precio mayorista es requerido'
@@ -993,27 +1417,38 @@ async function saveNewComp() {
   savingAddComp.value = true
   
   try {
-    const payload = {
-      items: [
-        {
-          producto_catalogo_id: newComp.value.producto_id,
-          precio_mayorista: newComp.value.precio,
-          stock: newComp.value.stock,
-          especificacion: newComp.value.especificacion || null,
-          gama: newComp.value.gama || 'media',
-          enfoque_uso: newComp.value.enfoque_uso || null,
-          nucleos: newComp.value.nucleos ? Number(newComp.value.nucleos) : null,
-          hilos: newComp.value.hilos ? Number(newComp.value.hilos) : null,
-          frecuencia_hz: newComp.value.frecuencia_hz ? Number(newComp.value.frecuencia_hz) : null,
-          descripcion_comercial: newComp.value.descripcion_comercial || null
-        }
-      ]
+    const fd = new FormData()
+    fd.append('producto_catalogo_id', newComp.value.producto_id)
+    fd.append('precio_mayorista', newComp.value.precio)
+    fd.append('stock', newComp.value.stock)
+    if (newComp.value.especificacion) fd.append('especificacion', newComp.value.especificacion)
+    if (newComp.value.gama) fd.append('gama', newComp.value.gama)
+    if (newComp.value.enfoque_uso) fd.append('enfoque_uso', newComp.value.enfoque_uso)
+    if (newComp.value.nucleos) fd.append('nucleos', newComp.value.nucleos)
+    if (newComp.value.hilos) fd.append('hilos', newComp.value.hilos)
+    if (newComp.value.frecuencia_hz) fd.append('frecuencia_hz', newComp.value.frecuencia_hz)
+    if (newComp.value.descripcion_comercial) fd.append('descripcion_comercial', newComp.value.descripcion_comercial)
+    
+    // Campos técnicos / compatibilidad
+    if (newComp.value.socket) fd.append('socket', newComp.value.socket)
+    if (newComp.value.tipo_ram) fd.append('tipo_ram', newComp.value.tipo_ram)
+    if (newComp.value.factor_forma) fd.append('factor_forma', newComp.value.factor_forma)
+    if (newComp.value.consumo_watts) fd.append('consumo_watts', newComp.value.consumo_watts)
+    if (newComp.value.wattage) fd.append('wattage', newComp.value.wattage)
+    if (newComp.value.largo_mm) fd.append('largo_mm', newComp.value.largo_mm)
+    if (newComp.value.espacio_gpu_mm) fd.append('espacio_gpu_mm', newComp.value.espacio_gpu_mm)
+    if (newComp.value.marca) fd.append('marca', newComp.value.marca)
+    
+    if (addImageFile.value) {
+      fd.append('imagen', addImageFile.value)
+    } else if (newComp.value.imagen_url) {
+      fd.append('imagen_url', newComp.value.imagen_url)
     }
     
     const res = await fetch(`${API}/proveedores/me/productos`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getToken()}` },
-      body: JSON.stringify(payload)
+      headers: { Authorization: `Bearer ${getToken()}` },
+      body: fd
     })
     const data = await res.json()
     if (!res.ok) {
@@ -1059,6 +1494,7 @@ function openEditComp(comp) {
   editImagePreview.value = null
   editFileName.value = ''
   editCompError.value = ''
+  editImageError.value = false
   showEditCompModal.value = true
 }
 
@@ -1078,23 +1514,38 @@ async function saveEditComp() {
   savingEditComp.value = true
   
   try {
-    const payload = {
-      producto_catalogo_id: editingComp.value.id,
-      precio_mayorista: editingComp.value.precio_mayorista,
-      stock: editingComp.value.stock,
-      especificacion: editingComp.value.especificacion || null,
-      gama: editingComp.value.gama || 'media',
-      enfoque_uso: editingComp.value.enfoque_uso || null,
-      nucleos: editingComp.value.nucleos ? Number(editingComp.value.nucleos) : null,
-      hilos: editingComp.value.hilos ? Number(editingComp.value.hilos) : null,
-      frecuencia_hz: editingComp.value.frecuencia_hz ? Number(editingComp.value.frecuencia_hz) : null,
-      descripcion_comercial: editingComp.value.descripcion_comercial || null
+    const fd = new FormData()
+    fd.append('producto_catalogo_id', editingComp.value.id)
+    fd.append('precio_mayorista', editingComp.value.precio_mayorista)
+    fd.append('stock', editingComp.value.stock)
+    if (editingComp.value.especificacion) fd.append('especificacion', editingComp.value.especificacion)
+    if (editingComp.value.gama) fd.append('gama', editingComp.value.gama)
+    if (editingComp.value.enfoque_uso) fd.append('enfoque_uso', editingComp.value.enfoque_uso)
+    if (editingComp.value.nucleos) fd.append('nucleos', editingComp.value.nucleos)
+    if (editingComp.value.hilos) fd.append('hilos', editingComp.value.hilos)
+    if (editingComp.value.frecuencia_hz) fd.append('frecuencia_hz', editingComp.value.frecuencia_hz)
+    if (editingComp.value.descripcion_comercial) fd.append('descripcion_comercial', editingComp.value.descripcion_comercial)
+    
+    // Campos técnicos / compatibilidad
+    if (editingComp.value.socket) fd.append('socket', editingComp.value.socket)
+    if (editingComp.value.tipo_ram) fd.append('tipo_ram', editingComp.value.tipo_ram)
+    if (editingComp.value.factor_forma) fd.append('factor_forma', editingComp.value.factor_forma)
+    if (editingComp.value.consumo_watts) fd.append('consumo_watts', editingComp.value.consumo_watts)
+    if (editingComp.value.wattage) fd.append('wattage', editingComp.value.wattage)
+    if (editingComp.value.largo_mm) fd.append('largo_mm', editingComp.value.largo_mm)
+    if (editingComp.value.espacio_gpu_mm) fd.append('espacio_gpu_mm', editingComp.value.espacio_gpu_mm)
+    if (editingComp.value.marca) fd.append('marca', editingComp.value.marca)
+    
+    if (editImageFile.value) {
+      fd.append('imagen', editImageFile.value)
+    } else if (editingComp.value.imagen_url) {
+      fd.append('imagen_url', editingComp.value.imagen_url)
     }
 
     const res = await fetch(`${API}/proveedores/catalogo/item`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getToken()}` },
-      body: JSON.stringify(payload)
+      method: 'POST',
+      headers: { Authorization: `Bearer ${getToken()}` },
+      body: fd
     })
     const data = await res.json()
     if (!res.ok) {

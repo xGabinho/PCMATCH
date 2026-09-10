@@ -293,7 +293,7 @@ class ProveedorController extends Controller
                     'nombre' => $p->nombre,
                     'categoria' => $p->categoria,
                     'especificacion' => $p->pivot->especificacion ?: $p->especificacion,
-                    'imagen_url' => $p->imagen_url,
+                    'imagen_url' => $p->pivot->imagen_url ?: $p->imagen_url,
                     'nucleos' => $p->pivot->nucleos !== null ? $p->pivot->nucleos : $p->nucleos,
                     'hilos' => $p->pivot->hilos !== null ? $p->pivot->hilos : $p->hilos,
                     'frecuencia_hz' => $p->pivot->frecuencia_hz !== null ? $p->pivot->frecuencia_hz : $p->frecuencia_hz,
@@ -302,6 +302,14 @@ class ProveedorController extends Controller
                     'precio_mayorista' => $p->pivot->precio_mayorista,
                     'stock' => $p->pivot->stock,
                     'descripcion_comercial' => $p->pivot->descripcion_comercial,
+                    'socket' => $p->socket,
+                    'tipo_ram' => $p->tipo_ram,
+                    'factor_forma' => $p->factor_forma,
+                    'consumo_watts' => $p->consumo_watts,
+                    'wattage' => $p->wattage,
+                    'largo_mm' => $p->largo_mm,
+                    'espacio_gpu_mm' => $p->espacio_gpu_mm,
+                    'marca' => $p->marca,
                 ];
             })
         ]);
@@ -332,7 +340,71 @@ class ProveedorController extends Controller
             return response()->json(['success' => false, 'message' => 'Proveedor no encontrado'], 404);
         }
 
-        // Accept array of {producto_catalogo_id, precio_mayorista, stock, especificacion, gama, enfoque_uso, nucleos, hilos, frecuencia_hz, descripcion_comercial}
+        // Support single item (FormData with optional image file or JSON)
+        $prodId = $request->input('producto_catalogo_id') ?? $request->input('producto_id');
+        if ($prodId && $request->has('precio_mayorista')) {
+            $request->validate([
+                'precio_mayorista' => 'required|numeric|min:0',
+                'stock' => 'required|integer|min:0',
+                'especificacion' => 'nullable|string|max:1000',
+                'gama' => 'nullable|string|in:alta,media,baja',
+                'enfoque_uso' => 'nullable|string|in:gaming,diseño,oficina,estudio',
+                'nucleos' => 'nullable|integer|min:1',
+                'hilos' => 'nullable|integer|min:1',
+                'frecuencia_hz' => 'nullable|numeric|min:0',
+                'descripcion_comercial' => 'nullable|string|max:1000',
+                'imagen_url' => 'nullable|string|max:1000',
+                'imagen' => 'nullable|file|mimes:jpeg,png,jpg,webp|max:5120',
+            ]);
+
+            $imagenUrl = $request->input('imagen_url');
+            if ($request->hasFile('imagen')) {
+                $path = $request->file('imagen')->store('componentes_proveedores', 'public');
+                $imagenUrl = url('storage/' . $path);
+            }
+
+            $syncData = [
+                $prodId => [
+                    'precio_mayorista' => $request->input('precio_mayorista'),
+                    'stock' => $request->input('stock'),
+                    'especificacion' => $request->input('especificacion') ?? null,
+                    'gama' => $request->input('gama') ?? null,
+                    'enfoque_uso' => $request->input('enfoque_uso') ?? null,
+                    'nucleos' => !empty($request->input('nucleos')) ? (int)$request->input('nucleos') : null,
+                    'hilos' => !empty($request->input('hilos')) ? (int)$request->input('hilos') : null,
+                    'frecuencia_hz' => !empty($request->input('frecuencia_hz')) ? (float)$request->input('frecuencia_hz') : null,
+                    'descripcion_comercial' => $request->input('descripcion_comercial') ?? null,
+                    'imagen_url' => $imagenUrl,
+                ]
+            ];
+
+            $proveedor->productosCatalogo()->syncWithoutDetaching($syncData);
+
+            // Actualizar especificaciones técnicas en productos_catalogo si vienen en la petición
+            $compatFields = ['socket', 'tipo_ram', 'factor_forma', 'consumo_watts', 'wattage', 'largo_mm', 'espacio_gpu_mm', 'marca', 'nucleos', 'hilos', 'frecuencia_hz'];
+            $catalogoUpdate = [];
+            foreach ($compatFields as $f) {
+                if ($request->filled($f)) {
+                    $val = $request->input($f);
+                    if (in_array($f, ['consumo_watts', 'wattage', 'largo_mm', 'espacio_gpu_mm', 'nucleos', 'hilos'])) {
+                        $catalogoUpdate[$f] = (int)$val;
+                    } elseif ($f === 'frecuencia_hz') {
+                        $catalogoUpdate[$f] = (float)$val;
+                    } else {
+                        $catalogoUpdate[$f] = trim($val);
+                    }
+                }
+            }
+            if (!empty($catalogoUpdate)) {
+                DB::table('productos_catalogo')->where('id', $prodId)->update($catalogoUpdate);
+            }
+
+            AuditLog::log($request, "Agregó el componente (ID: {$prodId}) al catálogo del proveedor: {$proveedor->nombre}", 'Proveedores');
+
+            return response()->json(['success' => true, 'message' => 'Componente creado exitosamente']);
+        }
+
+        // Accept array of {producto_catalogo_id, precio_mayorista, stock, especificacion, gama, enfoque_uso, nucleos, hilos, frecuencia_hz, descripcion_comercial, imagen_url}
         if ($request->has('items')) {
             $request->validate([
                 'items' => 'required|array',
@@ -346,6 +418,7 @@ class ProveedorController extends Controller
                 'items.*.hilos' => 'nullable|integer|min:1',
                 'items.*.frecuencia_hz' => 'nullable|numeric|min:0',
                 'items.*.descripcion_comercial' => 'nullable|string|max:1000',
+                'items.*.imagen_url' => 'nullable|string|max:1000',
             ]);
 
             $syncData = [];
@@ -360,6 +433,7 @@ class ProveedorController extends Controller
                     'hilos' => !empty($item['hilos']) ? (int)$item['hilos'] : null,
                     'frecuencia_hz' => !empty($item['frecuencia_hz']) ? (float)$item['frecuencia_hz'] : null,
                     'descripcion_comercial' => $item['descripcion_comercial'] ?? null,
+                    'imagen_url' => $item['imagen_url'] ?? null,
                 ];
             }
             $proveedor->productosCatalogo()->syncWithoutDetaching($syncData);
@@ -406,6 +480,8 @@ class ProveedorController extends Controller
             'hilos' => 'nullable|integer|min:1',
             'frecuencia_hz' => 'nullable|numeric|min:0',
             'descripcion_comercial' => 'nullable|string|max:1000',
+            'imagen_url' => 'nullable|string|max:1000',
+            'imagen' => 'nullable|file|mimes:jpeg,png,jpg,webp|max:5120',
         ]);
 
         $exists = DB::table('proveedor_producto_catalogo')
@@ -417,21 +493,49 @@ class ProveedorController extends Controller
             return response()->json(['success' => false, 'message' => 'Este producto no está en tu catálogo'], 404);
         }
 
+        $updateData = [
+            'precio_mayorista' => $request->input('precio_mayorista'),
+            'stock' => $request->input('stock'),
+            'especificacion' => $request->input('especificacion'),
+            'gama' => $request->input('gama'),
+            'enfoque_uso' => $request->input('enfoque_uso'),
+            'nucleos' => !empty($request->input('nucleos')) ? (int)$request->input('nucleos') : null,
+            'hilos' => !empty($request->input('hilos')) ? (int)$request->input('hilos') : null,
+            'frecuencia_hz' => !empty($request->input('frecuencia_hz')) ? (float)$request->input('frecuencia_hz') : null,
+            'descripcion_comercial' => $request->input('descripcion_comercial'),
+            'updated_at' => now(),
+        ];
+
+        if ($request->hasFile('imagen')) {
+            $path = $request->file('imagen')->store('componentes_proveedores', 'public');
+            $updateData['imagen_url'] = url('storage/' . $path);
+        } elseif ($request->has('imagen_url')) {
+            $updateData['imagen_url'] = $request->input('imagen_url');
+        }
+
         DB::table('proveedor_producto_catalogo')
             ->where('proveedor_id', $user->id)
             ->where('producto_catalogo_id', $request->input('producto_catalogo_id'))
-            ->update([
-                'precio_mayorista' => $request->input('precio_mayorista'),
-                'stock' => $request->input('stock'),
-                'especificacion' => $request->input('especificacion'),
-                'gama' => $request->input('gama'),
-                'enfoque_uso' => $request->input('enfoque_uso'),
-                'nucleos' => !empty($request->input('nucleos')) ? (int)$request->input('nucleos') : null,
-                'hilos' => !empty($request->input('hilos')) ? (int)$request->input('hilos') : null,
-                'frecuencia_hz' => !empty($request->input('frecuencia_hz')) ? (float)$request->input('frecuencia_hz') : null,
-                'descripcion_comercial' => $request->input('descripcion_comercial'),
-                'updated_at' => now(),
-            ]);
+            ->update($updateData);
+
+        // Actualizar especificaciones técnicas en productos_catalogo si vienen en la petición
+        $compatFields = ['socket', 'tipo_ram', 'factor_forma', 'consumo_watts', 'wattage', 'largo_mm', 'espacio_gpu_mm', 'marca', 'nucleos', 'hilos', 'frecuencia_hz'];
+        $catalogoUpdate = [];
+        foreach ($compatFields as $f) {
+            if ($request->filled($f)) {
+                $val = $request->input($f);
+                if (in_array($f, ['consumo_watts', 'wattage', 'largo_mm', 'espacio_gpu_mm', 'nucleos', 'hilos'])) {
+                    $catalogoUpdate[$f] = (int)$val;
+                } elseif ($f === 'frecuencia_hz') {
+                    $catalogoUpdate[$f] = (float)$val;
+                } else {
+                    $catalogoUpdate[$f] = trim($val);
+                }
+            }
+        }
+        if (!empty($catalogoUpdate)) {
+            DB::table('productos_catalogo')->where('id', (int)$request->input('producto_catalogo_id'))->update($catalogoUpdate);
+        }
 
         return response()->json(['success' => true, 'message' => 'Componente actualizado correctamente']);
     }

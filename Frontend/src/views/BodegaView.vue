@@ -223,7 +223,7 @@
             <table class="w-full min-w-[640px]">
               <thead class="border-b theme-border">
                 <tr>
-                  <th v-for="h in ['Componente', 'Categoría', 'Proveedor', 'Especificación', 'Gama', 'Precio', 'Stock', 'Estado', 'Acciones']"
+                  <th v-for="h in ['Componente', 'Categoría', 'Proveedor', 'Especificación', 'Gama', 'Precio', 'Descuento', 'Stock', 'Estado', 'Acciones']"
                     :key="h" class="px-6 py-3 text-left text-xs theme-text-muted uppercase tracking-wider font-medium">
                     {{ h }}
                   </th>
@@ -231,7 +231,7 @@
               </thead>
               <tbody class="divide-y divide-dark-border">
                 <tr v-if="filteredComponents.length === 0">
-                  <td colspan="9" class="px-6 py-12 text-center theme-text-muted text-sm">
+                  <td colspan="10" class="px-6 py-12 text-center theme-text-muted text-sm">
                     <p class="font-medium text-base theme-text mb-1">Aún no tienes componentes en tu inventario</p>
                     <p class="text-xs max-w-md mx-auto mb-4">La incorporación de componentes se realiza seleccionando productos desde los catálogos de los proveedores.</p>
                     <button @click="activeSection = 'proveedores'" class="btn-primary text-xs px-4 py-2 inline-flex items-center gap-1.5">
@@ -258,12 +258,23 @@
                   </td>
                   <td class="px-6 py-4 text-sm font-mono">
                     <div class="flex flex-col">
-                      <div v-if="comp.descuento_activo && comp.descuento_porcentaje > 0" class="flex items-center gap-1.5 mb-0.5">
+                      <div v-if="(comp.descuento_activo === true || comp.descuento_activo == 1 || comp.descuento_activo === 'true' || comp.descuento_activo === 't') && Number(comp.descuento_porcentaje) > 0" class="flex items-center gap-1.5 mb-0.5">
                         <span class="line-through text-xs theme-text-muted opacity-70">${{ Number(comp.precio).toLocaleString() }}</span>
-                        <span class="text-[10px] bg-red-500/20 text-red-400 px-1.5 py-0.5 rounded font-bold">-{{ comp.descuento_porcentaje }}%</span>
+                        <span class="text-[10px] bg-red-500/20 text-red-400 px-1.5 py-0.5 rounded font-bold">-{{ Number(comp.descuento_porcentaje) }}%</span>
                       </div>
                       <span class="text-accent font-semibold">${{ Number(comp.precio_final || comp.precio).toLocaleString() }}</span>
                     </div>
+                  </td>
+                  <td class="px-6 py-4">
+                    <span v-if="(comp.descuento_activo === true || comp.descuento_activo == 1 || comp.descuento_activo === 'true' || comp.descuento_activo === 't') && Number(comp.descuento_porcentaje) > 0"
+                      class="inline-flex items-center gap-1 text-xs font-bold px-2.5 py-1 rounded-full bg-red-500/15 text-red-400 border border-red-500/30">
+                      <span>🔥</span> -{{ Number(comp.descuento_porcentaje) }}%
+                    </span>
+                    <span v-else-if="Number(comp.descuento_porcentaje) > 0"
+                      class="inline-flex items-center text-xs px-2.5 py-0.5 rounded-full bg-yellow-500/10 text-yellow-500 border border-yellow-500/20">
+                      {{ Number(comp.descuento_porcentaje) }}% (Inactivo)
+                    </span>
+                    <span v-else class="text-xs theme-text-muted">Sin descuento</span>
                   </td>
                   <td class="px-6 py-4">
                     <div class="flex items-center gap-1.5">
@@ -839,7 +850,7 @@ const { isDark, toggleTheme } = useTheme()
 import { useRouter } from 'vue-router'
 import { useAuth } from '../composables/useAuth'
 import { useToast } from '../composables/useToast'
-import { ref, markRaw, computed, onMounted, onBeforeUnmount, nextTick } from 'vue'
+import { ref, markRaw, computed, watch, onMounted, onBeforeUnmount, nextTick } from 'vue'
 
 import { API } from '@/config/api'
 const toast = useToast()
@@ -858,6 +869,12 @@ const bodegaCorreo = user.value?.correo ?? ''
 
 // Secciones
 const activeSection = ref('dashboard')
+
+watch(activeSection, (sec) => {
+  if (sec === 'dashboard') {
+    fetchFlujoBodega()
+  }
+})
 const sections = [
   { id: 'dashboard',         icon: BarChart3,        label: 'Dashboard',         description: 'Resumen de tu bodega',                 count: null },
   { id: 'componentes',       icon: markRaw(Wrench),   label: 'Mis componentes',   description: 'Gestiona tu catálogo y stock',         count: true },
@@ -1189,7 +1206,12 @@ const editImagePreview = ref(null)
 const editFileName = ref('')
 
 function openEditComp(comp) {
-  editingComp.value = { ...comp }
+  editingComp.value = {
+    ...comp,
+    activo: comp.activo !== undefined && comp.activo !== null ? Boolean(Number(comp.activo) || comp.activo === true || comp.activo === 'true') : true,
+    descuento_activo: Boolean(Number(comp.descuento_activo) || comp.descuento_activo === true || comp.descuento_activo === 'true'),
+    descuento_porcentaje: comp.descuento_porcentaje ?? 0,
+  }
   editImageFile.value = null
   editImagePreview.value = null
   editFileName.value = ''
@@ -1223,10 +1245,14 @@ async function saveEditComp() {
   formData.append('id', editingComp.value.id)
   formData.append('_method', 'PUT')
   
-  const fields = ['especificacion', 'nucleos', 'hilos', 'frecuencia_hz', 'enfoque_uso', 'gama', 'precio', 'stock', 'activo']
+  const fields = ['especificacion', 'nucleos', 'hilos', 'frecuencia_hz', 'enfoque_uso', 'gama', 'precio', 'stock', 'activo', 'descuento_porcentaje', 'descuento_activo']
   fields.forEach(f => {
     if (editingComp.value[f] !== undefined && editingComp.value[f] !== null) {
-      formData.append(f, editingComp.value[f])
+      if (f === 'activo' || f === 'descuento_activo') {
+        formData.append(f, editingComp.value[f] ? '1' : '0')
+      } else {
+        formData.append(f, editingComp.value[f])
+      }
     }
   })
   

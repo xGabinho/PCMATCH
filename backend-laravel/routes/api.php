@@ -72,13 +72,14 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::delete('/proveedores/{id}', [ProveedorController::class, 'destroy']); // Soporte params
     Route::get('/proveedores/{id}/productos', [ProveedorController::class, 'productos']); // Obtener catálogo asignado
     Route::post('/proveedores/{id}/productos', [ProveedorController::class, 'syncProductos']); // Asignar catálogo
-    Route::put('/proveedores/catalogo/item', [ProveedorController::class, 'updateCatalogoItem']); // Editar precio mayorista
+    Route::match(['put', 'post'], '/proveedores/catalogo/item', [ProveedorController::class, 'updateCatalogoItem']); // Editar precio mayorista / componente
     Route::delete('/proveedores/catalogo/item', [ProveedorController::class, 'removeCatalogoItem']); // Quitar producto del catálogo
 
     // RUTAS DE COMPONENTES (Admin/Proveedor/Bodega)
     Route::get('/componentes/admin', [ComponenteController::class, 'indexAdmin']); // Ver Componentes (admin/superadmin)
     Route::get('/componentes/maestros', [ComponenteController::class, 'maestros']); // Ver maestros (admin/bodega/proveedor)
     Route::get('/componentes', [ComponenteController::class, 'indexBodega']);      // Ver los propios (bodega)
+    Route::post('/componentes/activar-todos', [ComponenteController::class, 'activarTodosMaestros']); // Activar todos como maestros (admin/superadmin)
     Route::post('/componentes/admin', [ComponenteController::class, 'store']);     // Crear (admin/superadmin)
     Route::post('/componentes', [ComponenteController::class, 'store']);           // Crear (bodega/proveedor)
 

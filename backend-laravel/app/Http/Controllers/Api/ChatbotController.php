@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\DB;
 use App\Services\RecomendacionService;
+use App\Services\CompatibilidadService;
 use Exception;
 
 class ChatbotController extends Controller
@@ -51,13 +52,22 @@ class ChatbotController extends Controller
         $systemInstruction = "Eres el asistente inteligente de PCMATCH, experto en hardware de computadoras y ensamblajes. Responde siempre en español, de forma clara, amable y directa.
 
 REGLAS OBLIGATORIAS:
-1. NUNCA inventes componentes, precios, marcas ni especificaciones. Todo debe proceder únicamente de las herramientas de PCMATCH ('ver_inventario' o 'build_pc').
-2. NUNCA respondas con un mensaje de error, límite o falla sin acompañarlo de al menos una alternativa concreta o una pregunta que permita avanzar.
-3. PREGUNTAS INTRODUCTORIAS DE ARMADO: Si el usuario desea armar una PC o recibir recomendación de equipo completo y NO ha especificado alguno de los 3 datos principales (Gama/Nivel, Presupuesto máximo, y Enfoque de uso), pregúntaselos amablemente.
-4. BÚSQUEDA DE COMPONENTES Y CATÁLOGO: Si el usuario pregunta por piezas específicas, disponibilidad, precios o stock (ej: '¿tienen tarjetas RTX 3060?'), usa INMEDIATAMENTE 'ver_inventario' sin exigir presupuesto obligatoriamente.
-5. RECOMENDACIÓN DE PC COMPLETA: Usa 'build_pc' únicamente cuando tengas o el usuario te provea el uso principal, gama/desempeño y/o presupuesto aproximado. Para juegos de bajos requisitos (ej. Roblox), verifica el mínimo real antes de rechazar.
-6. PRESUPUESTO INSUFICIENTE: Si el presupuesto no alcanza para una PC nueva completa, indica el monto mínimo real necesario con cifra exacta, ofrece la configuración más económica disponible, la diferencia de precio y pregunta si puede ajustar el presupuesto o sacrificar algún componente.
-7. TONO Y FORMATO: Respuestas breves y claras, cifras concretas del catálogo y cerrando SIEMPRE con una pregunta accionable o propuesta de siguiente paso.";
+1. NUNCA inventes componentes, precios, marcas ni especificaciones. Para precios y disponibilidad usa EXCLUSIVAMENTE las herramientas de PCMATCH.
+2. NUNCA respondas con un mensaje de error sin acompañarlo de al menos una alternativa concreta o pregunta que permita avanzar.
+3. PREGUNTAS INTRODUCTORIAS DE ARMADO: Si el usuario desea armar una PC y NO ha especificado Gama/Nivel, Presupuesto y Uso, pregúntaselos amablemente.
+4. BÚSQUEDA DE COMPONENTES: Si pregunta por piezas, precios o stock, usa 'ver_inventario' INMEDIATAMENTE.
+5. RECOMENDACIÓN COMPLETA: Usa 'build_pc' cuando el usuario quiera armar/cotizar PC y mencione presupuesto y/o uso. Si menciona estudiar Y jugar, usa 'gaming'.
+6. PRESUPUESTO: Extrae número limpio (de '3.800.000' extrae 3800000). 'media-alta' → 'alta' o 'media' según presupuesto.
+7. SEGUIMIENTO: Si pregunta si son los mejores componentes, ejecuta 'build_pc' con desempeno='alta'.
+8. PRESUPUESTO INSUFICIENTE: Indica monto mínimo real, ofrece configuración económica y pregunta si ajustar.
+9. COMPATIBILIDAD: Antes de cerrar una configuración, menciona si todos los componentes son compatibles. Si el usuario pregunta explícitamente, usa 'verificar_compatibilidad'.
+10. COMPARACIONES: Si pregunta cuál es mejor entre componentes, usa 'comparar_componentes' con los términos de búsqueda.
+11. UPGRADES: Si quiere mejorar su equipo actual, usa 'recomendar_upgrade' con los componentes que mencione.
+12. MODIFICACIONES: Si tras una build pide cambiar un componente, usa 'modificar_build'.
+13. CONSUMO: Si pregunta qué fuente necesita o cuántos watts consume, usa 'calcular_consumo_energetico'.
+14. CONOCIMIENTO GENERAL: Para preguntas educativas/conceptuales sobre hardware (ej: '¿qué es un socket?', '¿DDR4 vs DDR5?'), usa 'consultar_conocimiento_general'. NUNCA inventes precios ni stock.
+15. FUERA DE ALCANCE: Si la pregunta no tiene relación con hardware, armado de PCs o tecnología, responde cortésmente que solo puedes ayudar con temas de computadoras.
+16. TONO: Respuestas breves, cifras concretas, cierra SIEMPRE con pregunta accionable.";
 
         $payload = [
             'systemInstruction' => [
@@ -67,49 +77,208 @@ REGLAS OBLIGATORIAS:
             'tools' => [
                 [
                     'functionDeclarations' => [
+                        // ═══ HERRAMIENTA 1: build_pc ═══
                         [
                             'name' => 'build_pc',
-                            'description' => 'Arma y recomienda una PC completa ideal basada en uso, desempeño y presupuesto.',
+                            'description' => 'Arma y recomienda una PC completa ideal basada en uso, desempeño y presupuesto. Valida compatibilidad automáticamente.',
                             'parameters' => [
                                 'type' => 'OBJECT',
                                 'properties' => [
                                     'uso' => [
                                         'type' => 'STRING',
-                                        'description' => 'Uso principal de la PC',
-                                        'enum' => ['gaming', 'estudio', 'oficina', 'diseño']
+                                        'description' => 'Uso principal. Si menciona estudiar y jugar, prioriza gaming.',
+                                        'enum' => ['gaming', 'estudio', 'oficina', 'diseño', 'streaming', 'edicion_video', 'servidor', 'ia_machine_learning']
                                     ],
                                     'desempeno' => [
                                         'type' => 'STRING',
-                                        'description' => 'Nivel de desempeño deseado',
+                                        'description' => 'Nivel de desempeño deseado.',
                                         'enum' => ['alta', 'media', 'baja']
                                     ],
                                     'presupuesto_max' => [
                                         'type' => 'NUMBER',
-                                        'description' => 'Presupuesto máximo del usuario en un número entero (ej: 5000000). Si el usuario dice "alto", "ilimitado" o "sin límite", pasa 10000000. Si dice "medio", pasa 5000000. Si dice "bajo", pasa 2500000.'
+                                        'description' => 'Presupuesto máximo en número entero sin puntos ni símbolos.'
+                                    ],
+                                    'marca_preferida' => [
+                                        'type' => 'STRING',
+                                        'description' => 'Preferencia de marca del usuario para CPU/GPU.',
+                                        'enum' => ['AMD', 'Intel', 'NVIDIA', 'ninguna']
+                                    ],
+                                    'factor_forma' => [
+                                        'type' => 'STRING',
+                                        'description' => 'Factor de forma preferido del gabinete.',
+                                        'enum' => ['ATX', 'Micro-ATX', 'Mini-ITX', 'sin_preferencia']
                                     ]
                                 ],
                                 'required' => ['uso', 'desempeno']
                             ]
                         ],
+                        // ═══ HERRAMIENTA 2: ver_inventario ═══
                         [
                             'name' => 'ver_inventario',
-                            'description' => 'Busca componentes específicos en la base de datos de PCMATCH para responder preguntas sobre stock, precios o características.',
+                            'description' => 'Busca componentes en la base de datos de PCMATCH por categoría, palabra clave, marca o precio.',
                             'parameters' => [
                                 'type' => 'OBJECT',
                                 'properties' => [
                                     'categoria' => [
                                         'type' => 'STRING',
-                                        'description' => 'Categoría del componente (ej: CPU, GPU, RAM, Motherboard, Storage, PSU, Cooler, Case)',
+                                        'description' => 'Categoría del componente.',
+                                        'enum' => ['CPU', 'GPU', 'RAM', 'Motherboard', 'Storage', 'PSU', 'Cooler', 'Case']
                                     ],
                                     'palabra_clave' => [
                                         'type' => 'STRING',
-                                        'description' => 'Palabra clave para buscar por nombre o especificación (ej: Ryzen, RTX 3060, 16GB)',
+                                        'description' => 'Palabra clave para buscar (ej: Ryzen, RTX 3060, 16GB).',
                                     ],
                                     'precio_maximo' => [
                                         'type' => 'NUMBER',
-                                        'description' => 'Presupuesto máximo para la búsqueda',
+                                        'description' => 'Presupuesto máximo para filtrar.',
+                                    ],
+                                    'marca' => [
+                                        'type' => 'STRING',
+                                        'description' => 'Filtrar por marca (ej: AMD, Intel, NVIDIA, Corsair, ASUS).',
+                                    ],
+                                    'orden' => [
+                                        'type' => 'STRING',
+                                        'description' => 'Orden de resultados.',
+                                        'enum' => ['precio_asc', 'precio_desc', 'relevancia']
                                     ]
                                 ]
+                            ]
+                        ],
+                        // ═══ HERRAMIENTA 3: verificar_compatibilidad ═══
+                        [
+                            'name' => 'verificar_compatibilidad',
+                            'description' => 'Verifica la compatibilidad entre componentes de hardware: socket CPU/Mobo, tipo RAM, factor forma, espacio GPU en case, y consumo vs PSU.',
+                            'parameters' => [
+                                'type' => 'OBJECT',
+                                'properties' => [
+                                    'componentes_ids' => [
+                                        'type' => 'ARRAY',
+                                        'description' => 'Array de IDs de componentes del inventario PCMATCH.',
+                                        'items' => ['type' => 'NUMBER']
+                                    ],
+                                    'componentes_texto' => [
+                                        'type' => 'STRING',
+                                        'description' => 'Texto libre describiendo los componentes a verificar (ej: "Ryzen 5 5600X con B450M-A y DDR4").',
+                                    ]
+                                ]
+                            ]
+                        ],
+                        // ═══ HERRAMIENTA 4: comparar_componentes ═══
+                        [
+                            'name' => 'comparar_componentes',
+                            'description' => 'Compara 2-4 componentes de la misma categoría del inventario PCMATCH (precio, rendimiento, eficiencia, etc).',
+                            'parameters' => [
+                                'type' => 'OBJECT',
+                                'properties' => [
+                                    'categoria' => [
+                                        'type' => 'STRING',
+                                        'description' => 'Categoría de los componentes a comparar.',
+                                        'enum' => ['CPU', 'GPU', 'RAM', 'Motherboard', 'Storage', 'PSU', 'Cooler', 'Case']
+                                    ],
+                                    'terminos_busqueda' => [
+                                        'type' => 'ARRAY',
+                                        'description' => 'Array de 2-4 términos para buscar (ej: ["RTX 4060", "RX 7600"]).',
+                                        'items' => ['type' => 'STRING']
+                                    ],
+                                    'criterio' => [
+                                        'type' => 'STRING',
+                                        'description' => 'Criterio principal de comparación.',
+                                        'enum' => ['precio', 'rendimiento', 'eficiencia_energetica', 'general']
+                                    ]
+                                ],
+                                'required' => ['categoria', 'terminos_busqueda']
+                            ]
+                        ],
+                        // ═══ HERRAMIENTA 5: recomendar_upgrade ═══
+                        [
+                            'name' => 'recomendar_upgrade',
+                            'description' => 'Recomienda la mejor mejora para un equipo existente según presupuesto y uso. Identifica el cuello de botella y busca reemplazo compatible.',
+                            'parameters' => [
+                                'type' => 'OBJECT',
+                                'properties' => [
+                                    'componentes_actuales' => [
+                                        'type' => 'ARRAY',
+                                        'description' => 'Array de objetos con los componentes actuales del usuario.',
+                                        'items' => [
+                                            'type' => 'OBJECT',
+                                            'properties' => [
+                                                'categoria' => ['type' => 'STRING'],
+                                                'nombre' => ['type' => 'STRING']
+                                            ]
+                                        ]
+                                    ],
+                                    'presupuesto_max' => [
+                                        'type' => 'NUMBER',
+                                        'description' => 'Presupuesto disponible para el upgrade.'
+                                    ],
+                                    'uso' => [
+                                        'type' => 'STRING',
+                                        'description' => 'Uso principal del equipo.',
+                                        'enum' => ['gaming', 'estudio', 'oficina', 'diseño']
+                                    ]
+                                ],
+                                'required' => ['componentes_actuales', 'presupuesto_max', 'uso']
+                            ]
+                        ],
+                        // ═══ HERRAMIENTA 6: modificar_build ═══
+                        [
+                            'name' => 'modificar_build',
+                            'description' => 'Modifica un build existente sustituyendo un componente por otro, recalcula el total y revalida compatibilidad.',
+                            'parameters' => [
+                                'type' => 'OBJECT',
+                                'properties' => [
+                                    'build_actual' => [
+                                        'type' => 'ARRAY',
+                                        'description' => 'Array de componentes del build actual (incluir al menos categoria y nombre).',
+                                        'items' => [
+                                            'type' => 'OBJECT',
+                                            'properties' => [
+                                                'categoria' => ['type' => 'STRING'],
+                                                'nombre' => ['type' => 'STRING'],
+                                                'id' => ['type' => 'NUMBER']
+                                            ]
+                                        ]
+                                    ],
+                                    'instruccion' => [
+                                        'type' => 'STRING',
+                                        'description' => 'Instrucción de cambio (ej: "cambiar GPU por RTX 4070", "usar RAM de 32GB")'
+                                    ]
+                                ],
+                                'required' => ['build_actual', 'instruccion']
+                            ]
+                        ],
+                        // ═══ HERRAMIENTA 7: calcular_consumo_energetico ═══
+                        [
+                            'name' => 'calcular_consumo_energetico',
+                            'description' => 'Calcula el consumo estimado en watts de un conjunto de componentes y recomienda PSUs adecuadas del inventario.',
+                            'parameters' => [
+                                'type' => 'OBJECT',
+                                'properties' => [
+                                    'componentes_ids' => [
+                                        'type' => 'ARRAY',
+                                        'description' => 'Array de IDs de componentes del inventario.',
+                                        'items' => ['type' => 'NUMBER']
+                                    ],
+                                    'componentes_texto' => [
+                                        'type' => 'STRING',
+                                        'description' => 'Texto libre con los componentes (ej: "Ryzen 7 5700X con RTX 3070").',
+                                    ]
+                                ]
+                            ]
+                        ],
+                        // ═══ HERRAMIENTA 8: consultar_conocimiento_general ═══
+                        [
+                            'name' => 'consultar_conocimiento_general',
+                            'description' => 'Responde preguntas educativas o conceptuales sobre hardware (ej: qué es un socket, diferencias DDR4 vs DDR5, qué significan los núcleos). NO incluir precios ni stock inventado.',
+                            'parameters' => [
+                                'type' => 'OBJECT',
+                                'properties' => [
+                                    'pregunta' => [
+                                        'type' => 'STRING',
+                                        'description' => 'La pregunta conceptual del usuario sobre hardware.'
+                                    ]
+                                ],
+                                'required' => ['pregunta']
                             ]
                         ]
                     ]
@@ -124,8 +293,8 @@ REGLAS OBLIGATORIAS:
 
         $maxRetries = 3;
         $retryCount = 0;
-        // Lista de modelos a intentar en orden de preferencia
-        $models = ['gemini-2.0-flash-lite', 'gemini-2.0-flash', 'gemini-3.5-flash-lite'];
+        // Modelos activos con soporte nativo de function calling
+        $models = ['gemini-3.5-flash', 'gemini-3.5-flash-lite', 'gemini-3.6-flash'];
         $modelIndex = 0;
 
         while ($retryCount < $maxRetries) {
@@ -145,9 +314,9 @@ REGLAS OBLIGATORIAS:
                 continue;
             }
 
-            // Si se excede la cuota, esperar y reintentar con el siguiente modelo
-            if ($response->status() === 429) {
-                sleep(3);
+            // Si se excede la cuota o el modelo está saturado (503 / 429 / 500), esperar y reintentar con el siguiente modelo
+            if (in_array($response->status(), [429, 500, 503])) {
+                sleep(2);
                 $modelIndex = ($modelIndex + 1) % count($models);
                 $retryCount++;
                 continue;
@@ -195,10 +364,44 @@ REGLAS OBLIGATORIAS:
                     // Acción terminal: Armar PC y devolver resultado estructurado al Frontend
                     try {
                         $rawBudget = $args['presupuesto_max'] ?? null;
-                        $presupuesto = is_numeric($rawBudget) ? (float) $rawBudget : 0;
+                        $presupuesto = 0;
+
+                        if (is_numeric($rawBudget)) {
+                            $presupuesto = (float) $rawBudget;
+                        } elseif (is_string($rawBudget)) {
+                            $clean = preg_replace('/[^\d]/', '', $rawBudget);
+                            if (!empty($clean)) {
+                                $presupuesto = (float) $clean;
+                            }
+                        }
+
+                        // Normalizar uso
+                        $usoRaw = mb_strtolower(trim($args['uso'] ?? 'gaming'));
+                        if (str_contains($usoRaw, 'game') || str_contains($usoRaw, 'jueg') || str_contains($usoRaw, 'jugar')) {
+                            $uso = 'gaming';
+                        } elseif (str_contains($usoRaw, 'diseñ') || str_contains($usoRaw, 'render') || str_contains($usoRaw, 'edici')) {
+                            $uso = 'diseño';
+                        } elseif (str_contains($usoRaw, 'estudi') || str_contains($usoRaw, 'tarea')) {
+                            $uso = 'estudio';
+                        } elseif (str_contains($usoRaw, 'oficin') || str_contains($usoRaw, 'trabajo')) {
+                            $uso = 'oficina';
+                        } else {
+                            $uso = in_array($usoRaw, ['gaming', 'estudio', 'oficina', 'diseño']) ? $usoRaw : 'gaming';
+                        }
+
+                        // Normalizar desempeño
+                        $desempenoRaw = mb_strtolower(trim($args['desempeno'] ?? 'media'));
+                        if (str_contains($desempenoRaw, 'media alta') || str_contains($desempenoRaw, 'media-alta') || str_contains($desempenoRaw, 'media_alta')) {
+                            $desempeno = ($presupuesto > 0 && $presupuesto < 4500000) ? 'media' : 'alta';
+                        } elseif (str_contains($desempenoRaw, 'alta') || str_contains($desempenoRaw, 'alto')) {
+                            $desempeno = 'alta';
+                        } elseif (str_contains($desempenoRaw, 'baja') || str_contains($desempenoRaw, 'bajo') || str_contains($desempenoRaw, 'entrada')) {
+                            $desempeno = 'baja';
+                        } else {
+                            $desempeno = 'media';
+                        }
 
                         if ($presupuesto <= 0) {
-                            $desempeno = $args['desempeno'] ?? 'alta';
                             $presupuesto = match ($desempeno) {
                                 'alta' => 10000000.0,
                                 'media' => 5000000.0,
@@ -208,18 +411,20 @@ REGLAS OBLIGATORIAS:
                         }
 
                         $service = new RecomendacionService();
-                        $buildResult = $service->buildPcIdeal(
-                            $args['uso'] ?? 'gaming', 
-                            $args['desempeno'] ?? 'alta', 
-                            $presupuesto
-                        );
+                        $buildResult = $service->buildPcIdeal($uso, $desempeno, $presupuesto);
                         
+                        $opcionesCount = count($buildResult['opciones'] ?? []);
+                        $mejorOpt = $buildResult['opciones'][0] ?? null;
+                        $totalFormateado = $mejorOpt ? $this->formatMoney($mejorOpt['total']) : '';
+                        $msg = "¡Excelente! He analizado nuestro inventario para tu presupuesto de " . $this->formatMoney($presupuesto) . " y preparé " . ($opcionesCount > 1 ? "$opcionesCount configuraciones optimizadas" : "la mejor configuración posible") . ($totalFormateado ? " con un total de $totalFormateado" : "") . ". Puedes comparar las opciones en las pestañas y cargar la que prefieras al ensamblador.";
+
                         return response()->json([
                             'type' => 'build',
                             'buildResult' => $buildResult,
-                            'message' => '¡Excelente! He analizado nuestro inventario y he preparado la mejor configuración posible para ti.'
+                            'message' => $msg
                         ]);
-                    } catch (Exception $e) {
+                    } catch (\Throwable $e) {
+                        \Illuminate\Support\Facades\Log::error("Chatbot build_pc error: " . $e->getMessage() . " at " . $e->getFile() . ":" . $e->getLine());
                         $errorData = json_decode($e->getMessage(), true);
                         if (is_array($errorData) && isset($errorData['presupuesto_minimo_estimado'])) {
                             $costoMinimo = $errorData['presupuesto_minimo_estimado'];
@@ -266,35 +471,32 @@ REGLAS OBLIGATORIAS:
                     }
                 }
 
-                if ($name === 'ver_inventario') {
-                    // Ejecutar búsqueda en DB
-                    $resultados = $this->buscarInventario($args);
+                // ═══ Herramientas que devuelven datos a Gemini para generar respuesta ═══
+                $toolsConRespuesta = ['ver_inventario', 'verificar_compatibilidad', 'comparar_componentes', 'recomendar_upgrade', 'modificar_build', 'calcular_consumo_energetico', 'consultar_conocimiento_general'];
 
-                    // Agregar el functionCall de la IA a los contents
-                    $payload['contents'][] = [
-                        'role' => 'model',
-                        'parts' => [
-                            ['functionCall' => $functionCall]
-                        ]
-                    ];
+                if (in_array($name, $toolsConRespuesta)) {
+                    $resultadoHerramienta = $this->ejecutarHerramienta($name, $args);
 
-                    // Agregar la respuesta de la función (functionResponse) como un rol 'function'
+                    // Preservar la respuesta completa del modelo (incluyendo thoughtSignature)
+                    $payload['contents'][] = $candidates['content'];
+
+                    // Agregar la respuesta de la función
                     $payload['contents'][] = [
-                        'role' => 'function', 
+                        'role' => 'function',
                         'parts' => [
                             [
                                 'functionResponse' => [
-                                    'name' => 'ver_inventario',
+                                    'name' => $name,
                                     'response' => [
-                                        'name' => 'ver_inventario',
-                                        'content' => ['items' => $resultados]
+                                        'name' => $name,
+                                        'content' => $resultadoHerramienta
                                     ]
                                 ]
                             ]
                         ]
                     ];
                     $retryCount++;
-                    continue; // Volver a llamar a Gemini con los resultados
+                    continue;
                 }
             }
 
@@ -311,16 +513,34 @@ REGLAS OBLIGATORIAS:
         ]);
     }
 
+    /**
+     * Dispatcher: ejecuta la herramienta correspondiente y devuelve datos para Gemini.
+     */
+    private function ejecutarHerramienta(string $name, array $args): array
+    {
+        return match ($name) {
+            'ver_inventario'              => ['items' => $this->buscarInventario($args)],
+            'verificar_compatibilidad'    => $this->handleVerificarCompatibilidad($args),
+            'comparar_componentes'        => $this->handleCompararComponentes($args),
+            'recomendar_upgrade'          => $this->handleRecomendarUpgrade($args),
+            'modificar_build'             => $this->handleModificarBuild($args),
+            'calcular_consumo_energetico' => $this->handleCalcularConsumo($args),
+            'consultar_conocimiento_general' => $this->handleConocimientoGeneral($args),
+            default => ['error' => "Herramienta desconocida: {$name}"],
+        };
+    }
+
     private function buscarInventario(array $args): array
     {
         $query = DB::table('componentes as c')
             ->join('productos_catalogo as pc', 'c.producto_id', '=', 'pc.id')
-            ->where('c.activo', true)
+            ->whereRaw("c.activo IS TRUE")
             ->where('c.stock', '>', 0)
             ->whereNull('c.deleted_at')
             ->select(
-                'pc.nombre', 'pc.categoria', 'c.especificacion',
-                DB::raw('CASE WHEN (c.descuento_activo = true OR c.descuento_activo = 1) AND c.descuento_porcentaje > 0 THEN ROUND(c.precio * (1 - c.descuento_porcentaje / 100), 2) ELSE c.precio END as precio_final'),
+                'c.id', 'pc.nombre', 'pc.categoria', 'c.especificacion',
+                'pc.socket', 'pc.tipo_ram', 'pc.consumo_watts', 'pc.wattage', 'pc.marca',
+                DB::raw('CASE WHEN c.descuento_activo IS TRUE AND c.descuento_porcentaje > 0 THEN ROUND(c.precio * (1 - c.descuento_porcentaje / 100), 2) ELSE c.precio END as precio_final'),
                 'c.stock'
             );
 
@@ -338,17 +558,322 @@ REGLAS OBLIGATORIAS:
         }
 
         if (!empty($args['precio_maximo'])) {
-            $query->where(DB::raw('CASE WHEN (c.descuento_activo = true OR c.descuento_activo = 1) AND c.descuento_porcentaje > 0 THEN ROUND(c.precio * (1 - c.descuento_porcentaje / 100), 2) ELSE c.precio END'), '<=', $args['precio_maximo']);
+            $query->where(DB::raw('CASE WHEN c.descuento_activo IS TRUE AND c.descuento_porcentaje > 0 THEN ROUND(c.precio * (1 - c.descuento_porcentaje / 100), 2) ELSE c.precio END'), '<=', $args['precio_maximo']);
         }
 
-        // Limitar a los 10 más baratos o relevantes para evitar sobrecargar a Gemini
-        $resultados = $query->orderBy('precio_final', 'asc')->limit(10)->get();
+        if (!empty($args['marca'])) {
+            $query->where(DB::raw('LOWER(pc.marca)'), 'LIKE', '%' . strtolower($args['marca']) . '%');
+        }
+
+        // Orden de resultados
+        $orden = $args['orden'] ?? 'precio_asc';
+        match ($orden) {
+            'precio_desc' => $query->orderBy('precio_final', 'desc'),
+            'relevancia'  => $query->orderBy('c.stock', 'desc')->orderBy('precio_final', 'asc'),
+            default       => $query->orderBy('precio_final', 'asc'),
+        };
+
+        $resultados = $query->limit(10)->get();
 
         if ($resultados->isEmpty()) {
             return ['mensaje' => 'No se encontraron componentes que coincidan con la búsqueda.'];
         }
 
         return $resultados->toArray();
+    }
+
+    /**
+     * Verificar compatibilidad de componentes.
+     */
+    private function handleVerificarCompatibilidad(array $args): array
+    {
+        $compatService = new CompatibilidadService();
+        $componentes = [];
+
+        // Por IDs
+        if (!empty($args['componentes_ids'])) {
+            $ids = is_array($args['componentes_ids']) ? $args['componentes_ids'] : [$args['componentes_ids']];
+            $ids = array_map('intval', $ids);
+            $componentes = $compatService->enriquecerConDatosCatalogo($ids);
+        }
+
+        // Por texto libre (separar por saltos de línea, comas, o palabras clave)
+        if (empty($componentes) && !empty($args['componentes_texto'])) {
+            $texto = $args['componentes_texto'];
+            $lineas = preg_split('/[\r\n]+/', $texto);
+            $candidatos = [];
+            foreach ($lineas as $l) {
+                // Si la línea tiene formato "Categoría: Componente"
+                if (preg_match('/^[^:]+:\s*(.+)$/i', trim($l), $m)) {
+                    $candidatos[] = trim($m[1]);
+                } else {
+                    $subPartes = preg_split('/\s+(con|y|,|;|\+)\s+/i', $l);
+                    foreach ($subPartes as $sp) {
+                        $candidatos[] = trim($sp);
+                    }
+                }
+            }
+            foreach ($candidatos as $parte) {
+                $parte = trim($parte);
+                if (strlen($parte) > 2) {
+                    $comp = $compatService->buscarPorTexto($parte);
+                    if ($comp) {
+                        $componentes[] = $comp;
+                    }
+                }
+            }
+        }
+
+        if (count($componentes) < 2) {
+            return [
+                'componentes_encontrados_en_tienda' => count($componentes),
+                'mensaje' => 'Varios o todos los componentes listados no se encuentran en el inventario actual de PCMATCH. Por favor analiza la compatibilidad técnica y física de estos componentes usando tu conocimiento experto de hardware (socket, RAM, dimensiones físicas, fuente requerida), señala claramente cada incompatibilidad al usuario y aclara cuáles piezas están o no en el catálogo.'
+            ];
+        }
+
+        $resultado = $compatService->validarConjunto($componentes);
+        $resultado['componentes_evaluados'] = array_map(function ($c) {
+            return [
+                'nombre'   => is_object($c) ? $c->nombre : ($c['nombre'] ?? ''),
+                'categoria'=> is_object($c) ? $c->categoria : ($c['categoria'] ?? ''),
+                'socket'   => is_object($c) ? ($c->socket ?? '') : ($c['socket'] ?? ''),
+                'tipo_ram' => is_object($c) ? ($c->tipo_ram ?? '') : ($c['tipo_ram'] ?? ''),
+            ];
+        }, $componentes);
+
+        return $resultado;
+    }
+
+    /**
+     * Comparar componentes de la misma categoría.
+     */
+    private function handleCompararComponentes(array $args): array
+    {
+        $categoria = $args['categoria'] ?? 'GPU';
+        $terminos = $args['terminos_busqueda'] ?? [];
+        $criterio = $args['criterio'] ?? 'general';
+
+        if (!is_array($terminos) || count($terminos) < 2) {
+            return ['error' => 'Se necesitan al menos 2 términos de búsqueda para comparar.'];
+        }
+
+        $compatService = new CompatibilidadService();
+        return $compatService->compararComponentes($categoria, $terminos, $criterio);
+    }
+
+    /**
+     * Recomendar upgrade para equipo existente.
+     */
+    private function handleRecomendarUpgrade(array $args): array
+    {
+        $componentesActuales = $args['componentes_actuales'] ?? [];
+        $presupuesto = $this->limpiarPresupuesto($args['presupuesto_max'] ?? 0);
+        $uso = $this->normalizarUso($args['uso'] ?? 'gaming');
+
+        if (empty($componentesActuales) || $presupuesto <= 0) {
+            return ['error' => 'Se necesitan componentes actuales y presupuesto para recomendar un upgrade.'];
+        }
+
+        $compatService = new CompatibilidadService();
+        return $compatService->recomendarUpgrade($componentesActuales, $presupuesto, $uso);
+    }
+
+    /**
+     * Modificar un build existente.
+     */
+    private function handleModificarBuild(array $args): array
+    {
+        $buildActual = $args['build_actual'] ?? [];
+        $instruccion = $args['instruccion'] ?? '';
+
+        if (empty($buildActual) || empty($instruccion)) {
+            return ['error' => 'Se necesita el build actual y la instrucción de modificación.'];
+        }
+
+        // Identificar qué categoría se quiere cambiar desde la instrucción
+        $instrLower = mb_strtolower($instruccion);
+        $categoriaTarget = null;
+        $terminoBusqueda = $instruccion;
+
+        $mapPatrones = [
+            'GPU'         => ['gpu', 'tarjeta', 'gráfica', 'grafica', 'video'],
+            'CPU'         => ['cpu', 'procesador'],
+            'RAM'         => ['ram', 'memoria'],
+            'Motherboard' => ['motherboard', 'placa', 'board'],
+            'Storage'     => ['disco', 'ssd', 'nvme', 'almacenamiento', 'storage'],
+            'PSU'         => ['psu', 'fuente'],
+            'Cooler'      => ['cooler', 'refrigeración', 'refrigeracion', 'ventilador'],
+            'Case'        => ['case', 'gabinete', 'chasis'],
+        ];
+
+        foreach ($mapPatrones as $cat => $patrones) {
+            foreach ($patrones as $patron) {
+                if (str_contains($instrLower, $patron)) {
+                    $categoriaTarget = $cat;
+                    break 2;
+                }
+            }
+        }
+
+        if (!$categoriaTarget) {
+            return ['error' => 'No se pudo identificar qué componente deseas cambiar. Intenta ser más específico (ej: "cambiar GPU por RTX 4070").'];
+        }
+
+        // Buscar el nuevo componente
+        $nuevoComp = DB::table('componentes as c')
+            ->join('productos_catalogo as pc', 'c.producto_id', '=', 'pc.id')
+            ->leftJoin('bodegas as b', 'c.bodega_id', '=', 'b.id')
+            ->where('pc.categoria', $categoriaTarget)
+            ->whereRaw("c.activo IS TRUE")
+            ->where('c.stock', '>', 0)
+            ->whereNull('c.deleted_at')
+            ->where(function ($q) use ($instrLower) {
+                $q->where(DB::raw('LOWER(pc.nombre)'), 'LIKE', '%' . $instrLower . '%')
+                  ->orWhere(DB::raw('LOWER(c.especificacion)'), 'LIKE', '%' . $instrLower . '%');
+            })
+            ->select(
+                'c.id', 'pc.nombre', 'pc.categoria', 'c.especificacion', 'c.gama',
+                'pc.socket', 'pc.tipo_ram', 'pc.consumo_watts', 'pc.wattage', 'pc.largo_mm',
+                DB::raw('CASE WHEN c.descuento_activo IS TRUE AND c.descuento_porcentaje > 0 THEN ROUND(c.precio * (1 - c.descuento_porcentaje / 100), 2) ELSE c.precio END as precio_final'),
+                'c.stock', 'b.nombre as bodega'
+            )
+            ->orderBy('precio_final', 'DESC')
+            ->first();
+
+        if (!$nuevoComp) {
+            // Intentar búsqueda más amplia extrayendo modelo del texto
+            preg_match('/(?:por|a|con)\s+(.+)/i', $instruccion, $matches);
+            $modeloBuscar = $matches[1] ?? $instruccion;
+
+            $nuevoComp = DB::table('componentes as c')
+                ->join('productos_catalogo as pc', 'c.producto_id', '=', 'pc.id')
+                ->leftJoin('bodegas as b', 'c.bodega_id', '=', 'b.id')
+                ->where('pc.categoria', $categoriaTarget)
+                ->whereRaw("c.activo IS TRUE")
+                ->where('c.stock', '>', 0)
+                ->whereNull('c.deleted_at')
+                ->where(DB::raw('LOWER(pc.nombre)'), 'LIKE', '%' . strtolower(trim($modeloBuscar)) . '%')
+                ->select(
+                    'c.id', 'pc.nombre', 'pc.categoria', 'c.especificacion', 'c.gama',
+                    'pc.socket', 'pc.tipo_ram', 'pc.consumo_watts', 'pc.wattage', 'pc.largo_mm',
+                    DB::raw('CASE WHEN c.descuento_activo IS TRUE AND c.descuento_porcentaje > 0 THEN ROUND(c.precio * (1 - c.descuento_porcentaje / 100), 2) ELSE c.precio END as precio_final'),
+                    'c.stock', 'b.nombre as bodega'
+                )
+                ->orderBy('precio_final', 'DESC')
+                ->first();
+        }
+
+        if (!$nuevoComp) {
+            return ['error' => "No encontré el componente '{$instruccion}' en nuestro inventario de {$categoriaTarget}. ¿Deseas ver las opciones disponibles?"];
+        }
+
+        // Reconstruir build con el componente sustituido
+        $nuevoTotal = 0;
+        $buildModificado = [];
+        foreach ($buildActual as $comp) {
+            $cat = $comp['categoria'] ?? '';
+            if ($cat === $categoriaTarget) {
+                $buildModificado[] = [
+                    'categoria'      => $nuevoComp->categoria,
+                    'nombre'         => $nuevoComp->nombre,
+                    'especificacion' => $nuevoComp->especificacion,
+                    'precio_final'   => $nuevoComp->precio_final,
+                    'id'             => $nuevoComp->id,
+                ];
+                $nuevoTotal += (float) $nuevoComp->precio_final;
+            } else {
+                $buildModificado[] = $comp;
+                $nuevoTotal += (float) ($comp['precio_final'] ?? 0);
+            }
+        }
+
+        // Revalidar compatibilidad
+        $idsParaValidar = array_filter(array_map(function ($c) { return $c['id'] ?? null; }, $buildModificado));
+        $compatService = new CompatibilidadService();
+        $validacion = [];
+        if (count($idsParaValidar) >= 2) {
+            $componentes = $compatService->enriquecerConDatosCatalogo($idsParaValidar);
+            $validacion = $compatService->validarConjunto($componentes);
+        }
+
+        return [
+            'build_modificado'   => $buildModificado,
+            'total_nuevo'        => round($nuevoTotal, 2),
+            'componente_cambiado'=> [
+                'categoria' => $categoriaTarget,
+                'nuevo'     => $nuevoComp->nombre,
+                'precio'    => $nuevoComp->precio_final,
+            ],
+            'compatibilidad'     => $validacion,
+        ];
+    }
+
+    /**
+     * Calcular consumo energético.
+     */
+    private function handleCalcularConsumo(array $args): array
+    {
+        $compatService = new CompatibilidadService();
+        $componentes = [];
+
+        if (!empty($args['componentes_ids'])) {
+            $ids = array_map('intval', is_array($args['componentes_ids']) ? $args['componentes_ids'] : [$args['componentes_ids']]);
+            $componentes = $compatService->enriquecerConDatosCatalogo($ids);
+        }
+
+        if (empty($componentes) && !empty($args['componentes_texto'])) {
+            $partes = preg_split('/\s+(con|y|,|;|\+)\s+/i', $args['componentes_texto']);
+            foreach ($partes as $parte) {
+                $parte = trim($parte);
+                if (strlen($parte) > 2) {
+                    $comp = $compatService->buscarPorTexto($parte);
+                    if ($comp) $componentes[] = $comp;
+                }
+            }
+        }
+
+        if (empty($componentes)) {
+            return ['error' => 'No se encontraron componentes para calcular el consumo. Indica nombres de productos o IDs.'];
+        }
+
+        return $compatService->calcularConsumo($componentes);
+    }
+
+    /**
+     * Consultar conocimiento general (pasa la pregunta de vuelta a Gemini con contexto).
+     */
+    private function handleConocimientoGeneral(array $args): array
+    {
+        $pregunta = $args['pregunta'] ?? '';
+        return [
+            'tipo'     => 'conocimiento_general',
+            'pregunta' => $pregunta,
+            'nota'     => 'Responde esta pregunta conceptual sobre hardware de computadoras. Puedes usar tu conocimiento general, pero NO inventes precios, stock ni disponibilidad. Si la respuesta involucra productos, sugiere usar ver_inventario para precios reales.'
+        ];
+    }
+
+    // ═══════════════════════════════════════
+    // Helpers
+    // ═══════════════════════════════════════
+
+    private function limpiarPresupuesto($raw): float
+    {
+        if (is_numeric($raw)) return (float) $raw;
+        if (is_string($raw)) {
+            $clean = preg_replace('/[^\d]/', '', $raw);
+            return !empty($clean) ? (float) $clean : 0;
+        }
+        return 0;
+    }
+
+    private function normalizarUso(string $usoRaw): string
+    {
+        $u = mb_strtolower(trim($usoRaw));
+        if (str_contains($u, 'game') || str_contains($u, 'jueg') || str_contains($u, 'jugar')) return 'gaming';
+        if (str_contains($u, 'diseñ') || str_contains($u, 'render') || str_contains($u, 'edici')) return 'diseño';
+        if (str_contains($u, 'estudi') || str_contains($u, 'tarea')) return 'estudio';
+        if (str_contains($u, 'oficin') || str_contains($u, 'trabajo')) return 'oficina';
+        return in_array($u, ['gaming', 'estudio', 'oficina', 'diseño']) ? $u : 'gaming';
     }
 
     private function esConsultaSoloCatalogo(string $message): bool
@@ -363,7 +888,13 @@ REGLAS OBLIGATORIAS:
             }
         }
 
-        // Patrones o palabras clave de consulta de catálogo
+        // Si es pregunta conceptual, no es catálogo
+        $conceptuales = ['qué es', 'que es', 'diferencia entre', 'para qué sirve', 'para que sirve', 'cómo funciona', 'como funciona', 'explicame', 'explícame'];
+        foreach ($conceptuales as $patron) {
+            if (str_contains($msg, $patron)) return false;
+        }
+
+        // Patrones de consulta de catálogo
         $patronesCatalogo = [
             'procesador', 'procesadores', 'tarjeta de video', 'tarjetas de video', 'gpu', 'gpus',
             'cpu', 'cpus', 'placa madre', 'placas madre', 'motherboard', 'ram', 'memorias',
@@ -444,12 +975,12 @@ REGLAS OBLIGATORIAS:
             $items = DB::table('componentes as c')
                 ->join('productos_catalogo as pc', 'c.producto_id', '=', 'pc.id')
                 ->where('pc.categoria', $cat)
-                ->where('c.activo', true)
+                ->whereRaw("c.activo IS TRUE")
                 ->where('c.stock', '>', 0)
                 ->whereNull('c.deleted_at')
                 ->select(
                     'pc.nombre', 'pc.categoria', 'c.especificacion', 'c.gama', 'c.stock',
-                    DB::raw('CASE WHEN (c.descuento_activo = true OR c.descuento_activo = 1) AND c.descuento_porcentaje > 0 THEN ROUND(c.precio * (1 - c.descuento_porcentaje / 100), 2) ELSE c.precio END as precio_final')
+                    DB::raw('CASE WHEN c.descuento_activo IS TRUE AND c.descuento_porcentaje > 0 THEN ROUND(c.precio * (1 - c.descuento_porcentaje / 100), 2) ELSE c.precio END as precio_final')
                 )
                 ->orderBy('c.gama', 'desc')
                 ->orderBy('precio_final', 'asc')

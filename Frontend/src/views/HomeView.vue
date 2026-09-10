@@ -49,6 +49,9 @@
       </div>
     </section>
 
+    <!-- ════ Descuentos Especiales ════ -->
+    <SeccionDescuentos />
+
     <!-- ════ Más Vendidos ════ -->
     <SeccionMasVendidos />
 
@@ -76,6 +79,7 @@ import { Zap, Wrench, FileText } from 'lucide-vue-next';
 
 
 import { computed } from 'vue'
+import SeccionDescuentos from '../components/Recomendaciones/SeccionDescuentos.vue'
 import SeccionMasVendidos from '../components/Recomendaciones/SeccionMasVendidos.vue'
 import { useTheme } from '../composables/useTheme'
 import { useAuth } from '../composables/useAuth'

@@ -29,7 +29,7 @@
 </template>
 
 <script setup>
-import { ref, watch, onBeforeUnmount, nextTick, computed } from 'vue'
+import { ref, watch, onMounted, onBeforeUnmount, nextTick, computed } from 'vue'
 import { Chart, CHART_COLORS, CHART_COLORS_WARNING, tooltipOptions, themeColors } from '@/config/chartjs'
 
 const props = defineProps({
@@ -136,14 +136,20 @@ function render() {
   })
 }
 
-// Re-render when data or theme changes
+// Re-render when mounted
+onMounted(async () => {
+  await nextTick()
+  render()
+})
+
+// Re-render when data, theme or loading state changes
 watch(
-  () => [props.items, props.isDark, props.variant, props.orientation],
+  () => [props.items, props.isDark, props.variant, props.orientation, props.loading],
   async () => {
     await nextTick()
     render()
   },
-  { deep: true }
+  { deep: true, immediate: true }
 )
 
 onBeforeUnmount(() => {

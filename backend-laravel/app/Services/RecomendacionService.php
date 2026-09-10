@@ -13,6 +13,32 @@ class RecomendacionService
      */
     public function buildPcIdeal(string $uso, string $gama, float $presupuestoMax): array
     {
+        // Normalizar gama
+        $gamaClean = mb_strtolower(trim($gama));
+        if (str_contains($gamaClean, 'media-alta') || str_contains($gamaClean, 'media alta') || str_contains($gamaClean, 'media_alta')) {
+            $gama = ($presupuestoMax > 0 && $presupuestoMax < 4500000) ? 'media' : 'alta';
+        } elseif (str_contains($gamaClean, 'alta') || str_contains($gamaClean, 'alto')) {
+            $gama = 'alta';
+        } elseif (str_contains($gamaClean, 'baja') || str_contains($gamaClean, 'bajo') || str_contains($gamaClean, 'entrada')) {
+            $gama = 'baja';
+        } else {
+            $gama = 'media';
+        }
+
+        // Normalizar uso
+        $usoClean = mb_strtolower(trim($uso));
+        if (str_contains($usoClean, 'game') || str_contains($usoClean, 'jueg') || str_contains($usoClean, 'jugar')) {
+            $uso = 'gaming';
+        } elseif (str_contains($usoClean, 'diseñ') || str_contains($usoClean, 'render') || str_contains($usoClean, 'edici')) {
+            $uso = 'diseño';
+        } elseif (str_contains($usoClean, 'estudi') || str_contains($usoClean, 'tarea')) {
+            $uso = 'estudio';
+        } elseif (str_contains($usoClean, 'oficin') || str_contains($usoClean, 'trabajo')) {
+            $uso = 'oficina';
+        } else {
+            $uso = in_array($usoClean, ['gaming', 'estudio', 'oficina', 'diseño']) ? $usoClean : 'gaming';
+        }
+
         if ($presupuestoMax <= 0) {
             $presupuestoMax = match ($gama) {
                 'alta' => 10000000.0,
@@ -133,6 +159,9 @@ class RecomendacionService
     /**
      * Helper para armar una configuración individual según perfil y presupuesto.
      */
+    /**
+     * Helper para armar una configuración individual según perfil y presupuesto.
+     */
     private function generarBuild(string $uso, string $gama, float $presupuestoMax, string $tipoPerfil = 'equilibrada'): array
     {
         $proporciones = $this->getProporcionesPorUso($uso);
@@ -156,7 +185,7 @@ class RecomendacionService
         $categoriasConStock = DB::table('componentes as c')
             ->join('productos_catalogo as pc', 'c.producto_id', '=', 'pc.id')
             ->whereIn('pc.categoria', $categoriasRequeridas)
-            ->where('c.activo', true)
+            ->whereRaw("c.activo IS TRUE")
             ->where('c.stock', '>', 0)
             ->whereNull('c.deleted_at')
             ->pluck('pc.categoria')
@@ -169,13 +198,33 @@ class RecomendacionService
             }
         }
 
+        $minimosPorCategoria = $this->getCostosMinimosPorCategoria($categoriasRequeridas);
+
         $build = [];
         $totalGastado = 0;
         $presupuestoRestante = $presupuestoMax;
 
-        foreach ($categoriasRequeridas as $categoria) {
-            $subPresupuesto = $presupuestoMax * ($proporciones[$categoria] ?? 0.10);
+        for ($i = 0; $i < count($categoriasRequeridas); $i++) {
+            $categoria = $categoriasRequeridas[$i];
+            if (in_array($categoria, $categoriasOpcionales) && $presupuestoRestante < ($minimosPorCategoria[$categoria] ?? 0)) {
+                continue;
+            }
 
+            // Calcular costo mínimo necesario para las categorías restantes
+            $costoMinimoRestante = 0;
+            for ($j = $i + 1; $j < count($categoriasRequeridas); $j++) {
+                $catJ = $categoriasRequeridas[$j];
+                if (!in_array($catJ, $categoriasOpcionales)) {
+                    $costoMinimoRestante += ($minimosPorCategoria[$catJ] ?? 0);
+                }
+            }
+
+            // Tope seguro que esta categoría puede consumir sin dejar sin presupuesto a las demás
+            $topeMaximoCategoria = max(0, $presupuestoRestante - $costoMinimoRestante);
+            $subPresupuesto = max($minimosPorCategoria[$categoria] ?? 0, $presupuestoMax * ($proporciones[$categoria] ?? 0.10));
+            $subPresupuesto = min($subPresupuesto, $topeMaximoCategoria);
+
+            // Búsqueda progresiva de componente
             $componente = $this->buscarMejorComponente($categoria, $uso, $gama, $subPresupuesto);
 
             if (!$componente && $gama !== 'baja') {
@@ -183,12 +232,21 @@ class RecomendacionService
                 $componente = $this->buscarMejorComponente($categoria, $uso, $gamaFallback, $subPresupuesto);
             }
 
+            if (!$componente && $gama === 'alta') {
+                $componente = $this->buscarMejorComponente($categoria, $uso, 'baja', $subPresupuesto);
+            }
+
             if (!$componente) {
                 $componente = $this->buscarMejorComponente($categoria, null, $gama, $subPresupuesto);
             }
 
             if (!$componente) {
-                $componente = $this->buscarMejorComponente($categoria, null, null, $presupuestoRestante);
+                $componente = $this->buscarMejorComponente($categoria, null, null, $subPresupuesto);
+            }
+
+            if (!$componente) {
+                // Si no entra en el subpresupuesto asignado, obtener el más económico viable dentro del tope seguro
+                $componente = $this->buscarMejorComponente($categoria, null, null, $topeMaximoCategoria, 'ASC');
             }
 
             if ($componente) {
@@ -208,26 +266,53 @@ class RecomendacionService
             return ['success' => false];
         }
 
-        if ($presupuestoRestante > 0 && $tipoPerfil !== 'ahorro') {
+        // FASE 2: Aprovechar el presupuesto restante para mejorar componentes clave
+        if ($presupuestoRestante > 20000 && $tipoPerfil !== 'ahorro') {
             $prioridadMejora = $this->getPrioridadMejora($uso);
 
-            foreach ($prioridadMejora as $catMejora) {
-                if (!isset($build[$catMejora])) continue;
+            for ($loop = 0; $loop < 3 && $presupuestoRestante > 20000; $loop++) {
+                $mejoraRealizada = false;
+                foreach ($prioridadMejora as $catMejora) {
+                    if (!isset($build[$catMejora])) continue;
 
-                $precioActual = (float) $build[$catMejora]->precio_final;
-                $limiteMejora = $precioActual + $presupuestoRestante;
+                    $precioActual = (float) $build[$catMejora]->precio_final;
+                    $limiteMejora = $precioActual + $presupuestoRestante;
 
-                $mejorOpcion = $this->buscarMejorComponente($catMejora, $uso, 'alta', $limiteMejora);
+                    // Intentar mejorar manteniendo el enfoque de uso
+                    $mejorOpcion = $this->buscarMejorComponente($catMejora, $uso, null, $limiteMejora, 'DESC');
+                    if (!$mejorOpcion || (float) $mejorOpcion->precio_final <= $precioActual) {
+                        $mejorOpcion = $this->buscarMejorComponente($catMejora, null, null, $limiteMejora, 'DESC');
+                    }
 
-                if ($mejorOpcion && (float) $mejorOpcion->precio_final > $precioActual) {
-                    $diferencia = (float) $mejorOpcion->precio_final - $precioActual;
-                    $build[$catMejora] = $mejorOpcion;
-                    $totalGastado += $diferencia;
-                    $presupuestoRestante -= $diferencia;
+                    if ($mejorOpcion && (float) $mejorOpcion->precio_final > $precioActual) {
+                        $diferencia = (float) $mejorOpcion->precio_final - $precioActual;
+                        $build[$catMejora] = $mejorOpcion;
+                        $totalGastado += $diferencia;
+                        $presupuestoRestante -= $diferencia;
+                        $mejoraRealizada = true;
+                    }
                 }
-
-                if ($presupuestoRestante <= 0) break;
+                if (!$mejoraRealizada) break;
             }
+        }
+
+        // FASE 3: Validar compatibilidad del build armado y sustituir si hay conflictos
+        $compatService = new CompatibilidadService();
+        $validacion = $compatService->validarConjunto($this->buildToCompatArray($build));
+        $advertenciasCompat = $validacion['advertencias'] ?? [];
+
+        if (!$validacion['compatible']) {
+            // Intentar sustitución automática de componentes conflictivos
+            $build = $this->intentarSustitucion($build, $compatService, $presupuestoMax, $totalGastado, $uso, $gama);
+            // Recalcular totales tras sustitución
+            $totalGastado = 0;
+            foreach ($build as $comp) {
+                $totalGastado += (float) $comp->precio_final;
+            }
+            $presupuestoRestante = $presupuestoMax - $totalGastado;
+            // Re-validar
+            $validacion = $compatService->validarConjunto($this->buildToCompatArray($build));
+            $advertenciasCompat = array_merge($advertenciasCompat, $validacion['advertencias'] ?? []);
         }
 
         $componentes = [];
@@ -256,27 +341,32 @@ class RecomendacionService
         }
 
         return [
-            'success'   => true,
-            'build'     => $componentes,
-            'total'     => round($totalGastado, 2),
-            'ahorro'    => round($presupuestoMax - $totalGastado, 2),
+            'success'        => true,
+            'build'          => $componentes,
+            'total'          => round($totalGastado, 2),
+            'ahorro'         => round($presupuestoMax - $totalGastado, 2),
+            'compatibilidad' => [
+                'compatible'   => $validacion['compatible'],
+                'detalles'     => $validacion['detalles'] ?? [],
+                'advertencias' => $advertenciasCompat,
+            ],
         ];
     }
 
-    private function buscarMejorComponente($categoria, $uso = null, $gama = null, $precioMax = null)
+    private function buscarMejorComponente($categoria, $uso = null, $gama = null, $precioMax = null, string $order = 'DESC')
     {
         $query = DB::table('componentes as c')
             ->join('productos_catalogo as pc', 'c.producto_id', '=', 'pc.id')
             ->leftJoin('bodegas as b', 'c.bodega_id', '=', 'b.id')
             ->where('pc.categoria', $categoria)
-            ->where('c.activo', true)
+            ->whereRaw("c.activo IS TRUE")
             ->where('c.stock', '>', 0)
             ->whereNull('c.deleted_at')
             ->select(
                 'c.id', 'pc.nombre', 'pc.categoria', 'c.especificacion',
                 'c.gama', 'c.enfoque_uso', 'c.precio', 'c.descuento_porcentaje',
                 'c.descuento_activo', 'c.stock', 'c.imagen_url', 'b.nombre as bodega',
-                DB::raw('CASE WHEN (c.descuento_activo = true OR c.descuento_activo = 1) AND c.descuento_porcentaje > 0 THEN ROUND(c.precio * (1 - c.descuento_porcentaje / 100), 2) ELSE c.precio END as precio_final')
+                DB::raw('CASE WHEN c.descuento_activo IS TRUE AND c.descuento_porcentaje > 0 THEN ROUND(c.precio * (1 - c.descuento_porcentaje / 100), 2) ELSE c.precio END as precio_final')
             );
 
         if ($uso) {
@@ -288,19 +378,42 @@ class RecomendacionService
         }
 
         if ($precioMax !== null) {
-            $query->where(DB::raw('CASE WHEN (c.descuento_activo = true OR c.descuento_activo = 1) AND c.descuento_porcentaje > 0 THEN ROUND(c.precio * (1 - c.descuento_porcentaje / 100), 2) ELSE c.precio END'), '<=', $precioMax);
+            $query->where(DB::raw('CASE WHEN c.descuento_activo IS TRUE AND c.descuento_porcentaje > 0 THEN ROUND(c.precio * (1 - c.descuento_porcentaje / 100), 2) ELSE c.precio END'), '<=', $precioMax);
         }
 
-        return $query->orderBy(DB::raw('CASE WHEN (c.descuento_activo = true OR c.descuento_activo = 1) AND c.descuento_porcentaje > 0 THEN ROUND(c.precio * (1 - c.descuento_porcentaje / 100), 2) ELSE c.precio END'), 'DESC')->first();
+        return $query->orderBy(DB::raw('CASE WHEN c.descuento_activo IS TRUE AND c.descuento_porcentaje > 0 THEN ROUND(c.precio * (1 - c.descuento_porcentaje / 100), 2) ELSE c.precio END'), $order)->first();
+    }
+
+    private function getCostosMinimosPorCategoria(array $categorias): array
+    {
+        $preciosMinimos = DB::table('componentes as c')
+            ->join('productos_catalogo as pc', 'c.producto_id', '=', 'pc.id')
+            ->whereIn('pc.categoria', $categorias)
+            ->whereRaw("c.activo IS TRUE")
+            ->where('c.stock', '>', 0)
+            ->whereNull('c.deleted_at')
+            ->select(
+                'pc.categoria',
+                DB::raw('MIN(CASE WHEN c.descuento_activo IS TRUE AND c.descuento_porcentaje > 0 THEN ROUND(c.precio * (1 - c.descuento_porcentaje / 100), 2) ELSE c.precio END) as min_precio')
+            )
+            ->groupBy('pc.categoria')
+            ->pluck('min_precio', 'pc.categoria')
+            ->toArray();
+
+        $resultado = [];
+        foreach ($categorias as $cat) {
+            $resultado[$cat] = (float)($preciosMinimos[$cat] ?? 0);
+        }
+        return $resultado;
     }
 
     private function getProporcionesPorUso(string $uso): array
     {
         $proporciones = [
             'gaming' => [
-                'GPU' => 0.30, 'CPU' => 0.22, 'Motherboard' => 0.10,
-                'RAM' => 0.10, 'Storage' => 0.08, 'PSU' => 0.08,
-                'Cooler' => 0.05, 'Case' => 0.07,
+                'GPU' => 0.32, 'CPU' => 0.22, 'Motherboard' => 0.12,
+                'RAM' => 0.08, 'Storage' => 0.09, 'PSU' => 0.08,
+                'Cooler' => 0.04, 'Case' => 0.05,
             ],
             'diseño' => [
                 'CPU' => 0.28, 'GPU' => 0.25, 'RAM' => 0.12,
@@ -325,30 +438,18 @@ class RecomendacionService
     private function getPrioridadMejora(string $uso): array
     {
         return match ($uso) {
-            'gaming'  => ['GPU', 'CPU', 'RAM', 'Storage'],
-            'diseño'  => ['CPU', 'GPU', 'RAM', 'Storage'],
-            'estudio' => ['CPU', 'RAM', 'Storage', 'GPU'],
-            'oficina' => ['Storage', 'RAM', 'CPU'],
-            default   => ['CPU', 'GPU', 'RAM'],
+            'gaming'  => ['GPU', 'CPU', 'RAM', 'Storage', 'Motherboard', 'PSU', 'Cooler', 'Case'],
+            'diseño'  => ['CPU', 'RAM', 'Storage', 'GPU', 'Motherboard', 'PSU', 'Cooler', 'Case'],
+            'estudio' => ['CPU', 'RAM', 'Storage', 'GPU', 'Motherboard', 'PSU', 'Cooler', 'Case'],
+            'oficina' => ['Storage', 'RAM', 'CPU', 'Motherboard', 'PSU', 'Case'],
+            default   => ['CPU', 'GPU', 'RAM', 'Storage'],
         };
     }
 
     private function calcularCostoMinimo(array $categorias): float
     {
-        $preciosMinimos = DB::table('componentes as c')
-            ->join('productos_catalogo as pc', 'c.producto_id', '=', 'pc.id')
-            ->whereIn('pc.categoria', $categorias)
-            ->where('c.activo', true)
-            ->where('c.stock', '>', 0)
-            ->whereNull('c.deleted_at')
-            ->select(
-                'pc.categoria',
-                DB::raw('MIN(CASE WHEN (c.descuento_activo = true OR c.descuento_activo = 1) AND c.descuento_porcentaje > 0 THEN ROUND(c.precio * (1 - c.descuento_porcentaje / 100), 2) ELSE c.precio END) as min_precio')
-            )
-            ->groupBy('pc.categoria')
-            ->pluck('min_precio');
-
-        return round((float) $preciosMinimos->sum(), 2);
+        $minimos = $this->getCostosMinimosPorCategoria($categorias);
+        return round((float) array_sum($minimos), 2);
     }
 
     public function obtenerBuildMinima(array $categoriasRequeridas): array
@@ -403,5 +504,135 @@ class RecomendacionService
             'build' => $build,
             'total' => round($total, 2)
         ];
+    }
+
+    /**
+     * Convierte el array de build (keyed por categoría) a un array compatible con CompatibilidadService.
+     * Enriquece cada componente con datos de compatibilidad de productos_catalogo.
+     */
+    private function buildToCompatArray(array $build): array
+    {
+        $result = [];
+        foreach ($build as $categoria => $comp) {
+            // Buscar datos de compatibilidad del producto catalogo
+            $productoId = $comp->producto_id ?? null;
+            $compat = null;
+            if ($productoId) {
+                $compat = DB::table('productos_catalogo')
+                    ->where('id', $productoId)
+                    ->select('socket', 'tipo_ram', 'factor_forma', 'consumo_watts', 'wattage', 'largo_mm', 'espacio_gpu_mm', 'marca')
+                    ->first();
+            }
+
+            $obj = (object) [
+                'id'            => $comp->id,
+                'producto_id'   => $productoId,
+                'nombre'        => $comp->nombre,
+                'categoria'     => $categoria,
+                'especificacion'=> $comp->especificacion,
+                'socket'        => $compat->socket ?? null,
+                'tipo_ram'      => $compat->tipo_ram ?? null,
+                'factor_forma'  => $compat->factor_forma ?? null,
+                'consumo_watts' => $compat->consumo_watts ?? null,
+                'wattage'       => $compat->wattage ?? null,
+                'largo_mm'      => $compat->largo_mm ?? null,
+                'espacio_gpu_mm'=> $compat->espacio_gpu_mm ?? null,
+                'marca'         => $compat->marca ?? null,
+            ];
+            $result[] = $obj;
+        }
+        return $result;
+    }
+
+    /**
+     * Intenta sustituir componentes incompatibles para resolver conflictos.
+     * Estrategia: si hay socket mismatch CPU/Mobo, cambia la Mobo por una compatible.
+     *             si hay RAM type mismatch, cambia la RAM por una compatible.
+     */
+    private function intentarSustitucion(array $build, CompatibilidadService $compatService, float $presupuestoMax, float $totalGastado, string $uso, string $gama): array
+    {
+        // Obtener socket del CPU seleccionado
+        $cpuProductoId = $build['CPU']->producto_id ?? null;
+        $cpuCompat = $cpuProductoId ? DB::table('productos_catalogo')->where('id', $cpuProductoId)->first() : null;
+        $socketCpu = $cpuCompat->socket ?? null;
+        $tipoRamCpu = $cpuCompat->tipo_ram ?? null;
+
+        // 1. Si hay socket mismatch, buscar Motherboard compatible
+        if ($socketCpu && isset($build['Motherboard'])) {
+            $moboProductoId = $build['Motherboard']->producto_id ?? null;
+            $moboCompat = $moboProductoId ? DB::table('productos_catalogo')->where('id', $moboProductoId)->first() : null;
+            $socketMobo = $moboCompat->socket ?? null;
+
+            if ($socketMobo && $socketCpu !== $socketMobo) {
+                $presupuestoMobo = (float) $build['Motherboard']->precio_final + ($presupuestoMax - $totalGastado);
+                // Buscar motherboard con socket compatible
+                $nuevaMobo = DB::table('componentes as c')
+                    ->join('productos_catalogo as pc', 'c.producto_id', '=', 'pc.id')
+                    ->leftJoin('bodegas as b', 'c.bodega_id', '=', 'b.id')
+                    ->where('pc.categoria', 'Motherboard')
+                    ->where('pc.socket', $socketCpu)
+                    ->whereRaw("c.activo IS TRUE")
+                    ->where('c.stock', '>', 0)
+                    ->whereNull('c.deleted_at')
+                    ->where(DB::raw('CASE WHEN c.descuento_activo IS TRUE AND c.descuento_porcentaje > 0 THEN ROUND(c.precio * (1 - c.descuento_porcentaje / 100), 2) ELSE c.precio END'), '<=', $presupuestoMobo)
+                    ->select(
+                        'c.id', 'c.producto_id', 'pc.nombre', 'pc.categoria', 'c.especificacion',
+                        'c.gama', 'c.enfoque_uso', 'c.precio', 'c.descuento_porcentaje',
+                        'c.descuento_activo', 'c.stock', 'c.imagen_url', 'b.nombre as bodega',
+                        DB::raw('CASE WHEN c.descuento_activo IS TRUE AND c.descuento_porcentaje > 0 THEN ROUND(c.precio * (1 - c.descuento_porcentaje / 100), 2) ELSE c.precio END as precio_final')
+                    )
+                    ->orderBy(DB::raw('CASE WHEN c.descuento_activo IS TRUE AND c.descuento_porcentaje > 0 THEN ROUND(c.precio * (1 - c.descuento_porcentaje / 100), 2) ELSE c.precio END'), 'DESC')
+                    ->first();
+
+                if ($nuevaMobo) {
+                    $build['Motherboard'] = $nuevaMobo;
+                }
+            }
+        }
+
+        // 2. Si hay RAM type mismatch, buscar RAM compatible
+        if ($tipoRamCpu && isset($build['RAM'])) {
+            // Get mobo tipo_ram (use the potentially substituted one)
+            $moboProductoId2 = $build['Motherboard']->producto_id ?? null;
+            $moboCompat2 = $moboProductoId2 ? DB::table('productos_catalogo')->where('id', $moboProductoId2)->first() : null;
+            $tipoRamMobo = $moboCompat2->tipo_ram ?? $tipoRamCpu;
+
+            $ramProductoId = $build['RAM']->producto_id ?? null;
+            $ramCompat = $ramProductoId ? DB::table('productos_catalogo')->where('id', $ramProductoId)->first() : null;
+            $tipoRamActual = $ramCompat->tipo_ram ?? null;
+
+            if ($tipoRamActual && $tipoRamActual !== $tipoRamMobo) {
+                // Recalcular total after mobo change
+                $totalActual = 0;
+                foreach ($build as $comp) {
+                    $totalActual += (float) $comp->precio_final;
+                }
+                $presupuestoRam = (float) $build['RAM']->precio_final + ($presupuestoMax - $totalActual);
+
+                $nuevaRam = DB::table('componentes as c')
+                    ->join('productos_catalogo as pc', 'c.producto_id', '=', 'pc.id')
+                    ->leftJoin('bodegas as b', 'c.bodega_id', '=', 'b.id')
+                    ->where('pc.categoria', 'RAM')
+                    ->where('pc.tipo_ram', $tipoRamMobo)
+                    ->whereRaw("c.activo IS TRUE")
+                    ->where('c.stock', '>', 0)
+                    ->whereNull('c.deleted_at')
+                    ->where(DB::raw('CASE WHEN c.descuento_activo IS TRUE AND c.descuento_porcentaje > 0 THEN ROUND(c.precio * (1 - c.descuento_porcentaje / 100), 2) ELSE c.precio END'), '<=', $presupuestoRam)
+                    ->select(
+                        'c.id', 'c.producto_id', 'pc.nombre', 'pc.categoria', 'c.especificacion',
+                        'c.gama', 'c.enfoque_uso', 'c.precio', 'c.descuento_porcentaje',
+                        'c.descuento_activo', 'c.stock', 'c.imagen_url', 'b.nombre as bodega',
+                        DB::raw('CASE WHEN c.descuento_activo IS TRUE AND c.descuento_porcentaje > 0 THEN ROUND(c.precio * (1 - c.descuento_porcentaje / 100), 2) ELSE c.precio END as precio_final')
+                    )
+                    ->orderBy(DB::raw('CASE WHEN c.descuento_activo IS TRUE AND c.descuento_porcentaje > 0 THEN ROUND(c.precio * (1 - c.descuento_porcentaje / 100), 2) ELSE c.precio END'), 'DESC')
+                    ->first();
+
+                if ($nuevaRam) {
+                    $build['RAM'] = $nuevaRam;
+                }
+            }
+        }
+
+        return $build;
     }
 }

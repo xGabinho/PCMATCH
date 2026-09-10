@@ -68,20 +68,24 @@
 
         <div class="flex items-center gap-2 flex-wrap mt-2">
           <button
-            v-for="cat in ['Todos', ...categories]"
+            v-for="cat in ['Todos', 'Descuentos', ...categories]"
             :key="cat"
             @click="activeCategory = cat"
-            class="px-4 py-2 rounded-lg text-sm font-medium transition-all duration-150 whitespace-nowrap min-h-[44px]"
+            class="px-4 py-2 rounded-lg text-sm font-medium transition-all duration-150 whitespace-nowrap min-h-[44px] flex items-center gap-1.5 cursor-pointer"
             :class="activeCategory === cat
-              ? 'bg-accent text-white shadow-lg shadow-accent/20'
-              : 'theme-card border theme-border theme-text-muted hover:theme-text hover:border-accent/40 shadow-sm'"
+              ? (cat === 'Descuentos' ? 'bg-red-500 text-white shadow-lg shadow-red-500/20' : 'bg-accent text-white shadow-lg shadow-accent/20')
+              : (cat === 'Descuentos' ? 'theme-card border border-red-500/40 text-red-400 hover:bg-red-500/10 shadow-sm' : 'theme-card border theme-border theme-text-muted hover:theme-text hover:border-accent/40 shadow-sm')"
           >
-            {{ cat }}
+            <span v-if="cat === 'Descuentos'">🔥</span>
+            {{ cat === 'Descuentos' ? 'En Descuento' : cat }}
+            <span v-if="cat === 'Descuentos' && componentesEnDescuento.length > 0" class="text-[10px] px-1.5 py-0.5 rounded-full bg-red-500/20 text-red-400 font-bold ml-0.5">
+              {{ componentesEnDescuento.length }}
+            </span>
           </button>
         </div>
 
         <!-- Advanced Filters Panel -->
-        <div v-if="showAdvancedFilters" class="p-6 theme-card border theme-border shadow-sm rounded-xl grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-6 animate-fade-in mt-2">
+        <div v-if="showAdvancedFilters" class="p-6 theme-card border theme-border shadow-sm rounded-xl grid grid-cols-1 sm:grid-cols-2 md:grid-cols-6 gap-6 animate-fade-in mt-2">
           <div>
             <label class="block text-sm font-medium theme-text-muted mb-2">Gama</label>
             <select v-model="filterGama" class="theme-input">
@@ -113,8 +117,88 @@
             <label class="block text-sm font-medium theme-text-muted mb-2">Frec. (GHz Mín.)</label>
             <input v-model="filterFrecuenciaMin" type="number" step="0.1" min="0" placeholder="Ej: 3.5" class="theme-input" />
           </div>
+          <div>
+            <label class="block text-sm font-medium theme-text-muted mb-2">Promoción</label>
+            <label class="flex items-center gap-2 cursor-pointer mt-2.5">
+              <input type="checkbox" v-model="filterSoloDescuentos" class="rounded accent-accent w-4 h-4 cursor-pointer" />
+              <span class="text-xs theme-text font-medium">Solo ofertas</span>
+            </label>
+          </div>
         </div>
       </div>
+
+      <!-- ════ Apartado de Descuentos y Ofertas ════ -->
+      <section v-if="componentesEnDescuento.length > 0 && activeCategory !== 'Descuentos'" class="mb-12 p-6 rounded-2xl border border-red-500/20 bg-gradient-to-br from-red-500/5 via-transparent to-amber-500/5 relative overflow-hidden">
+        <div class="flex items-center justify-between mb-5 flex-wrap gap-4">
+          <div class="flex items-center gap-3">
+            <div class="w-10 h-10 rounded-xl bg-red-500/15 border border-red-500/30 flex items-center justify-center text-red-400 font-bold text-lg">
+              🔥
+            </div>
+            <div>
+              <div class="flex items-center gap-2">
+                <h2 class="text-lg font-bold theme-text tracking-tight">Apartado de Descuentos y Ofertas</h2>
+                <span class="px-2 py-0.5 rounded-full text-xs font-bold bg-red-500/20 text-red-400 border border-red-500/30">
+                  {{ componentesEnDescuento.length }} ofertas activas
+                </span>
+              </div>
+              <p class="text-xs theme-text-muted mt-0.5">Precios rebajados directamente por las bodegas</p>
+            </div>
+          </div>
+          <button
+            @click="activeCategory = 'Descuentos'"
+            class="text-xs font-semibold text-accent hover:underline flex items-center gap-1 cursor-pointer"
+          >
+            Ver todos los descuentos ({{ componentesEnDescuento.length }}) →
+          </button>
+        </div>
+
+        <!-- Grid de ofertas destacadas -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+          <div
+            v-for="comp in componentesEnDescuento.slice(0, 4)"
+            :key="'desc-' + comp.id"
+            class="card-dark rounded-xl flex flex-col card-hover group overflow-hidden border border-red-500/20 relative"
+          >
+            <div class="absolute top-2.5 left-2.5 z-10 px-2 py-0.5 rounded-md text-[11px] font-black bg-red-600 text-white shadow-md">
+              -{{ comp.descuento_porcentaje }}%
+            </div>
+
+            <!-- Image -->
+            <div class="relative w-full h-36 theme-bg flex items-center justify-center overflow-hidden flex-shrink-0">
+              <img v-if="comp.imagen_url" :src="comp.imagen_url" :alt="comp.nombre" class="w-full h-full object-contain p-2 group-hover:scale-105 transition-transform duration-300" />
+              <component v-else :is="categoryIcons[comp.categoria] ?? Wrench" class="w-10 h-10 opacity-20" />
+            </div>
+
+            <!-- Content -->
+            <div class="p-4 flex flex-col gap-2 flex-1">
+              <span class="badge text-[10px] bg-accent/10 text-accent border border-accent/20 self-start">
+                {{ comp.categoria }}
+              </span>
+              <h3 class="text-sm font-semibold theme-text leading-snug line-clamp-1 group-hover:text-accent transition-colors">
+                {{ comp.nombre }}
+              </h3>
+              <p class="text-xs theme-text-muted leading-relaxed line-clamp-1">{{ comp.especificacion }}</p>
+
+              <div class="mt-auto pt-2 border-t theme-border flex items-end justify-between">
+                <div>
+                  <div class="flex items-center gap-1.5 mb-0.5">
+                    <span class="line-through text-xs theme-text-muted opacity-70">${{ Number(comp.precio).toLocaleString() }}</span>
+                  </div>
+                  <p class="text-accent font-bold font-mono text-base">${{ Number(comp.precio_final || comp.precio).toLocaleString() }}</p>
+                  <p class="text-[11px] theme-text-muted mt-0.5">{{ comp.bodega }}</p>
+                </div>
+                <button
+                  @click="addToBuilder(comp)"
+                  :disabled="comp.stock == 0"
+                  class="btn-primary text-xs px-3 py-1.5 rounded-lg flex items-center gap-1 cursor-pointer"
+                >
+                  Usar →
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
 
       
 
@@ -273,6 +357,9 @@
 
     </div>
 
+    <!-- ════ Descuentos Especiales ════ -->
+    <SeccionDescuentos />
+
     <!-- ════ Más Vendidos ════ -->
     <SeccionMasVendidos />
 
@@ -289,6 +376,7 @@ import { useAuth } from '../composables/useAuth'
 import { useTheme } from '../composables/useTheme'
 import { useBuilder } from '../composables/useBuilder'
 import { useComponentes } from '../composables/useComponentes'
+import SeccionDescuentos from '../components/Recomendaciones/SeccionDescuentos.vue'
 import SeccionMasVendidos from '../components/Recomendaciones/SeccionMasVendidos.vue'
 
 import { API } from '@/config/api'
@@ -364,12 +452,21 @@ const tierStyles = {
 
 const totalBodegas = computed(() => new Set(allComponents.value.map(c => c.bodega)).size)
 
+const componentesEnDescuento = computed(() => {
+  return allComponents.value.filter(c => {
+    const isActivo = c.descuento_activo === true || c.descuento_activo == 1 || c.descuento_activo === '1' || c.descuento_activo === 'true'
+    const pct = Number(c.descuento_porcentaje) || 0
+    return isActivo && pct > 0
+  })
+})
+
 const showAdvancedFilters = ref(false)
 const filterGama = ref('')
 const filterEnfoque = ref('')
 const filterNucleos = ref('')
 const filterHilos = ref('')
 const filterFrecuenciaMin = ref('')
+const filterSoloDescuentos = ref(false)
 
 /**
 
@@ -380,7 +477,13 @@ const filterFrecuenciaMin = ref('')
 const filteredComponents = computed(() => {
   let result = [...allComponents.value]
 
-  if (activeCategory.value !== 'Todos') {
+  if (activeCategory.value === 'Descuentos' || filterSoloDescuentos.value) {
+    result = result.filter(c => {
+      const isActivo = c.descuento_activo === true || c.descuento_activo == 1 || c.descuento_activo === '1' || c.descuento_activo === 'true'
+      const pct = Number(c.descuento_porcentaje) || 0
+      return isActivo && pct > 0
+    })
+  } else if (activeCategory.value !== 'Todos') {
     result = result.filter(c => c.categoria === activeCategory.value)
   }
 
@@ -443,7 +546,7 @@ function goToPage(page) {
   }
 }
 
-watch([searchQuery, activeCategory, sortBy, filterGama, filterEnfoque, filterNucleos, filterHilos, filterFrecuenciaMin], () => {
+watch([searchQuery, activeCategory, sortBy, filterGama, filterEnfoque, filterNucleos, filterHilos, filterFrecuenciaMin, filterSoloDescuentos], () => {
   currentPage.value = 1
 })
 
