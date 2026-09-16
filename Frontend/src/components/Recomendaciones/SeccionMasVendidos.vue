@@ -111,9 +111,7 @@
 import { Gamepad2, BookOpen, Briefcase, Palette, Settings, Save, Disc, Plug, Zap, Snowflake, Monitor, Package, Flame, Wrench } from 'lucide-vue-next';
 
 import { ref, computed, onMounted } from 'vue'
-
-
-const API = '/api'
+import { API } from '@/config/api'
 
 const tabs = [
   { key: 'gaming',  icon: Gamepad2, label: 'Gaming' },

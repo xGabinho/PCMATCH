@@ -238,8 +238,8 @@ import { ref, onMounted, watch, nextTick } from 'vue'
 import { useRouter } from 'vue-router'
 import { Bot, Send, RefreshCw, X, MessageSquare, Sparkles, Zap } from 'lucide-vue-next'
 import { useBuilder } from '../composables/useBuilder'
+import { API } from '@/config/api'
 
-const API = '/api'
 const STORAGE_KEY = 'pcmatch_chat_session'
 
 const router = useRouter()
